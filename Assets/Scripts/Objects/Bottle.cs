@@ -93,6 +93,25 @@ namespace BarSimulator.Objects
             LoadLiquorData();
         }
 
+        /// <summary>
+        /// 使用 LiquorData 初始化酒瓶
+        /// </summary>
+        public void Initialize(LiquorData data)
+        {
+            if (data == null) return;
+
+            liquorData = data;
+            liquorId = data.id;
+            displayName = data.displayName;
+
+            // 更新視覺顏色
+            var renderer = GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = data.color;
+            }
+        }
+
         #endregion
 
         #region 倒酒
