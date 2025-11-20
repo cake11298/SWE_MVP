@@ -150,7 +150,8 @@ namespace BarSimulator.NPC
             var evaluation = new DrinkEvaluation
             {
                 cocktailName = drinkInfo.cocktailName,
-                volume = drinkInfo.volume
+                volume = drinkInfo.volume,
+                isValidCocktail = true
             };
 
             // 簡單評分邏輯
@@ -159,18 +160,18 @@ namespace BarSimulator.NPC
                 drinkInfo.cocktailName.Contains("Margarita"))
             {
                 evaluation.score = 85;
-                evaluation.comment = "Perfect!";
+                evaluation.message = "Perfect!";
             }
             else if (drinkInfo.cocktailName.Contains("Custom") ||
                      drinkInfo.cocktailName.Contains("Mix"))
             {
                 evaluation.score = 60;
-                evaluation.comment = "Interesting...";
+                evaluation.message = "Interesting...";
             }
             else
             {
                 evaluation.score = 70;
-                evaluation.comment = "Not bad!";
+                evaluation.message = "Not bad!";
             }
 
             return evaluation;
@@ -183,11 +184,11 @@ namespace BarSimulator.NPC
         {
             if (evaluation.score >= 80)
             {
-                return $"Wow! This {evaluation.cocktailName} is amazing! {evaluation.comment}";
+                return $"Wow! This {evaluation.cocktailName} is amazing! {evaluation.message}";
             }
             else if (evaluation.score >= 60)
             {
-                return $"Thanks for the {evaluation.cocktailName}. {evaluation.comment}";
+                return $"Thanks for the {evaluation.cocktailName}. {evaluation.message}";
             }
             else
             {
@@ -215,16 +216,5 @@ namespace BarSimulator.NPC
         public string CurrentDialogue => currentDialogue;
 
         #endregion
-    }
-
-    /// <summary>
-    /// 飲料評估結果
-    /// </summary>
-    public class DrinkEvaluation
-    {
-        public string cocktailName;
-        public float volume;
-        public int score;
-        public string comment;
     }
 }
