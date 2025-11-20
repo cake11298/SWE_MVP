@@ -26,23 +26,22 @@ namespace BarSimulator.Data
     [System.Serializable]
     public class LiquorData
     {
-        [Tooltip("酒類識別碼 (如: vodka, gin)")]
+        /// <summary>酒類識別碼 (如: vodka, gin)</summary>
         public string id;
 
-        [Tooltip("中文名稱")]
+        /// <summary>中文名稱</summary>
         public string nameZH;
 
-        [Tooltip("英文顯示名稱")]
+        /// <summary>英文顯示名稱</summary>
         public string displayName;
 
-        [Tooltip("酒液顏色")]
+        /// <summary>酒液顏色</summary>
         public Color color;
 
-        [Tooltip("酒精含量 (%)")]
-        [Range(0f, 100f)]
+        /// <summary>酒精含量 (%)</summary>
         public float alcoholContent;
 
-        [Tooltip("酒類類別")]
+        /// <summary>酒類類別</summary>
         public LiquorCategory category;
 
         /// <summary>
