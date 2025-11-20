@@ -107,7 +107,10 @@ namespace BarSimulator.Core
             // 3. 建造 NPC
             BuildNPCs();
 
-            // 4. 設置燈光
+            // 4. 建造裝飾
+            BuildDecorations();
+
+            // 5. 設置燈光
             SetupLighting();
 
             Debug.Log($"BarSceneBuilder: Scene built - {bottles.Count} bottles, {glasses.Count} glasses, {npcs.Count} NPCs");
@@ -200,8 +203,8 @@ namespace BarSimulator.Core
 
             var marbleMaterial = new Material(Shader.Find("Standard"));
             marbleMaterial.color = marbleColor;
-            marbleMaterial.SetFloat("_Glossiness", 0.9f);
-            marbleMaterial.SetFloat("_Metallic", 0.1f);
+            marbleMaterial.SetFloat("_Glossiness", 0.3f); // 降低反射
+            marbleMaterial.SetFloat("_Metallic", 0f);
             counterTop.GetComponent<Renderer>().material = marbleMaterial;
 
             structureObjects.Add(counter);
@@ -273,9 +276,11 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildBottles()
         {
-            if (liquorDatabase == null || liquorDatabase.liquors == null)
+            // 如果沒有資料庫，使用預設酒瓶
+            if (liquorDatabase == null || liquorDatabase.liquors == null || liquorDatabase.liquors.Length == 0)
             {
-                Debug.LogWarning("BarSceneBuilder: No liquor database available");
+                Debug.Log("BarSceneBuilder: No liquor database, creating default bottles");
+                BuildDefaultBottles();
                 return;
             }
 
@@ -305,6 +310,85 @@ namespace BarSimulator.Core
         }
 
         /// <summary>
+        /// 建立預設酒瓶 (當沒有資料庫時)
+        /// </summary>
+        private void BuildDefaultBottles()
+        {
+            // 預設酒類資料
+            var defaultLiquors = new[]
+            {
+                new { name = "Gin", color = new Color(0.9f, 0.95f, 1f, 0.8f), type = "gin" },
+                new { name = "Vodka", color = new Color(0.95f, 0.95f, 1f, 0.9f), type = "vodka" },
+                new { name = "Whiskey", color = new Color(0.8f, 0.5f, 0.2f, 0.9f), type = "whiskey" },
+                new { name = "Rum", color = new Color(0.7f, 0.4f, 0.2f, 0.85f), type = "rum" },
+                new { name = "Tequila", color = new Color(1f, 0.95f, 0.8f, 0.85f), type = "tequila" },
+                new { name = "Triple Sec", color = new Color(1f, 0.6f, 0.2f, 0.8f), type = "triple_sec" },
+                new { name = "Vermouth", color = new Color(0.8f, 0.7f, 0.5f, 0.85f), type = "vermouth" },
+                new { name = "Campari", color = new Color(0.9f, 0.2f, 0.2f, 0.9f), type = "campari" }
+            };
+
+            int liquorIndex = 0;
+
+            // 每層架子放置酒瓶
+            for (int shelfIdx = 0; shelfIdx < shelfHeights.Length; shelfIdx++)
+            {
+                float shelfY = shelfHeights[shelfIdx] + 0.25f;
+                float startX = -4f;
+                float spacing = 1f;
+
+                for (int i = 0; i < bottlesPerShelf && liquorIndex < defaultLiquors.Length * 3; i++)
+                {
+                    var liquor = defaultLiquors[liquorIndex % defaultLiquors.Length];
+
+                    // 建立酒瓶
+                    var bottleObj = CreateDefaultBottle(liquor.name, liquor.color, liquor.type);
+                    bottleObj.transform.position = new Vector3(startX + i * spacing, shelfY, -8f);
+
+                    var bottle = bottleObj.GetComponent<Bottle>();
+                    bottles.Add(bottle);
+
+                    liquorIndex++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 建立預設酒瓶物件
+        /// </summary>
+        private GameObject CreateDefaultBottle(string name, Color color, string type)
+        {
+            var bottleObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            bottleObj.name = $"Bottle_{name}";
+            bottleObj.transform.localScale = new Vector3(0.1f, 0.25f, 0.1f);
+
+            // 設定顏色
+            var renderer = bottleObj.GetComponent<Renderer>();
+            var material = new Material(Shader.Find("Standard"));
+            material.color = color;
+            material.SetFloat("_Glossiness", 0.8f);
+            renderer.material = material;
+
+            // 添加 Bottle 組件
+            var bottle = bottleObj.AddComponent<Bottle>();
+            // 使用反射或直接設定屬性來初始化
+            bottle.gameObject.name = $"Bottle_{name}";
+
+            // 添加 Rigidbody
+            var rb = bottleObj.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
+            // 設定 Layer (檢查是否存在)
+            int interactableLayer = LayerMask.NameToLayer("Interactable");
+            if (interactableLayer != -1)
+            {
+                bottleObj.layer = interactableLayer;
+            }
+
+            return bottleObj;
+        }
+
+        /// <summary>
         /// 建立單一酒瓶
         /// </summary>
         private GameObject CreateBottle(LiquorData liquorData)
@@ -329,8 +413,12 @@ namespace BarSimulator.Core
             rb.isKinematic = true;
             rb.useGravity = false;
 
-            // 設定 Layer
-            bottleObj.layer = LayerMask.NameToLayer("Interactable");
+            // 設定 Layer (檢查是否存在)
+            int interactableLayer = LayerMask.NameToLayer("Interactable");
+            if (interactableLayer != -1)
+            {
+                bottleObj.layer = interactableLayer;
+            }
 
             return bottleObj;
         }
@@ -363,7 +451,7 @@ namespace BarSimulator.Core
         {
             var glassObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             glassObj.name = "Glass";
-            glassObj.transform.localScale = new Vector3(0.12f, 0.15f, 0.12f);
+            glassObj.transform.localScale = new Vector3(0.25f, 0.3f, 0.25f); // 放大酒杯
 
             // 透明玻璃材質
             var renderer = glassObj.GetComponent<Renderer>();
@@ -388,8 +476,12 @@ namespace BarSimulator.Core
             rb.isKinematic = true;
             rb.useGravity = false;
 
-            // 設定 Layer
-            glassObj.layer = LayerMask.NameToLayer("Interactable");
+            // 設定 Layer (檢查是否存在)
+            int interactableLayer = LayerMask.NameToLayer("Interactable");
+            if (interactableLayer != -1)
+            {
+                glassObj.layer = interactableLayer;
+            }
 
             return glassObj;
         }
@@ -420,8 +512,234 @@ namespace BarSimulator.Core
             rb.isKinematic = true;
             rb.useGravity = false;
 
-            // 設定 Layer
-            shakerObj.layer = LayerMask.NameToLayer("Interactable");
+            // 設定 Layer (檢查是否存在)
+            int interactableLayer = LayerMask.NameToLayer("Interactable");
+            if (interactableLayer != -1)
+            {
+                shakerObj.layer = interactableLayer;
+            }
+        }
+
+        #endregion
+
+        #region 裝飾生成
+
+        /// <summary>
+        /// 建造裝飾物
+        /// 參考: RetirementLounge.js
+        /// </summary>
+        private void BuildDecorations()
+        {
+            // 盆栽植物
+            CreatePottedPlant(new Vector3(-8f, 0f, 8f), 1.2f);
+            CreatePottedPlant(new Vector3(8f, 0f, 8f), 1.0f);
+            CreatePottedPlant(new Vector3(-8f, 0f, -8f), 0.8f);
+            CreatePottedPlant(new Vector3(8f, 0f, -8f), 1.1f);
+
+            // 吧台角落小植物
+            CreateSmallPlant(new Vector3(-5f, 1.15f, -2.5f));
+            CreateSmallPlant(new Vector3(5f, 1.15f, -2.5f));
+
+            // 牆上裝飾畫
+            CreateWallArt(new Vector3(-4f, 3f, -12.3f), new Color(0.8f, 0.6f, 0.4f));
+            CreateWallArt(new Vector3(4f, 3f, -12.3f), new Color(0.4f, 0.6f, 0.8f));
+
+            // 酒吧招牌
+            CreateBarSign();
+
+            // 地毯
+            CreateRug(new Vector3(0f, 0.01f, 3f), new Color(0.5f, 0.1f, 0.1f));
+        }
+
+        /// <summary>
+        /// 建立盆栽植物
+        /// </summary>
+        private void CreatePottedPlant(Vector3 position, float scale)
+        {
+            var plantRoot = new GameObject("PottedPlant");
+            plantRoot.transform.position = position;
+
+            // 花盆
+            var pot = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pot.name = "Pot";
+            pot.transform.SetParent(plantRoot.transform);
+            pot.transform.localPosition = new Vector3(0f, 0.3f * scale, 0f);
+            pot.transform.localScale = new Vector3(0.4f * scale, 0.3f * scale, 0.4f * scale);
+
+            var potMaterial = new Material(Shader.Find("Standard"));
+            potMaterial.color = new Color(0.6f, 0.4f, 0.3f); // 陶土色
+            potMaterial.SetFloat("_Glossiness", 0.2f);
+            pot.GetComponent<Renderer>().material = potMaterial;
+
+            // 植物葉子 (用多個球體模擬)
+            var leafMaterial = new Material(Shader.Find("Standard"));
+            leafMaterial.color = new Color(0.2f, 0.5f, 0.2f); // 綠色
+            leafMaterial.SetFloat("_Glossiness", 0.3f);
+
+            for (int i = 0; i < 5; i++)
+            {
+                var leaf = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                leaf.name = $"Leaf_{i}";
+                leaf.transform.SetParent(plantRoot.transform);
+                float angle = i * 72f * Mathf.Deg2Rad;
+                float radius = 0.25f * scale;
+                leaf.transform.localPosition = new Vector3(
+                    Mathf.Cos(angle) * radius,
+                    0.8f * scale,
+                    Mathf.Sin(angle) * radius
+                );
+                leaf.transform.localScale = new Vector3(0.3f * scale, 0.4f * scale, 0.3f * scale);
+                leaf.GetComponent<Renderer>().material = leafMaterial;
+
+                // 移除碰撞體
+                Destroy(leaf.GetComponent<Collider>());
+            }
+
+            // 中間的葉子
+            var centerLeaf = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            centerLeaf.name = "CenterLeaf";
+            centerLeaf.transform.SetParent(plantRoot.transform);
+            centerLeaf.transform.localPosition = new Vector3(0f, 1f * scale, 0f);
+            centerLeaf.transform.localScale = new Vector3(0.35f * scale, 0.5f * scale, 0.35f * scale);
+            centerLeaf.GetComponent<Renderer>().material = leafMaterial;
+            Destroy(centerLeaf.GetComponent<Collider>());
+
+            structureObjects.Add(plantRoot);
+        }
+
+        /// <summary>
+        /// 建立小型植物 (吧台上)
+        /// </summary>
+        private void CreateSmallPlant(Vector3 position)
+        {
+            var plantRoot = new GameObject("SmallPlant");
+            plantRoot.transform.position = position;
+
+            // 小花盆
+            var pot = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pot.name = "SmallPot";
+            pot.transform.SetParent(plantRoot.transform);
+            pot.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+            pot.transform.localScale = new Vector3(0.1f, 0.05f, 0.1f);
+
+            var potMaterial = new Material(Shader.Find("Standard"));
+            potMaterial.color = new Color(0.9f, 0.9f, 0.9f); // 白色陶瓷
+            potMaterial.SetFloat("_Glossiness", 0.5f);
+            pot.GetComponent<Renderer>().material = potMaterial;
+
+            // 多肉植物
+            var plant = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            plant.name = "Succulent";
+            plant.transform.SetParent(plantRoot.transform);
+            plant.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+            plant.transform.localScale = new Vector3(0.08f, 0.06f, 0.08f);
+
+            var plantMaterial = new Material(Shader.Find("Standard"));
+            plantMaterial.color = new Color(0.3f, 0.6f, 0.3f);
+            plantMaterial.SetFloat("_Glossiness", 0.4f);
+            plant.GetComponent<Renderer>().material = plantMaterial;
+
+            Destroy(plant.GetComponent<Collider>());
+            structureObjects.Add(plantRoot);
+        }
+
+        /// <summary>
+        /// 建立牆上藝術品
+        /// </summary>
+        private void CreateWallArt(Vector3 position, Color artColor)
+        {
+            var artRoot = new GameObject("WallArt");
+            artRoot.transform.position = position;
+
+            // 畫框
+            var frame = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            frame.name = "Frame";
+            frame.transform.SetParent(artRoot.transform);
+            frame.transform.localPosition = Vector3.zero;
+            frame.transform.localScale = new Vector3(1.2f, 0.8f, 0.05f);
+
+            var frameMaterial = new Material(Shader.Find("Standard"));
+            frameMaterial.color = new Color(0.3f, 0.2f, 0.1f); // 深棕色
+            frameMaterial.SetFloat("_Glossiness", 0.6f);
+            frame.GetComponent<Renderer>().material = frameMaterial;
+
+            // 畫布
+            var canvas = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            canvas.name = "Canvas";
+            canvas.transform.SetParent(artRoot.transform);
+            canvas.transform.localPosition = new Vector3(0f, 0f, 0.03f);
+            canvas.transform.localScale = new Vector3(1f, 0.6f, 0.02f);
+
+            var canvasMaterial = new Material(Shader.Find("Standard"));
+            canvasMaterial.color = artColor;
+            canvasMaterial.SetFloat("_Glossiness", 0.1f);
+            canvas.GetComponent<Renderer>().material = canvasMaterial;
+
+            Destroy(canvas.GetComponent<Collider>());
+            structureObjects.Add(artRoot);
+        }
+
+        /// <summary>
+        /// 建立酒吧招牌
+        /// </summary>
+        private void CreateBarSign()
+        {
+            var signRoot = new GameObject("BarSign");
+            signRoot.transform.position = new Vector3(0f, 5f, -8.3f);
+
+            // 招牌背板
+            var signBoard = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            signBoard.name = "SignBoard";
+            signBoard.transform.SetParent(signRoot.transform);
+            signBoard.transform.localPosition = Vector3.zero;
+            signBoard.transform.localScale = new Vector3(3f, 0.8f, 0.1f);
+
+            var boardMaterial = new Material(Shader.Find("Standard"));
+            boardMaterial.color = new Color(0.1f, 0.1f, 0.1f);
+            boardMaterial.SetFloat("_Glossiness", 0.8f);
+            signBoard.GetComponent<Renderer>().material = boardMaterial;
+
+            // 霓虹燈效果
+            var neonMaterial = new Material(Shader.Find("Standard"));
+            neonMaterial.color = new Color(1f, 0.4f, 0.7f); // 粉紅霓虹
+            neonMaterial.EnableKeyword("_EMISSION");
+            neonMaterial.SetColor("_EmissionColor", new Color(1f, 0.4f, 0.7f) * 2f);
+            neonMaterial.SetFloat("_Glossiness", 0.9f);
+
+            // 用小方塊模擬文字 "BAR"
+            float[] letterX = { -0.8f, 0f, 0.8f };
+            foreach (float x in letterX)
+            {
+                var letter = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                letter.name = "NeonLetter";
+                letter.transform.SetParent(signRoot.transform);
+                letter.transform.localPosition = new Vector3(x, 0f, 0.06f);
+                letter.transform.localScale = new Vector3(0.4f, 0.4f, 0.02f);
+                letter.GetComponent<Renderer>().material = neonMaterial;
+                Destroy(letter.GetComponent<Collider>());
+            }
+
+            Destroy(signBoard.GetComponent<Collider>());
+            structureObjects.Add(signRoot);
+        }
+
+        /// <summary>
+        /// 建立地毯
+        /// </summary>
+        private void CreateRug(Vector3 position, Color rugColor)
+        {
+            var rug = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            rug.name = "Rug";
+            rug.transform.position = position;
+            rug.transform.localScale = new Vector3(4f, 0.02f, 3f);
+
+            var rugMaterial = new Material(Shader.Find("Standard"));
+            rugMaterial.color = rugColor;
+            rugMaterial.SetFloat("_Glossiness", 0.1f);
+            rug.GetComponent<Renderer>().material = rugMaterial;
+
+            Destroy(rug.GetComponent<Collider>());
+            structureObjects.Add(rug);
         }
 
         #endregion
@@ -649,17 +967,17 @@ namespace BarSimulator.Core
         /// </summary>
         private void SetupLighting()
         {
-            // 主方向光
+            // 主方向光 - 降低強度
             var mainLight = new GameObject("MainLight");
             var light = mainLight.AddComponent<Light>();
             light.type = LightType.Directional;
             light.color = new Color(1f, 0.95f, 0.8f);
-            light.intensity = 1f;
+            light.intensity = 0.5f; // 降低主光源強度
             mainLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            // 環境光設置
+            // 環境光設置 - 略微提高以平衡降低的主光源
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.1f, 0.08f, 0.06f);
+            RenderSettings.ambientLight = new Color(0.15f, 0.12f, 0.1f);
 
             // 霧效
             RenderSettings.fog = true;
@@ -668,10 +986,10 @@ namespace BarSimulator.Core
             RenderSettings.fogStartDistance = 10f;
             RenderSettings.fogEndDistance = 30f;
 
-            // 吧台聚光燈
-            CreateSpotlight(new Vector3(-3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 15f);
-            CreateSpotlight(new Vector3(0f, 4f, -3f), new Color(0.8f, 0.8f, 1f), 15f);
-            CreateSpotlight(new Vector3(3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 15f);
+            // 吧台聚光燈 - 降低強度
+            CreateSpotlight(new Vector3(-3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 5f);
+            CreateSpotlight(new Vector3(0f, 4f, -3f), new Color(0.8f, 0.8f, 1f), 5f);
+            CreateSpotlight(new Vector3(3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 5f);
         }
 
         /// <summary>
