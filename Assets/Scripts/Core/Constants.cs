@@ -13,7 +13,7 @@ namespace BarSimulator.Core
         public const float MoveSpeed = 5f;
 
         /// <summary>滑鼠敏感度</summary>
-        public const float MouseSensitivity = 2f;
+        public const float MouseSensitivity = 150f;
 
         /// <summary>垂直視角最小值 (度)</summary>
         public const float MinPitch = -90f;
