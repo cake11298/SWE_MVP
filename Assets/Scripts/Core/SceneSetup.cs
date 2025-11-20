@@ -110,8 +110,16 @@ namespace BarSimulator.Core
         /// </summary>
         private void CreateBasicScene()
         {
-            // 建立地板
-            if (floor == null)
+            // 使用 BarSceneBuilder 建立完整場景
+            if (BarSceneBuilder.Instance == null)
+            {
+                var builderObj = new GameObject("BarSceneBuilder");
+                var builder = builderObj.AddComponent<BarSceneBuilder>();
+                // BarSceneBuilder 會在 Start 時自動建立場景
+            }
+
+            // 如果 BarSceneBuilder 沒有啟用，則建立基本場景作為後備
+            if (floor == null && BarSceneBuilder.Instance == null)
             {
                 floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
                 floor.name = "Floor";
@@ -126,7 +134,7 @@ namespace BarSimulator.Core
             }
 
             // 建立吧台
-            if (barCounter == null)
+            if (barCounter == null && BarSceneBuilder.Instance == null)
             {
                 barCounter = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 barCounter.name = "BarCounter";
@@ -141,7 +149,7 @@ namespace BarSimulator.Core
             }
 
             // 建立後牆
-            if (walls == null || walls.Length == 0)
+            if ((walls == null || walls.Length == 0) && BarSceneBuilder.Instance == null)
             {
                 var backWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 backWall.name = "BackWall";
