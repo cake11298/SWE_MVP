@@ -39,7 +39,10 @@ namespace BarSimulator.UI
         private Image crosshairImage;
         private TextMeshProUGUI interactionHintText;
         private TextMeshProUGUI drinkInfoText;
+        private TextMeshProUGUI messageText;
         private CanvasGroup hintCanvasGroup;
+        private CanvasGroup messageCanvasGroup;
+        private float messageTimer;
 
         #endregion
 
@@ -93,6 +96,9 @@ namespace BarSimulator.UI
 
             // 建立控制說明
             CreateControlsHelp();
+
+            // 建立訊息顯示
+            CreateMessageDisplay();
 
             Debug.Log("UIBuilder: UI built successfully");
         }
@@ -349,6 +355,25 @@ ESC - Pause";
         {
             UpdateInteractionHint();
             UpdateCrosshairColor();
+            UpdateMessage();
+        }
+
+        /// <summary>
+        /// 更新訊息顯示
+        /// </summary>
+        private void UpdateMessage()
+        {
+            if (messageCanvasGroup == null) return;
+
+            if (messageTimer > 0)
+            {
+                messageTimer -= Time.deltaTime;
+                messageCanvasGroup.alpha = Mathf.Lerp(messageCanvasGroup.alpha, 1f, Time.deltaTime * 8f);
+            }
+            else
+            {
+                messageCanvasGroup.alpha = Mathf.Lerp(messageCanvasGroup.alpha, 0f, Time.deltaTime * 4f);
+            }
         }
 
         /// <summary>
@@ -394,12 +419,53 @@ ESC - Pause";
         #region 公開方法
 
         /// <summary>
+        /// 建立訊息顯示區域
+        /// </summary>
+        private void CreateMessageDisplay()
+        {
+            var msgContainer = new GameObject("MessageDisplay");
+            msgContainer.transform.SetParent(mainCanvas.transform, false);
+
+            var containerRect = msgContainer.AddComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0.5f, 0.7f);
+            containerRect.anchorMax = new Vector2(0.5f, 0.7f);
+            containerRect.anchoredPosition = Vector2.zero;
+            containerRect.sizeDelta = new Vector2(700, 80);
+
+            messageCanvasGroup = msgContainer.AddComponent<CanvasGroup>();
+            messageCanvasGroup.alpha = 0f;
+
+            var bgImage = msgContainer.AddComponent<Image>();
+            bgImage.color = new Color(0, 0, 0, 0.8f);
+
+            // 文字
+            var textObj = new GameObject("MessageText");
+            textObj.transform.SetParent(msgContainer.transform, false);
+
+            var textRect = textObj.AddComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(15, 10);
+            textRect.offsetMax = new Vector2(-15, -10);
+
+            messageText = textObj.AddComponent<TextMeshProUGUI>();
+            messageText.fontSize = 18;
+            messageText.color = Color.white;
+            messageText.alignment = TextAlignmentOptions.Center;
+            messageText.text = "";
+        }
+
+        /// <summary>
         /// 顯示訊息
         /// </summary>
-        public void ShowMessage(string message)
+        public void ShowMessage(string message, float duration = 4f)
         {
+            if (messageText != null)
+            {
+                messageText.text = message;
+                messageTimer = duration;
+            }
             Debug.Log($"UI Message: {message}");
-            // TODO: 實作訊息顯示
         }
 
         /// <summary>

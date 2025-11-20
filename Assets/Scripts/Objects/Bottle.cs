@@ -65,9 +65,14 @@ namespace BarSimulator.Objects
         /// </summary>
         private void LoadLiquorData()
         {
+            // 從 CocktailSystem 取得資料庫（避免 Resources.Load 錯誤）
             if (liquorDatabase == null)
             {
-                liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
+                var cocktailSystem = BarSimulator.Systems.CocktailSystem.Instance;
+                if (cocktailSystem != null)
+                {
+                    liquorDatabase = cocktailSystem.LiquorDatabase;
+                }
             }
 
             if (liquorDatabase != null && !string.IsNullOrEmpty(liquorId))

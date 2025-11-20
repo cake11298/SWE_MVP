@@ -17,6 +17,8 @@ namespace BarSimulator.Interaction
         Jigger,
         /// <summary>吉他</summary>
         Guitar,
+        /// <summary>NPC</summary>
+        NPC,
         /// <summary>其他</summary>
         Other
     }

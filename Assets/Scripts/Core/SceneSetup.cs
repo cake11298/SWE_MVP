@@ -304,10 +304,7 @@ namespace BarSimulator.Core
             controller.radius = 0.3f;
             controller.center = new Vector3(0f, 0.9f, 0f);
 
-            // 添加 FirstPersonController
-            player.AddComponent<FirstPersonController>();
-
-            // 建立攝影機
+            // 先建立攝影機 (在 FirstPersonController 之前)
             var cameraObj = new GameObject("PlayerCamera");
             cameraObj.transform.SetParent(player.transform);
             cameraObj.transform.localPosition = new Vector3(0f, 1.6f, 0f);
@@ -321,13 +318,10 @@ namespace BarSimulator.Core
             // 添加 AudioListener
             cameraObj.AddComponent<AudioListener>();
 
-            // 確保 FirstPersonController 能找到攝影機
-            var fpc = player.GetComponent<FirstPersonController>();
-            if (fpc != null)
-            {
-                // 使用反射設定私有欄位，或等待 Awake 自動尋找
-                Debug.Log("SceneSetup: 已建立玩家攝影機");
-            }
+            // 添加 FirstPersonController (在攝影機之後，這樣 Awake 能找到)
+            player.AddComponent<FirstPersonController>();
+
+            Debug.Log("SceneSetup: 已建立玩家和攝影機");
 
             return player;
         }

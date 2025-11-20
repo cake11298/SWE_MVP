@@ -68,20 +68,7 @@ namespace BarSimulator.Systems
             }
             instance = this;
 
-            // 載入資料庫 (使用 try-catch 避免 ExtensionOfNativeClass 錯誤)
-            if (liquorDatabase == null)
-            {
-                try
-                {
-                    liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning($"CocktailSystem: 載入 LiquorDatabase 失敗: {e.Message}");
-                }
-            }
-
-            // 如果載入失敗，建立預設資料庫
+            // 直接建立執行期資料庫 (避免 ExtensionOfNativeClass 錯誤)
             if (liquorDatabase == null)
             {
                 Debug.Log("CocktailSystem: 建立執行期 LiquorDatabase");
@@ -89,16 +76,11 @@ namespace BarSimulator.Systems
                 liquorDatabase.InitializeDefaults();
             }
 
+            // RecipeDatabase 也直接建立
             if (recipeDatabase == null)
             {
-                try
-                {
-                    recipeDatabase = Resources.Load<RecipeDatabase>("RecipeDatabase");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning($"CocktailSystem: 載入 RecipeDatabase 失敗: {e.Message}");
-                }
+                Debug.Log("CocktailSystem: 建立執行期 RecipeDatabase");
+                recipeDatabase = ScriptableObject.CreateInstance<RecipeDatabase>();
             }
         }
 
