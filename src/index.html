@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCU Molecular Innovative Bartending Research Society - Bar Simulator</title>
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="loading">Loading...</div>
+        <div id="controls">
+            <strong>控制說明:</strong><br>
+            WASD - 移動 | 滑鼠 - 視角 | E - 拾取/互動<br>
+            R - 放回原位 | 左鍵 - 倒酒/搖酒<br>
+            右鍵 - 喝酒 | F - 給NPC喝酒 | M - 查看食譜 | P - 製作人資訊
+        </div>
+        <div id="dialogue-box">
+            <h3 id="character-name"></h3>
+            <p id="dialogue-text"></p>
+        </div>
+        <div id="interaction-hint">按 E 互動</div>
+        <div id="drink-message"></div>
+        <div id="container-info"></div>
+
+        <!-- 準星 -->
+        <div id="crosshair">
+            <div class="crosshair-line crosshair-horizontal"></div>
+            <div class="crosshair-line crosshair-vertical"></div>
+            <div class="crosshair-dot"></div>
+        </div>
+
+        <!-- 倒酒進度條 -->
+        <div id="pour-progress-panel" style="display: none;">
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>杯子容量</span>
+                    <span id="container-volume-text">0/300ml</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="container-volume-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>本次倒入量</span>
+                    <span id="pour-rate-text">0ml</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="pour-rate-bar" class="progress-bar pour-active" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 食譜面板 -->
+        <div id="recipe-panel" style="display: none;">
+            <div class="recipe-header">
+                <h2>🍸 經典調酒食譜 🍸</h2>
+                <p class="recipe-subtitle">按 M 鍵關閉</p>
+            </div>
+            <div class="recipe-content" id="recipe-content">
+                <!-- 食譜內容將通過 JavaScript 動態載入 -->
+            </div>
+        </div>
+
+        <!-- 製作人資訊面板 -->
+        <div id="credits-panel" style="display: none;">
+            <div class="credits-header">
+                <h2>🎓 製作人資訊 🎓</h2>
+                <p class="credits-subtitle">按 P 鍵關閉</p>
+            </div>
+            <div class="credits-content">
+                <div class="credits-section">
+                    <h3>中央大學資工系</h3>
+                    <div class="founders">
+                        <p class="founder-name">楊智宇 & 黃曦樂</p>
+                        <p class="founder-role">調酒社創辦人</p>
+                    </div>
+                </div>
+                <div class="credits-section">
+                    <h3>社團願景</h3>
+                    <p class="vision-text">
+                        我們致力於在校園中推廣調酒文化，讓更多同學認識並體驗調酒的藝術與樂趣。
+                        透過學習專業調酒技巧，培養品味與創意，同時建立一個充滿熱情與友誼的社群。
+                    </p>
+                </div>
+                <div class="credits-section">
+                    <h3>網站初衷</h3>
+                    <p class="vision-text">
+                        這個虛擬調酒模擬器旨在提供一個無障礙的學習平台，讓任何人都能在安全的環境中
+                        練習調酒技巧、了解各種酒類特性，並探索經典調酒配方。希望透過這個互動體驗，
+                        激發大家對調酒的興趣，並為實際的調酒學習打下基礎。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
