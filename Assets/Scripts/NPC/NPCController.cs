@@ -50,6 +50,15 @@ namespace BarSimulator.NPC
 
         #endregion
 
+        #region 私有欄位 - 直接資料
+
+        // 直接儲存的資料（不使用 ScriptableObject 時）
+        private string directName;
+        private string directRole;
+        private string[] directDialogues;
+
+        #endregion
+
         #region 初始化
 
         /// <summary>
@@ -63,6 +72,24 @@ namespace BarSimulator.NPC
 
             // 設定名稱
             gameObject.name = $"NPC_{data.npcName}";
+
+            // 儲存基礎位置
+            basePosition = transform.position;
+        }
+
+        /// <summary>
+        /// 直接使用參數初始化（不需要 ScriptableObject）
+        /// </summary>
+        public void InitializeNPC(string npcName, string role, string[] dialogues)
+        {
+            directName = npcName;
+            directRole = role;
+            directDialogues = dialogues;
+            currentDialogueIndex = 0;
+            currentMood = NPCMood.Neutral;
+
+            // 設定物件名稱
+            gameObject.name = $"NPC_{npcName}";
 
             // 儲存基礎位置
             basePosition = transform.position;
@@ -106,15 +133,18 @@ namespace BarSimulator.NPC
         /// </summary>
         public string GetNextDialogue()
         {
-            if (npcData == null || npcData.dialogues == null || npcData.dialogues.Length == 0)
+            // 優先使用直接資料
+            var dialogues = directDialogues ?? npcData?.dialogues;
+
+            if (dialogues == null || dialogues.Length == 0)
             {
                 return "...";
             }
 
-            string dialogue = npcData.dialogues[currentDialogueIndex];
+            string dialogue = dialogues[currentDialogueIndex];
 
             // 循環對話
-            currentDialogueIndex = (currentDialogueIndex + 1) % npcData.dialogues.Length;
+            currentDialogueIndex = (currentDialogueIndex + 1) % dialogues.Length;
 
             return dialogue;
         }
@@ -124,13 +154,16 @@ namespace BarSimulator.NPC
         /// </summary>
         public string GetDialogue(int index)
         {
-            if (npcData == null || npcData.dialogues == null)
+            // 優先使用直接資料
+            var dialogues = directDialogues ?? npcData?.dialogues;
+
+            if (dialogues == null)
                 return "...";
 
-            if (index < 0 || index >= npcData.dialogues.Length)
+            if (index < 0 || index >= dialogues.Length)
                 return "...";
 
-            return npcData.dialogues[index];
+            return dialogues[index];
         }
 
         /// <summary>
@@ -186,12 +219,12 @@ namespace BarSimulator.NPC
         /// <summary>
         /// NPC 名稱
         /// </summary>
-        public string NPCName => npcData?.npcName ?? "Unknown";
+        public string NPCName => directName ?? npcData?.npcName ?? "Unknown";
 
         /// <summary>
         /// NPC 角色/職位
         /// </summary>
-        public string Role => npcData?.role ?? "";
+        public string Role => directRole ?? npcData?.role ?? "";
 
         /// <summary>
         /// NPC 性別
