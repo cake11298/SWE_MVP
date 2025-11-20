@@ -66,6 +66,20 @@ namespace BarSimulator.Player
                 {
                     cameraTransform = cam.transform;
                 }
+                else
+                {
+                    // 嘗試尋找主攝影機
+                    cam = Camera.main;
+                    if (cam != null)
+                    {
+                        cameraTransform = cam.transform;
+                    }
+                }
+            }
+
+            if (cameraTransform == null)
+            {
+                Debug.LogError("FirstPersonController: 找不到攝影機 Transform，垂直視角將無法運作");
             }
 
             SetupInputActions();

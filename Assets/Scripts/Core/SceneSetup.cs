@@ -2,6 +2,7 @@ using UnityEngine;
 using BarSimulator.Managers;
 using BarSimulator.Systems;
 using BarSimulator.Player;
+using BarSimulator.UI;
 
 namespace BarSimulator.Core
 {
@@ -242,6 +243,20 @@ namespace BarSimulator.Core
                 var npcObj = new GameObject("NPCManager");
                 npcObj.AddComponent<NPCManager>();
             }
+
+            // InteractionSystem
+            if (InteractionSystem.Instance == null)
+            {
+                var interactionObj = new GameObject("InteractionSystem");
+                interactionObj.AddComponent<InteractionSystem>();
+            }
+
+            // UIBuilder
+            if (UIBuilder.Instance == null)
+            {
+                var uiObj = new GameObject("UIBuilder");
+                uiObj.AddComponent<UIBuilder>();
+            }
         }
 
         /// <summary>
@@ -296,6 +311,7 @@ namespace BarSimulator.Core
             var cameraObj = new GameObject("PlayerCamera");
             cameraObj.transform.SetParent(player.transform);
             cameraObj.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            cameraObj.tag = "MainCamera"; // 設定為主攝影機標籤
 
             var camera = cameraObj.AddComponent<Camera>();
             camera.fieldOfView = 60f;
@@ -304,6 +320,14 @@ namespace BarSimulator.Core
 
             // 添加 AudioListener
             cameraObj.AddComponent<AudioListener>();
+
+            // 確保 FirstPersonController 能找到攝影機
+            var fpc = player.GetComponent<FirstPersonController>();
+            if (fpc != null)
+            {
+                // 使用反射設定私有欄位，或等待 Awake 自動尋找
+                Debug.Log("SceneSetup: 已建立玩家攝影機");
+            }
 
             return player;
         }
