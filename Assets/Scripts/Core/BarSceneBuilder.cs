@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BarSimulator.Data;
 using BarSimulator.Objects;
 using BarSimulator.Interaction;
+using BarSimulator.NPC;
 
 namespace BarSimulator.Core
 {
@@ -70,17 +71,12 @@ namespace BarSimulator.Core
 
         private void Start()
         {
-            // 載入資料庫 (使用 try-catch 避免 ExtensionOfNativeClass 錯誤)
+            // 直接建立執行期資料庫 (避免 ExtensionOfNativeClass 錯誤)
             if (liquorDatabase == null)
             {
-                try
-                {
-                    liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning($"BarSceneBuilder: 載入 LiquorDatabase 失敗: {e.Message}");
-                }
+                Debug.Log("BarSceneBuilder: 建立執行期 LiquorDatabase");
+                liquorDatabase = ScriptableObject.CreateInstance<LiquorDatabase>();
+                liquorDatabase.InitializeDefaults();
             }
 
             if (buildOnStart)
@@ -953,7 +949,7 @@ namespace BarSimulator.Core
             rightArm.GetComponent<Renderer>().material = armMaterial;
 
             // 添加 NPCController
-            var controller = npcRoot.AddComponent<NPC.NPCController>();
+            var controller = npcRoot.AddComponent<NPCController>();
             controller.InitializeNPC(npcName, role, dialogues);
 
             // 添加碰撞體
@@ -961,6 +957,9 @@ namespace BarSimulator.Core
             collider.height = 2f;
             collider.radius = 0.4f;
             collider.center = new Vector3(0f, 1f, 0f);
+
+            // 添加 InteractableNPC 使 NPC 可以被互動
+            npcRoot.AddComponent<InteractableNPC>();
 
             return npcRoot;
         }
