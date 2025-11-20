@@ -132,6 +132,34 @@ namespace BarSimulator.Objects
 
         #endregion
 
+        #region 公開方法
+
+        /// <summary>
+        /// 取得飲品資訊
+        /// </summary>
+        public DrinkInfo GetDrinkInfo()
+        {
+            if (contents.IsEmpty) return null;
+
+            return new DrinkInfo
+            {
+                volume = contents.volume,
+                color = contents.mixedColor,
+                ingredients = contents.ingredients.ToArray(),
+                cocktailName = "Cocktail" // 將由 CocktailSystem 識別
+            };
+        }
+
+        /// <summary>
+        /// 清空杯子
+        /// </summary>
+        public void Empty()
+        {
+            Clear();
+        }
+
+        #endregion
+
         #region 公開屬性
 
         /// <summary>

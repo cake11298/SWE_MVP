@@ -173,6 +173,18 @@ namespace BarSimulator.Objects
 
         #endregion
 
+        #region 公開方法
+
+        /// <summary>
+        /// 清空搖酒器
+        /// </summary>
+        public void Empty()
+        {
+            Clear();
+        }
+
+        #endregion
+
         #region 公開屬性
 
         /// <summary>

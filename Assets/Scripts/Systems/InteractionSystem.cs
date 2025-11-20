@@ -300,7 +300,7 @@ namespace BarSimulator.Systems
                 {
                     heldRigidbody.isKinematic = true;
                     heldRigidbody.useGravity = false;
-                    heldRigidbody.linearVelocity = Vector3.zero;
+                    heldRigidbody.velocity = Vector3.zero;
                     heldRigidbody.angularVelocity = Vector3.zero;
                 }
             }
@@ -363,6 +363,14 @@ namespace BarSimulator.Systems
         #endregion
 
         #region 公開屬性與方法
+
+        /// <summary>
+        /// 放下手持物件（公開方法）
+        /// </summary>
+        public void DropHeldObject()
+        {
+            DropObject(false);
+        }
 
         /// <summary>
         /// 當前瞄準的物件
