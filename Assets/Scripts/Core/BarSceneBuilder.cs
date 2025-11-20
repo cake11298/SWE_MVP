@@ -70,10 +70,17 @@ namespace BarSimulator.Core
 
         private void Start()
         {
-            // 載入資料庫
+            // 載入資料庫 (使用 try-catch 避免 ExtensionOfNativeClass 錯誤)
             if (liquorDatabase == null)
             {
-                liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
+                try
+                {
+                    liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"BarSceneBuilder: 載入 LiquorDatabase 失敗: {e.Message}");
+                }
             }
 
             if (buildOnStart)

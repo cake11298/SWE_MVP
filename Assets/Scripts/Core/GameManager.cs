@@ -24,10 +24,7 @@ namespace BarSimulator.Core
                 if (instance == null)
                 {
                     instance = FindFirstObjectByType<GameManager>();
-                    if (instance == null)
-                    {
-                        Debug.LogError("GameManager: 場景中找不到 GameManager");
-                    }
+                    // 不再報錯，讓 SceneSetup 有機會創建
                 }
                 return instance;
             }
