@@ -31,7 +31,6 @@ namespace BarSimulator.Objects
         #region 私有欄位
 
         private LiquorData liquorData;
-        private Quaternion originalRotation;
         private bool isPouring;
         private float currentTilt;
 
