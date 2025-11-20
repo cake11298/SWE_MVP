@@ -300,7 +300,7 @@ namespace BarSimulator.Systems
                 {
                     heldRigidbody.isKinematic = true;
                     heldRigidbody.useGravity = false;
-                    heldRigidbody.linearVelocity = Vector3.zero;
+                    heldRigidbody.velocity = Vector3.zero;
                     heldRigidbody.angularVelocity = Vector3.zero;
                 }
             }
