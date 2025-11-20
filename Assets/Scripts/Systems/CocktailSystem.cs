@@ -303,7 +303,7 @@ namespace BarSimulator.Systems
         public string IdentifyCocktail(Ingredient[] ingredients)
         {
             if (ingredients == null || ingredients.Length == 0)
-                return "空杯";
+                return "Empty Glass";
 
             var types = new List<string>();
             var amounts = new Dictionary<string, float>();
@@ -315,15 +315,15 @@ namespace BarSimulator.Systems
                 amounts[ing.type] = ing.amount;
             }
 
-            // === 經典調酒識別 ===
+            // === Classic Cocktail Identification ===
 
-            // Martini：Gin + Dry Vermouth (2:1 到 3:1)
+            // Martini: Gin + Dry Vermouth (2:1 to 3:1)
             if (types.Contains("gin") && types.Contains("vermouth_dry"))
             {
                 float ratio = amounts["gin"] / amounts["vermouth_dry"];
                 if (ratio >= 2f && ratio <= 3f && !HasOtherSpirits(types, "gin"))
                 {
-                    return "馬丁尼 (Martini)";
+                    return "Martini";
                 }
             }
 
@@ -333,11 +333,11 @@ namespace BarSimulator.Systems
                 float ratio = amounts["vodka"] / amounts["vermouth_dry"];
                 if (ratio >= 2f && ratio <= 3f && !HasOtherSpirits(types, "vodka"))
                 {
-                    return "伏特加馬丁尼 (Vodka Martini)";
+                    return "Vodka Martini";
                 }
             }
 
-            // Negroni：Gin + Campari + Sweet Vermouth (1:1:1)
+            // Negroni: Gin + Campari + Sweet Vermouth (1:1:1)
             if (types.Contains("gin") && types.Contains("campari") && types.Contains("vermouth_sweet"))
             {
                 float avg = (amounts["gin"] + amounts["campari"] + amounts["vermouth_sweet"]) / 3f;
@@ -346,60 +346,60 @@ namespace BarSimulator.Systems
                                   IsWithinRatio(amounts["vermouth_sweet"], avg, 0.3f);
                 if (isBalanced)
                 {
-                    return "內格羅尼 (Negroni)";
+                    return "Negroni";
                 }
             }
 
-            // Margarita：Tequila + Triple Sec + Lime Juice
+            // Margarita: Tequila + Triple Sec + Lime Juice
             if (types.Contains("tequila") && types.Contains("triple_sec") && types.Contains("lime_juice"))
             {
-                return "瑪格麗特 (Margarita)";
+                return "Margarita";
             }
 
-            // Daiquiri：Rum + Lime Juice + Simple Syrup
+            // Daiquiri: Rum + Lime Juice + Simple Syrup
             if (types.Contains("rum") && types.Contains("lime_juice") && types.Contains("simple_syrup"))
             {
-                return "黛克瑞 (Daiquiri)";
+                return "Daiquiri";
             }
 
-            // Piña Colada：Rum + Pineapple Juice + Coconut Cream
+            // Pina Colada: Rum + Pineapple Juice + Coconut Cream
             if (types.Contains("rum") && types.Contains("pineapple_juice") && types.Contains("coconut_cream"))
             {
-                return "椰林風情 (Piña Colada)";
+                return "Pina Colada";
             }
 
-            // Cosmopolitan：Vodka + Triple Sec + Cranberry + Lime
+            // Cosmopolitan: Vodka + Triple Sec + Cranberry + Lime
             if (types.Contains("vodka") && types.Contains("triple_sec") &&
                 types.Contains("cranberry_juice") && types.Contains("lime_juice"))
             {
-                return "柯夢波丹 (Cosmopolitan)";
+                return "Cosmopolitan";
             }
 
-            // Mojito：Rum + Lime Juice + Simple Syrup
+            // Mojito: Rum + Lime Juice + Simple Syrup
             if (types.Contains("rum") && types.Contains("lime_juice") && types.Contains("simple_syrup"))
             {
-                return "莫希托 (Mojito)";
+                return "Mojito";
             }
 
             // Whiskey Sour
             if (types.Contains("whiskey") && types.Contains("lemon_juice") && types.Contains("simple_syrup"))
             {
-                return "威士忌酸酒 (Whiskey Sour)";
+                return "Whiskey Sour";
             }
 
-            // === 簡單分類 ===
+            // === Simple Classification ===
             if (types.Count == 1)
             {
                 var liquor = liquorDatabase?.GetLiquor(types[0]);
-                return liquor != null ? $"{liquor.nameZH}純飲" : "單一飲品";
+                return liquor != null ? $"{liquor.displayName} Neat" : "Single Spirit";
             }
             else if (types.Count == 2)
             {
-                return "雙料調酒";
+                return "Two-Ingredient Mix";
             }
             else
             {
-                return "特調混酒";
+                return "Custom Cocktail";
             }
         }
 

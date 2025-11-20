@@ -409,31 +409,47 @@ namespace BarSimulator.Systems
         }
 
         /// <summary>
-        /// 取得互動提示文字
-        /// 參考: InteractionSystem.js getInteractionHint() Line 341-412
+        /// Get interaction hint text (English)
+        /// Reference: InteractionSystem.js getInteractionHint() Line 341-412
         /// </summary>
         public string GetInteractionHint()
         {
             if (isHolding && heldObject != null)
             {
                 var type = heldObject.InteractableType;
-                string typeName = InteractableBase.GetTypeName(type);
+                string typeName = GetTypeNameEnglish(type);
 
                 return type switch
                 {
-                    InteractableType.Bottle => $"{heldObject.DisplayName} | 按住滑鼠左鍵倒酒 | 按 R 放回酒牆",
-                    InteractableType.Glass => $"{typeName} | 按滑鼠右鍵喝掉 | 按 R 放回原位",
-                    InteractableType.Shaker => $"{typeName} | 按住滑鼠左鍵搖晃 | 按 R 放回原位",
-                    _ => $"{heldObject.DisplayName} | 按 R 放回原位"
+                    InteractableType.Bottle => $"{heldObject.DisplayName} | Hold LMB to pour | Press R to return",
+                    InteractableType.Glass => $"{typeName} | Press RMB to drink | Press R to return",
+                    InteractableType.Shaker => $"{typeName} | Hold LMB to shake | Press R to return",
+                    _ => $"{heldObject.DisplayName} | Press R to return"
                 };
             }
             else if (targetedObject != null)
             {
-                string action = targetedObject.CanPickup ? "拾取" : "互動";
-                return $"按 E {action} {targetedObject.DisplayName}";
+                string action = targetedObject.CanPickup ? "pick up" : "interact with";
+                return $"Press E to {action} {targetedObject.DisplayName}";
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// Get type name in English
+        /// </summary>
+        private string GetTypeNameEnglish(InteractableType type)
+        {
+            return type switch
+            {
+                InteractableType.Bottle => "Bottle",
+                InteractableType.Glass => "Glass",
+                InteractableType.Shaker => "Shaker",
+                InteractableType.Jigger => "Jigger",
+                InteractableType.Guitar => "Guitar",
+                _ => "Item"
+            };
         }
 
         /// <summary>
