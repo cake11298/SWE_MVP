@@ -5,7 +5,7 @@
 本文件詳細記錄從 Three.js 3D 調酒遊戲移植到 Unity C# 的完整對照表。
 
 **原始專案：** Three.js + Cannon.js (JavaScript)
-**目標平台：** Unity 2022.3 LTS (C#)
+**目標平台：** Unity 6000 LTS (C#)
 
 ---
 
@@ -549,9 +549,9 @@ Assets/
 
 ## 10. 待決定事項
 
-1. **渲染管線**: 選擇 URP 還是 HDRP？
+1. **渲染管線**: 選擇 URP
 2. **版本控制**: 使用 Git LFS 處理大型資源
-3. **Asset Store**: 是否使用現成的第一人稱控制器？
+3. **Asset Store**: 是否使用現成的第一人稱控制器？ (如果 Claude Code 有能力 則下載你所需要的各種免費 Assets)
 4. **音效**: 使用 Unity Audio 還是 FMOD/Wwise？
 5. **本地化**: 是否需要多語言支援？
 
