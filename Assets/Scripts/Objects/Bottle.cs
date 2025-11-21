@@ -33,6 +33,7 @@ namespace BarSimulator.Objects
         private LiquorData liquorData;
         private bool isPouring;
         private float currentTilt;
+        private Quaternion savedOriginalRotation;
 
         #endregion
 
@@ -43,9 +44,13 @@ namespace BarSimulator.Objects
             base.Awake();
 
             interactableType = InteractableType.Bottle;
-            originalRotation = transform.localRotation;
+            // Save the original rotation for later restoration
+            savedOriginalRotation = transform.rotation;
+        }
 
-            // 載入酒類資料
+        private void Start()
+        {
+            // 載入酒類資料 - deferred to Start to ensure CocktailSystem is initialized
             LoadLiquorData();
         }
 
@@ -171,6 +176,7 @@ namespace BarSimulator.Objects
         public override void OnPickup()
         {
             base.OnPickup();
+            // Reset for tilt animation when held
             originalRotation = Quaternion.identity;
         }
 
@@ -182,8 +188,9 @@ namespace BarSimulator.Objects
 
             if (returnToOriginal)
             {
-                originalRotation = this.originalRotation;
-                transform.rotation = this.originalRotation;
+                // Restore saved original rotation
+                originalRotation = savedOriginalRotation;
+                transform.rotation = savedOriginalRotation;
             }
         }
 
