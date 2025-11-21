@@ -27,7 +27,7 @@ namespace BarSimulator.Core
         public const float InteractionDistance = 3f;
 
         /// <summary>倒酒有效距離 (m)</summary>
-        public const float PourDistance = 2.5f;
+        public const float PourDistance = 4f;
 
         /// <summary>倒酒有效角度餘弦值 (約45度)</summary>
         public const float PourAngleCos = 0.7f;

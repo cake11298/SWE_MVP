@@ -338,6 +338,14 @@ namespace BarSimulator.Editor
                 canvas.gameObject.AddComponent<GameUIController>();
                 Debug.Log("Added GameUIController to Canvas");
             }
+
+            // Add GameplayHUD for real-time feedback (pouring, glass contents)
+            if (Object.FindFirstObjectByType<GameplayHUD>() == null)
+            {
+                var hudObj = new GameObject("GameplayHUD");
+                hudObj.AddComponent<GameplayHUD>();
+                Debug.Log("Created GameplayHUD for pouring and glass info display");
+            }
         }
     }
 }

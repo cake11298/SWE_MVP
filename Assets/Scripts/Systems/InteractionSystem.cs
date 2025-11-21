@@ -536,25 +536,28 @@ namespace BarSimulator.Systems
         /// </summary>
         public Transform FindNearbyContainer(Transform source, float maxDistance = 2.5f)
         {
-            if (mainCamera == null || source == null) return null;
+            if (mainCamera == null) return null;
 
-            // 取得相機方向
-            Vector3 cameraDir = mainCamera.transform.forward;
+            // 搜尋附近的容器 - 從相機位置搜尋，而非手持物品位置
+            Vector3 searchCenter = mainCamera.transform.position;
 
             // 搜尋附近的容器 - 如果沒有設定 layer，使用所有 layer
             Collider[] colliders;
             if (interactableLayer.value != 0)
             {
-                colliders = Physics.OverlapSphere(source.position, maxDistance, interactableLayer);
+                colliders = Physics.OverlapSphere(searchCenter, maxDistance, interactableLayer);
             }
             else
             {
-                colliders = Physics.OverlapSphere(source.position, maxDistance);
+                colliders = Physics.OverlapSphere(searchCenter, maxDistance);
             }
+
+            Transform nearestContainer = null;
+            float nearestDistance = float.MaxValue;
 
             foreach (var collider in colliders)
             {
-                if (collider.transform == source) continue;
+                if (source != null && collider.transform == source) continue;
 
                 var interactable = collider.GetComponentInParent<IInteractable>();
                 if (interactable == null) continue;
@@ -563,18 +566,22 @@ namespace BarSimulator.Systems
                 var type = interactable.InteractableType;
                 if (type != InteractableType.Glass && type != InteractableType.Shaker) continue;
 
-                // 檢查視角
-                Vector3 toContainer = (collider.transform.position - mainCamera.transform.position).normalized;
-                float dot = Vector3.Dot(cameraDir, toContainer);
+                // 簡單的距離檢查 - 找最近的容器，不需要嚴格的角度
+                float distance = Vector3.Distance(searchCenter, collider.transform.position);
 
-                // 角度必須小於約30度 (cos(30°) ≈ 0.866)
-                if (dot >= Constants.PourAngleCos)
+                // 只要在視野前方即可 (非常寬鬆的角度檢查)
+                Vector3 toContainer = (collider.transform.position - searchCenter).normalized;
+                float dot = Vector3.Dot(mainCamera.transform.forward, toContainer);
+
+                // 只要不是在背後就行 (dot > 0 = 前方180度)
+                if (dot > 0 && distance < nearestDistance)
                 {
-                    return collider.transform;
+                    nearestDistance = distance;
+                    nearestContainer = collider.transform;
                 }
             }
 
-            return null;
+            return nearestContainer;
         }
 
         #endregion
