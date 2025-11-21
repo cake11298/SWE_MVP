@@ -193,21 +193,30 @@ namespace BarSimulator.Systems
             }
 
             // R 鍵：放回原位
-            bool dropPressed = false;
+            bool returnPressed = false;
             if (useFallbackInput)
             {
-                dropPressed = Input.GetKeyDown(KeyCode.R);
+                returnPressed = Input.GetKeyDown(KeyCode.R);
             }
             else
             {
-                dropPressed = dropAction != null && dropAction.WasPressedThisFrame();
+                returnPressed = dropAction != null && dropAction.WasPressedThisFrame();
             }
 
-            if (dropPressed)
+            if (returnPressed)
             {
                 if (isHolding)
                 {
-                    DropObject(true);
+                    DropObject(true); // Return to original position
+                }
+            }
+
+            // Q 鍵：原地放下
+            if (useFallbackInput && Input.GetKeyDown(KeyCode.Q))
+            {
+                if (isHolding)
+                {
+                    DropObject(false); // Drop in place
                 }
             }
         }
@@ -490,10 +499,10 @@ namespace BarSimulator.Systems
 
                 return type switch
                 {
-                    InteractableType.Bottle => $"{heldObject.DisplayName} | Hold LMB to pour | Press R to return",
-                    InteractableType.Glass => $"{typeName} | Press RMB to drink | Press R to return",
-                    InteractableType.Shaker => $"{typeName} | Hold LMB to shake | Press R to return",
-                    _ => $"{heldObject.DisplayName} | Press R to return"
+                    InteractableType.Bottle => $"{heldObject.DisplayName} | Hold LMB to pour | Q=Drop R=Return",
+                    InteractableType.Glass => $"{typeName} | Press RMB to drink | Q=Drop R=Return",
+                    InteractableType.Shaker => $"{typeName} | Hold LMB to shake | Q=Drop R=Return",
+                    _ => $"{heldObject.DisplayName} | Q=Drop R=Return"
                 };
             }
             else if (targetedObject != null)

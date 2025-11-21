@@ -27,10 +27,10 @@ namespace BarSimulator.Core
         public const float InteractionDistance = 3f;
 
         /// <summary>倒酒有效距離 (m)</summary>
-        public const float PourDistance = 1.5f;
+        public const float PourDistance = 2.5f;
 
-        /// <summary>倒酒有效角度餘弦值 (約30度)</summary>
-        public const float PourAngleCos = 0.85f;
+        /// <summary>倒酒有效角度餘弦值 (約45度)</summary>
+        public const float PourAngleCos = 0.7f;
 
         // === 調酒參數 ===
 
@@ -57,7 +57,7 @@ namespace BarSimulator.Core
         // === 手持物品偏移 ===
 
         /// <summary>手持物品相對攝影機的偏移位置</summary>
-        public static readonly Vector3 HoldOffset = new Vector3(0.3f, -0.3f, -0.8f);
+        public static readonly Vector3 HoldOffset = new Vector3(0.3f, -0.3f, 0.6f);
 
         // === Layer 名稱 ===
 
