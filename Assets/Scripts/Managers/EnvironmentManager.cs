@@ -85,10 +85,21 @@ namespace BarSimulator.Managers
 
         private void Start()
         {
-            // 載入資料庫
+            // 載入資料庫 - 優先從 CocktailSystem 取得
             if (liquorDatabase == null)
             {
-                liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
+                var cocktailSystem = BarSimulator.Systems.CocktailSystem.Instance;
+                if (cocktailSystem != null && cocktailSystem.LiquorDatabase != null)
+                {
+                    liquorDatabase = cocktailSystem.LiquorDatabase;
+                }
+                else
+                {
+                    // 建立執行期資料庫
+                    liquorDatabase = ScriptableObject.CreateInstance<LiquorDatabase>();
+                    liquorDatabase.InitializeDefaults();
+                    Debug.Log("EnvironmentManager: Created runtime LiquorDatabase");
+                }
             }
 
             // 生成環境物件
