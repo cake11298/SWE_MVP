@@ -379,14 +379,14 @@ namespace BarSimulator.UI
             ratingPopupPanel.SetActive(true);
             ratingPopupTimer = RATING_POPUP_DURATION;
 
-            // 播放音效
-            if (AudioManager.Instance != null)
-            {
-                if (rating >= 70)
-                    AudioManager.Instance.PlaySFX("success");
-                else
-                    AudioManager.Instance.PlaySFX("fail");
-            }
+            // TODO: 播放音效 - 需要設定 AudioClip 引用
+            // if (AudioManager.Instance != null)
+            // {
+            //     if (rating >= 70)
+            //         AudioManager.Instance.PlaySFX(successClip);
+            //     else
+            //         AudioManager.Instance.PlaySFX(failClip);
+            // }
         }
 
         #endregion
@@ -511,8 +511,9 @@ namespace BarSimulator.UI
 
         private void PlayButtonSound()
         {
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySFX("ui_click");
+            // TODO: 播放按鈕音效 - 需要設定 AudioClip 引用
+            // if (AudioManager.Instance != null && buttonClickClip != null)
+            //     AudioManager.Instance.PlaySFX(buttonClickClip);
         }
 
         #endregion
