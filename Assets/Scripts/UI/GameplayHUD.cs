@@ -29,6 +29,9 @@ namespace BarSimulator.UI
         private GUIStyle headerStyle;
         private bool stylesInitialized = false;
 
+        // 食譜面板狀態
+        private bool showRecipePanel = false;
+
         #endregion
 
         #region Unity 生命週期
@@ -49,6 +52,15 @@ namespace BarSimulator.UI
             cocktailSystem = CocktailSystem.Instance;
         }
 
+        private void Update()
+        {
+            // M 鍵顯示/隱藏食譜
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                showRecipePanel = !showRecipePanel;
+            }
+        }
+
         private void OnGUI()
         {
             InitializeStyles();
@@ -66,6 +78,12 @@ namespace BarSimulator.UI
             if (interactionSystem != null && interactionSystem.IsHolding)
             {
                 DrawHeldItemInfo();
+            }
+
+            // 顯示食譜面板
+            if (showRecipePanel)
+            {
+                DrawRecipePanel();
             }
         }
 
@@ -258,6 +276,59 @@ namespace BarSimulator.UI
                 emptyStyle.normal.textColor = Color.gray;
                 GUI.Label(new Rect(x + 10, y + 70, width - 20, 20), "Empty", emptyStyle);
             }
+        }
+
+        /// <summary>
+        /// 繪製食譜面板
+        /// </summary>
+        private void DrawRecipePanel()
+        {
+            float width = 400;
+            float height = 450;
+            float x = (Screen.width - width) / 2;
+            float y = (Screen.height - height) / 2;
+
+            // 背景框
+            GUI.Box(new Rect(x, y, width, height), "", boxStyle);
+
+            // 標題
+            GUI.Label(new Rect(x + 10, y + 10, width - 20, 30), "Cocktail Recipes (M to close)", headerStyle);
+
+            // 食譜列表
+            var recipeStyle = new GUIStyle(labelStyle);
+            recipeStyle.fontSize = 12;
+
+            float lineY = y + 50;
+            float lineHeight = 60;
+
+            // Martini
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Martini\n  Gin + Dry Vermouth (2:1 to 3:1)\n  Example: 60ml Gin + 20ml Dry Vermouth", recipeStyle);
+            lineY += lineHeight;
+
+            // Negroni
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Negroni\n  Gin + Campari + Sweet Vermouth (1:1:1)\n  Example: 30ml each", recipeStyle);
+            lineY += lineHeight;
+
+            // Margarita
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Margarita\n  Tequila + Triple Sec + Lime Juice\n  Example: 45ml + 15ml + 15ml", recipeStyle);
+            lineY += lineHeight;
+
+            // Daiquiri
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Daiquiri\n  Rum + Lime Juice + Simple Syrup\n  Example: 60ml + 20ml + 15ml", recipeStyle);
+            lineY += lineHeight;
+
+            // Cosmopolitan
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Cosmopolitan\n  Vodka + Triple Sec + Cranberry + Lime\n  Example: 40ml + 15ml + 30ml + 10ml", recipeStyle);
+            lineY += lineHeight;
+
+            // Whiskey Sour
+            GUI.Label(new Rect(x + 15, lineY, width - 30, lineHeight),
+                "Whiskey Sour\n  Whiskey + Lemon Juice + Simple Syrup\n  Example: 45ml + 30ml + 15ml", recipeStyle);
         }
 
         #endregion

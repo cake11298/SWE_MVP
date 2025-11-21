@@ -360,10 +360,13 @@ namespace BarSimulator.Systems
                 // 恢復物理（但保持靜止）
                 if (heldRigidbody != null)
                 {
-                    heldRigidbody.isKinematic = true;
-                    heldRigidbody.useGravity = false;
+                    // 先設為非 kinematic 才能設定速度
+                    heldRigidbody.isKinematic = false;
                     heldRigidbody.velocity = Vector3.zero;
                     heldRigidbody.angularVelocity = Vector3.zero;
+                    // 然後設回 kinematic 保持靜止
+                    heldRigidbody.isKinematic = true;
+                    heldRigidbody.useGravity = false;
                 }
             }
             else

@@ -108,7 +108,13 @@ namespace BarSimulator.Systems
         /// </summary>
         private void HandlePouringInput()
         {
-            if (interactionSystem == null || !interactionSystem.IsHolding) return;
+            if (interactionSystem == null)
+            {
+                if (Time.frameCount % 300 == 0) Debug.Log("CocktailSystem: InteractionSystem is null");
+                return;
+            }
+
+            if (!interactionSystem.IsHolding) return;
 
             var heldType = interactionSystem.GetHeldObjectType();
 
@@ -117,6 +123,12 @@ namespace BarSimulator.Systems
 
             if (interactionSystem.IsLeftClickHeld())
             {
+                // Debug: 顯示正在嘗試倒酒
+                if (Time.frameCount % 60 == 0)
+                {
+                    Debug.Log($"CocktailSystem: Trying to pour with {heldType}, searching for container within {pourMaxDistance}m");
+                }
+
                 // 尋找目標容器
                 var targetTransform = interactionSystem.FindNearbyContainer(
                     interactionSystem.HeldTransform,

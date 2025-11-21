@@ -88,6 +88,14 @@ namespace BarSimulator.Editor
                 nmObject.AddComponent<NPCManager>();
                 Debug.Log("Created NPCManager");
             }
+
+            // LightingManager - adjust scene lighting to be darker (bar atmosphere)
+            if (Object.FindFirstObjectByType<LightingManager>() == null)
+            {
+                var lmObject = new GameObject("LightingManager");
+                lmObject.AddComponent<LightingManager>();
+                Debug.Log("Created LightingManager to reduce brightness");
+            }
         }
 
         private static void CreatePlayer()
@@ -225,11 +233,42 @@ namespace BarSimulator.Editor
             glass.transform.position = position;
             glass.transform.localScale = new Vector3(0.08f, 0.1f, 0.08f);
 
-            // Set transparent material
-            var renderer = glass.GetComponent<Renderer>();
-            if (renderer != null)
+            // Set transparent material for glass
+            var glassRenderer = glass.GetComponent<Renderer>();
+            if (glassRenderer != null)
             {
-                renderer.material.color = new Color(0.8f, 0.9f, 1f, 0.3f);
+                var glassMat = new Material(Shader.Find("Standard"));
+                glassMat.color = new Color(0.9f, 0.95f, 1f, 0.2f);
+                glassMat.SetFloat("_Mode", 3); // Transparent
+                glassMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                glassMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                glassMat.SetInt("_ZWrite", 0);
+                glassMat.DisableKeyword("_ALPHATEST_ON");
+                glassMat.EnableKeyword("_ALPHABLEND_ON");
+                glassMat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                glassMat.renderQueue = 3000;
+                glassRenderer.material = glassMat;
+            }
+
+            // Create liquid cylinder inside the glass
+            var liquid = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            liquid.name = "Liquid";
+            liquid.transform.SetParent(glass.transform);
+            liquid.transform.localPosition = new Vector3(0f, 0.3f, 0f); // Start position
+            liquid.transform.localScale = new Vector3(0.8f, 0.01f, 0.8f); // Initial tiny scale
+
+            // Remove collider from liquid
+            Object.DestroyImmediate(liquid.GetComponent<Collider>());
+
+            // Set liquid material
+            var liquidRenderer = liquid.GetComponent<MeshRenderer>();
+            if (liquidRenderer != null)
+            {
+                var liquidMat = new Material(Shader.Find("Standard"));
+                liquidMat.color = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+                liquidMat.SetFloat("_Glossiness", 0.9f);
+                liquidRenderer.material = liquidMat;
+                liquidRenderer.enabled = false; // Initially hidden
             }
 
             // Add Rigidbody for physics (kinematic by default so it stays in place)
@@ -239,6 +278,23 @@ namespace BarSimulator.Editor
 
             // Add Glass component
             var glassComponent = glass.AddComponent<Glass>();
+
+            // Set liquid references via reflection
+            var containerType = typeof(Glass).BaseType; // Container
+
+            var liquidRendererField = containerType.GetField("liquidRenderer",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (liquidRendererField != null && liquidRenderer != null)
+            {
+                liquidRendererField.SetValue(glassComponent, liquidRenderer);
+            }
+
+            var liquidTransformField = containerType.GetField("liquidTransform",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (liquidTransformField != null)
+            {
+                liquidTransformField.SetValue(glassComponent, liquid.transform);
+            }
 
             // Set display name
             var displayNameField = typeof(Glass).BaseType.BaseType.GetField("displayName",
