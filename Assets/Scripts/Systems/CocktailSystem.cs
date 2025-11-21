@@ -145,6 +145,10 @@ namespace BarSimulator.Systems
                             }
                         }
                     }
+                    else if (targetContainer != null && targetContainer.IsFull)
+                    {
+                        Debug.Log("CocktailSystem: Target container is full");
+                    }
                 }
                 else if (heldType == InteractableType.Shaker)
                 {

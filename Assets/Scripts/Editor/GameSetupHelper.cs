@@ -124,7 +124,18 @@ namespace BarSimulator.Editor
 
         private static void CreateTestObjects()
         {
-            // Create bar counter
+            // Create floor
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.name = "Floor";
+            floor.transform.position = Vector3.zero;
+            floor.transform.localScale = new Vector3(2, 1, 2);
+            var floorRenderer = floor.GetComponent<Renderer>();
+            if (floorRenderer != null)
+            {
+                floorRenderer.material.color = new Color(0.3f, 0.25f, 0.2f);
+            }
+
+            // Create bar counter with matte brown material
             var counter = GameObject.CreatePrimitive(PrimitiveType.Cube);
             counter.name = "Bar Counter";
             counter.transform.position = new Vector3(0, 0.5f, 2);
@@ -132,7 +143,12 @@ namespace BarSimulator.Editor
             var counterRenderer = counter.GetComponent<Renderer>();
             if (counterRenderer != null)
             {
-                counterRenderer.material.color = new Color(0.4f, 0.2f, 0.1f);
+                // Create matte brown material with no reflection
+                var mat = new Material(Shader.Find("Standard"));
+                mat.color = new Color(0.35f, 0.2f, 0.1f); // Dark brown
+                mat.SetFloat("_Glossiness", 0.1f); // Low smoothness = matte
+                mat.SetFloat("_Metallic", 0f); // No metallic = no reflection
+                counterRenderer.material = mat;
             }
 
             // Create bottles
@@ -174,6 +190,11 @@ namespace BarSimulator.Editor
                 renderer.material.color = color;
             }
 
+            // Add Rigidbody for physics (kinematic by default so it stays in place)
+            var rb = bottle.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
             // Add Bottle component
             var bottleComponent = bottle.AddComponent<Bottle>();
 
@@ -210,6 +231,11 @@ namespace BarSimulator.Editor
             {
                 renderer.material.color = new Color(0.8f, 0.9f, 1f, 0.3f);
             }
+
+            // Add Rigidbody for physics (kinematic by default so it stays in place)
+            var rb = glass.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
 
             // Add Glass component
             var glassComponent = glass.AddComponent<Glass>();
