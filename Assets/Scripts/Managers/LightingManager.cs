@@ -33,23 +33,23 @@ namespace BarSimulator.Managers
 
         [Header("燈光設定")]
         [Tooltip("環境光強度")]
-        [SerializeField] private float ambientIntensity = 0.3f;
+        [SerializeField] private float ambientIntensity = 0.15f;
 
         [Tooltip("主燈強度")]
-        [SerializeField] private float mainLightIntensity = 1f;
+        [SerializeField] private float mainLightIntensity = 0.5f;
 
         [Tooltip("聚光燈強度")]
-        [SerializeField] private float spotlightIntensity = 2f;
+        [SerializeField] private float spotlightIntensity = 1.5f;
 
         [Tooltip("霓虹燈強度")]
-        [SerializeField] private float neonIntensity = 1.5f;
+        [SerializeField] private float neonIntensity = 1f;
 
         [Header("顏色設定")]
         [Tooltip("環境光顏色")]
-        [SerializeField] private Color ambientColor = new Color(0.1f, 0.1f, 0.15f);
+        [SerializeField] private Color ambientColor = new Color(0.15f, 0.12f, 0.1f);
 
         [Tooltip("主燈顏色")]
-        [SerializeField] private Color mainLightColor = new Color(1f, 0.95f, 0.8f);
+        [SerializeField] private Color mainLightColor = new Color(1f, 0.9f, 0.8f);
 
         [Tooltip("暖色聚光燈")]
         [SerializeField] private Color warmSpotColor = new Color(1f, 0.8f, 0.6f);
@@ -147,12 +147,28 @@ namespace BarSimulator.Managers
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = ambientColor;
             RenderSettings.ambientIntensity = ambientIntensity;
+            RenderSettings.reflectionIntensity = 0.3f;
+
+            // 如果沒有指定主燈，自動找場景中的 Directional Light
+            if (mainDirectionalLight == null)
+            {
+                var lights = FindObjectsByType<Light>(FindObjectsSortMode.None);
+                foreach (var light in lights)
+                {
+                    if (light.type == LightType.Directional)
+                    {
+                        mainDirectionalLight = light;
+                        break;
+                    }
+                }
+            }
 
             // 設置主燈
             if (mainDirectionalLight != null)
             {
                 mainDirectionalLight.color = mainLightColor;
                 mainDirectionalLight.intensity = mainLightIntensity;
+                mainDirectionalLight.shadowStrength = 0.5f;
             }
 
             // 設置聚光燈
@@ -161,7 +177,7 @@ namespace BarSimulator.Managers
             // 設置霓虹燈
             SetupNeonLights();
 
-            Debug.Log("LightingManager: Lighting initialized");
+            Debug.Log($"LightingManager: Lighting initialized - Ambient: {ambientIntensity}, Main: {mainLightIntensity}");
         }
 
         /// <summary>
