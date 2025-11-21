@@ -111,8 +111,8 @@ namespace BarSimulator.NPC
         {
             if (nearbyNPC == null) return;
 
-            // 按 E 鍵互動
-            if (Input.GetKeyDown(KeyCode.E))
+            // 按 F 鍵給 NPC 飲料
+            if (Input.GetKeyDown(KeyCode.F))
             {
                 // 檢查玩家是否持有酒杯
                 if (interactionSystem != null && interactionSystem.IsHolding)
@@ -125,8 +125,17 @@ namespace BarSimulator.NPC
                         return;
                     }
                 }
+            }
 
-                // 與 NPC 對話
+            // 按 E 鍵與 NPC 對話
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                // 如果正在拿著東西，不能對話（需要先放下）
+                if (interactionSystem != null && interactionSystem.IsHolding)
+                {
+                    return;
+                }
+
                 TalkToNPC(nearbyNPC);
             }
         }
@@ -243,9 +252,11 @@ namespace BarSimulator.NPC
                     var glass = interactionSystem.HeldObject as Glass;
                     if (glass != null && !glass.IsEmpty)
                     {
-                        return $"Press {interactionKey} to give drink to {nearbyNPC.NPCName}";
+                        return $"Press F to give drink to {nearbyNPC.NPCName}";
                     }
                 }
+                // If holding something else, can't interact
+                return string.Empty;
             }
 
             return $"Press {interactionKey} to talk to {nearbyNPC.NPCName}";

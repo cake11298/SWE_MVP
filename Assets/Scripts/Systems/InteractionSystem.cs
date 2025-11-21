@@ -63,6 +63,9 @@ namespace BarSimulator.Systems
         private InputAction leftClickAction;
         private InputAction rightClickAction;
 
+        // Fallback input state
+        private bool useFallbackInput = false;
+
         // 事件
         public System.Action<IInteractable> OnObjectTargeted;
         public System.Action OnObjectUntargeted;
@@ -132,7 +135,12 @@ namespace BarSimulator.Systems
                 inputActions = Resources.Load<InputActionAsset>("PlayerInputActions");
             }
 
-            if (inputActions == null) return;
+            if (inputActions == null)
+            {
+                Debug.LogWarning("InteractionSystem: PlayerInputActions not found, using fallback input");
+                useFallbackInput = true;
+                return;
+            }
 
             var playerMap = inputActions.FindActionMap("Player");
             if (playerMap != null)
@@ -141,13 +149,34 @@ namespace BarSimulator.Systems
                 dropAction = playerMap.FindAction("Drop");
                 leftClickAction = playerMap.FindAction("LeftClick");
                 rightClickAction = playerMap.FindAction("RightClick");
+
+                if (interactAction == null || dropAction == null)
+                {
+                    Debug.LogWarning("InteractionSystem: Some actions not found, using fallback input");
+                    useFallbackInput = true;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("InteractionSystem: Player action map not found, using fallback input");
+                useFallbackInput = true;
             }
         }
 
         private void HandleInput()
         {
             // E 鍵：拾取/互動
-            if (interactAction != null && interactAction.WasPressedThisFrame())
+            bool interactPressed = false;
+            if (useFallbackInput)
+            {
+                interactPressed = Input.GetKeyDown(KeyCode.E);
+            }
+            else
+            {
+                interactPressed = interactAction != null && interactAction.WasPressedThisFrame();
+            }
+
+            if (interactPressed)
             {
                 if (!isHolding && targetedObject != null)
                 {
@@ -164,7 +193,17 @@ namespace BarSimulator.Systems
             }
 
             // R 鍵：放回原位
-            if (dropAction != null && dropAction.WasPressedThisFrame())
+            bool dropPressed = false;
+            if (useFallbackInput)
+            {
+                dropPressed = Input.GetKeyDown(KeyCode.R);
+            }
+            else
+            {
+                dropPressed = dropAction != null && dropAction.WasPressedThisFrame();
+            }
+
+            if (dropPressed)
             {
                 if (isHolding)
                 {
@@ -188,7 +227,21 @@ namespace BarSimulator.Systems
             // 從螢幕中心發射射線
             Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
-            if (Physics.Raycast(ray, out RaycastHit hit, interactionDistance, interactableLayer))
+            bool didHit = false;
+            RaycastHit hit = default;
+
+            // If interactableLayer is configured (not 0), use it; otherwise raycast all
+            if (interactableLayer.value != 0)
+            {
+                didHit = Physics.Raycast(ray, out hit, interactionDistance, interactableLayer);
+            }
+            else
+            {
+                // Fallback: raycast all objects and check for IInteractable
+                didHit = Physics.Raycast(ray, out hit, interactionDistance);
+            }
+
+            if (didHit)
             {
                 // 嘗試取得 IInteractable 組件
                 var interactable = hit.collider.GetComponentInParent<IInteractable>();
@@ -405,6 +458,10 @@ namespace BarSimulator.Systems
         /// </summary>
         public bool IsLeftClickHeld()
         {
+            if (useFallbackInput)
+            {
+                return Input.GetMouseButton(0);
+            }
             return leftClickAction != null && leftClickAction.IsPressed();
         }
 
@@ -413,6 +470,10 @@ namespace BarSimulator.Systems
         /// </summary>
         public bool IsRightClickPressed()
         {
+            if (useFallbackInput)
+            {
+                return Input.GetMouseButtonDown(1);
+            }
             return rightClickAction != null && rightClickAction.WasPressedThisFrame();
         }
 
@@ -471,8 +532,16 @@ namespace BarSimulator.Systems
             // 取得相機方向
             Vector3 cameraDir = mainCamera.transform.forward;
 
-            // 搜尋附近的容器
-            Collider[] colliders = Physics.OverlapSphere(source.position, maxDistance, interactableLayer);
+            // 搜尋附近的容器 - 如果沒有設定 layer，使用所有 layer
+            Collider[] colliders;
+            if (interactableLayer.value != 0)
+            {
+                colliders = Physics.OverlapSphere(source.position, maxDistance, interactableLayer);
+            }
+            else
+            {
+                colliders = Physics.OverlapSphere(source.position, maxDistance);
+            }
 
             foreach (var collider in colliders)
             {
