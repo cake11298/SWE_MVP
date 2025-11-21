@@ -537,3 +537,401 @@ canvas {
     text-align: justify;
     margin: 0;
 }
+
+/* 主選單 */
+#main-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a0033 0%, #2d1b4e 50%, #1a0033 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.menu-container {
+    text-align: center;
+    padding: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.menu-title {
+    font-size: 64px;
+    color: #FFD700;
+    margin: 0 0 10px 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from {
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    to {
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+}
+
+.menu-subtitle {
+    font-size: 18px;
+    color: #87CEEB;
+    margin: 0 0 40px 0;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.menu-btn {
+    padding: 15px 40px;
+    font-size: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: rgba(75, 0, 130, 0.6);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.menu-btn:hover {
+    background: rgba(138, 43, 226, 0.8);
+    border-color: #FFD700;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(138, 43, 226, 0.5);
+}
+
+.menu-btn.primary {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a0033;
+    font-weight: bold;
+    border-color: #FFD700;
+}
+
+.menu-btn.primary:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+}
+
+.menu-info {
+    color: #B0B0B0;
+    font-size: 14px;
+}
+
+.menu-info p {
+    margin: 5px 0;
+}
+
+/* 設定面板 */
+#settings-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.settings-container {
+    background: rgba(30, 30, 60, 0.98);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    min-width: 400px;
+}
+
+.settings-container h2 {
+    color: #FFD700;
+    margin: 0 0 30px 0;
+    text-align: center;
+}
+
+.setting-item {
+    margin-bottom: 25px;
+}
+
+.setting-item label {
+    display: block;
+    color: #87CEEB;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.setting-item input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: #333;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFD700;
+    cursor: pointer;
+}
+
+.setting-item span {
+    display: inline-block;
+    margin-top: 5px;
+    color: #E0E0E0;
+}
+
+/* 教學面板 */
+#tutorial-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.tutorial-container {
+    background: rgba(30, 30, 60, 0.98);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.tutorial-container h2 {
+    color: #FFD700;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.tutorial-content {
+    margin-bottom: 20px;
+}
+
+.tutorial-step {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 3px solid #FFD700;
+}
+
+.tutorial-step h3 {
+    color: #FFD700;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.tutorial-step p {
+    color: #E0E0E0;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.tutorial-container .menu-btn {
+    margin: 5px;
+}
+
+/* 分數面板 */
+#score-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    z-index: 100;
+    display: none;
+}
+
+#score-panel.visible {
+    display: block;
+}
+
+.score-item {
+    color: white;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.score-label {
+    color: #87CEEB;
+    margin-right: 10px;
+}
+
+#satisfied-count, #total-score {
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* 最近評分顯示 */
+#recent-rating {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px 40px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 200;
+    animation: ratingPopup 0.5s ease;
+    border: 3px solid rgba(255, 215, 0, 0.5);
+}
+
+@keyframes ratingPopup {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.rating-stars {
+    font-size: 36px;
+    margin-bottom: 15px;
+}
+
+.rating-text {
+    color: white;
+    font-size: 18px;
+}
+
+/* 遊戲結束面板 */
+#game-over-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.game-over-container {
+    text-align: center;
+    padding: 50px;
+    background: linear-gradient(135deg, rgba(75, 0, 130, 0.8), rgba(138, 43, 226, 0.8));
+    border-radius: 20px;
+    border: 3px solid #FFD700;
+    animation: gameOverPop 0.5s ease;
+}
+
+@keyframes gameOverPop {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+#game-over-title {
+    font-size: 48px;
+    color: #FFD700;
+    margin: 0 0 30px 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.final-stats {
+    margin-bottom: 30px;
+}
+
+.final-stats p {
+    color: white;
+    font-size: 20px;
+    margin: 10px 0;
+}
+
+.final-stats span {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 隱藏狀態 */
+#main-menu.hidden,
+#settings-panel.hidden,
+#tutorial-panel.hidden,
+#game-over-panel.hidden,
+#pause-menu.hidden {
+    display: none;
+}
+
+/* 暫停選單 */
+#pause-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+}
+
+.pause-container {
+    text-align: center;
+    padding: 40px;
+    background: rgba(30, 30, 60, 0.98);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.pause-container h2 {
+    color: #FFD700;
+    font-size: 36px;
+    margin: 0 0 30px 0;
+}
+
+.pause-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.pause-hint {
+    color: #87CEEB;
+    font-size: 14px;
+    margin: 0;
+}

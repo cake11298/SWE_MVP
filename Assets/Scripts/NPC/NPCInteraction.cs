@@ -197,6 +197,12 @@ namespace BarSimulator.NPC
             // 通知 NPCManager 處理評分 UI
             npcManager?.NPCDrinkCocktail(npc, drinkInfo);
 
+            // 更新遊戲分數
+            if (Core.GameManager.Instance != null)
+            {
+                Core.GameManager.Instance.AddDrinkScore(evaluation.score, npc.NPCName);
+            }
+
             Debug.Log($"NPCInteraction: Gave drink to {npc.NPCName}, Score: {evaluation.score}");
         }
 

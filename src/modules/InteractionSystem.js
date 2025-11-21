@@ -440,4 +440,37 @@ export default class InteractionSystem {
         }
         return obj1.position.distanceTo(obj2.position) < maxDistance;
     }
+
+    /**
+     * 放回所有物品到原始位置
+     */
+    returnAllObjects() {
+        // 如果正在拿著物品，先放下
+        if (this.heldObject) {
+            this.dropObject(true);
+        }
+
+        // 將所有物品放回原位
+        this.originalPositions.forEach((originalPos, object) => {
+            if (object && originalPos) {
+                object.position.copy(originalPos);
+
+                // 重置旋轉
+                object.rotation.set(0, 0, 0);
+
+                // 重新啟用物理
+                if (this.physics && object.userData.physicsBody) {
+                    this.physics.enableBody(object.userData.physicsBody);
+                    object.userData.physicsBody.position.copy(originalPos);
+                    object.userData.physicsBody.velocity.set(0, 0, 0);
+                    object.userData.physicsBody.angularVelocity.set(0, 0, 0);
+                }
+            }
+        });
+
+        // 重置狀態
+        this.heldObject = null;
+        this.targetedObject = null;
+        this.isHolding = false;
+    }
 }

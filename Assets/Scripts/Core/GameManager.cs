@@ -1,11 +1,43 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using BarSimulator.Player;
+using System;
 
 namespace BarSimulator.Core
 {
     /// <summary>
-    /// 遊戲管理器 - 管理遊戲主迴圈、系統初始化、暫停/恢復
+    /// 遊戲狀態枚舉
+    /// </summary>
+    public enum GameState
+    {
+        Menu,
+        Playing,
+        Paused,
+        GameOver
+    }
+
+    /// <summary>
+    /// 遊戲分數資料
+    /// </summary>
+    [Serializable]
+    public class GameScore
+    {
+        public int satisfiedDrinks;
+        public int totalScore;
+        public int totalDrinks;
+        public int targetSatisfied = 5;
+        public int satisfactionThreshold = 70; // 70/100 分算滿意
+
+        public void Reset()
+        {
+            satisfiedDrinks = 0;
+            totalScore = 0;
+            totalDrinks = 0;
+        }
+    }
+
+    /// <summary>
+    /// 遊戲管理器 - 管理遊戲主迴圈、系統初始化、暫停/恢復、分數追蹤
     /// 參考: src/index.js BarSimulator 類別
     /// </summary>
     public class GameManager : MonoBehaviour
@@ -24,11 +56,34 @@ namespace BarSimulator.Core
                 if (instance == null)
                 {
                     instance = FindFirstObjectByType<GameManager>();
-                    // 不再報錯，讓 SceneSetup 有機會創建
                 }
                 return instance;
             }
         }
+
+        #endregion
+
+        #region 事件
+
+        /// <summary>
+        /// 遊戲狀態改變事件
+        /// </summary>
+        public event Action<GameState> OnGameStateChanged;
+
+        /// <summary>
+        /// 分數更新事件
+        /// </summary>
+        public event Action<GameScore> OnScoreUpdated;
+
+        /// <summary>
+        /// 遊戲勝利事件
+        /// </summary>
+        public event Action OnGameWon;
+
+        /// <summary>
+        /// 飲品評分事件
+        /// </summary>
+        public event Action<int, string> OnDrinkRated;
 
         #endregion
 
@@ -49,21 +104,24 @@ namespace BarSimulator.Core
         [Tooltip("是否在開始時初始化所有系統")]
         [SerializeField] private bool initializeOnStart = true;
 
+        [Header("遊戲設定")]
+        [Tooltip("目標滿意飲品數")]
+        [SerializeField] private int targetSatisfiedDrinks = 5;
+
+        [Tooltip("滿意分數門檻 (0-100)")]
+        [SerializeField] private int satisfactionThreshold = 70;
+
         #endregion
 
         #region 私有欄位
 
-        private bool isPaused;
+        private GameState currentGameState = GameState.Menu;
+        private GameScore score = new GameScore();
         private bool isInitialized;
 
         // Input Actions
         private InputAction pauseAction;
         private InputAction showRecipeAction;
-
-        // 系統引用（將在階段 2 中實作）
-        // private CocktailSystem cocktailSystem;
-        // private InteractionSystem interactionSystem;
-        // private NPCManager npcManager;
 
         #endregion
 
@@ -81,10 +139,17 @@ namespace BarSimulator.Core
             DontDestroyOnLoad(gameObject);
 
             SetupInputActions();
+
+            // 初始化分數設定
+            score.targetSatisfied = targetSatisfiedDrinks;
+            score.satisfactionThreshold = satisfactionThreshold;
         }
 
         private void Start()
         {
+            // 開始時顯示主選單狀態
+            SetGameState(GameState.Menu);
+
             if (initializeOnStart)
             {
                 Initialize();
@@ -105,24 +170,179 @@ namespace BarSimulator.Core
 
         private void Update()
         {
-            // 處理暫停輸入
-            if (pauseAction != null && pauseAction.WasPressedThisFrame())
+            // 只有在遊戲中才處理暫停
+            if (currentGameState == GameState.Playing || currentGameState == GameState.Paused)
             {
-                TogglePause();
+                if (pauseAction != null && pauseAction.WasPressedThisFrame())
+                {
+                    TogglePause();
+                }
+
+                if (showRecipeAction != null && showRecipeAction.WasPressedThisFrame())
+                {
+                    ToggleRecipePanel();
+                }
             }
 
-            // 處理顯示食譜輸入
-            if (showRecipeAction != null && showRecipeAction.WasPressedThisFrame())
+            // 如果不是遊玩狀態，不更新遊戲邏輯
+            if (currentGameState != GameState.Playing) return;
+        }
+
+        #endregion
+
+        #region 遊戲狀態管理
+
+        /// <summary>
+        /// 設定遊戲狀態
+        /// </summary>
+        public void SetGameState(GameState newState)
+        {
+            if (currentGameState == newState) return;
+
+            GameState previousState = currentGameState;
+            currentGameState = newState;
+
+            Debug.Log($"GameManager: 遊戲狀態從 {previousState} 變為 {newState}");
+
+            switch (newState)
             {
-                ToggleRecipePanel();
+                case GameState.Menu:
+                    Time.timeScale = 1f;
+                    UnlockCursor();
+                    break;
+
+                case GameState.Playing:
+                    Time.timeScale = 1f;
+                    LockCursor();
+                    if (playerController != null)
+                    {
+                        playerController.EnableInput();
+                    }
+                    break;
+
+                case GameState.Paused:
+                    Time.timeScale = 0f;
+                    UnlockCursor();
+                    break;
+
+                case GameState.GameOver:
+                    Time.timeScale = 1f;
+                    UnlockCursor();
+                    break;
             }
 
-            // 如果暫停，不更新遊戲邏輯
-            // 參考: index.js Line 96-99
-            if (isPaused) return;
+            OnGameStateChanged?.Invoke(newState);
+        }
 
-            // 遊戲主迴圈邏輯將在這裡更新
-            // 各系統的 Update 由它們自己的 MonoBehaviour 處理
+        /// <summary>
+        /// 開始遊戲
+        /// </summary>
+        public void StartGame()
+        {
+            Debug.Log("GameManager: 開始遊戲");
+
+            // 重置分數
+            score.Reset();
+            OnScoreUpdated?.Invoke(score);
+
+            // 重置玩家位置
+            if (playerController != null)
+            {
+                playerController.ResetPosition();
+            }
+
+            SetGameState(GameState.Playing);
+        }
+
+        /// <summary>
+        /// 返回主選單
+        /// </summary>
+        public void ReturnToMenu()
+        {
+            Debug.Log("GameManager: 返回主選單");
+            SetGameState(GameState.Menu);
+        }
+
+        /// <summary>
+        /// 遊戲結束
+        /// </summary>
+        public void EndGame(bool won)
+        {
+            Debug.Log($"GameManager: 遊戲結束 - {(won ? "勝利" : "結束")}");
+
+            if (won)
+            {
+                OnGameWon?.Invoke();
+            }
+
+            SetGameState(GameState.GameOver);
+        }
+
+        /// <summary>
+        /// 重新開始遊戲
+        /// </summary>
+        public void RestartGame()
+        {
+            Debug.Log("GameManager: 重新開始遊戲");
+            StartGame();
+        }
+
+        #endregion
+
+        #region 分數系統
+
+        /// <summary>
+        /// 添加飲品評分
+        /// </summary>
+        /// <param name="rating">評分 (0-100)</param>
+        /// <param name="npcName">NPC 名稱</param>
+        public void AddDrinkScore(int rating, string npcName)
+        {
+            score.totalDrinks++;
+            score.totalScore += rating;
+
+            // 檢查是否滿意 (>= 門檻分數)
+            if (rating >= score.satisfactionThreshold)
+            {
+                score.satisfiedDrinks++;
+                Debug.Log($"GameManager: {npcName} 對飲品滿意！({score.satisfiedDrinks}/{score.targetSatisfied})");
+            }
+            else
+            {
+                Debug.Log($"GameManager: {npcName} 對飲品不太滿意 ({rating}分)");
+            }
+
+            // 觸發事件
+            OnScoreUpdated?.Invoke(score);
+            OnDrinkRated?.Invoke(rating, npcName);
+
+            // 檢查勝利條件
+            if (score.satisfiedDrinks >= score.targetSatisfied)
+            {
+                // 延遲結束，讓玩家看到最後的評分
+                Invoke(nameof(TriggerWin), 2f);
+            }
+        }
+
+        private void TriggerWin()
+        {
+            EndGame(true);
+        }
+
+        /// <summary>
+        /// 取得當前分數
+        /// </summary>
+        public GameScore GetScore()
+        {
+            return score;
+        }
+
+        /// <summary>
+        /// 將 0-100 分轉換為 0-10 星級
+        /// </summary>
+        public int ConvertToStarRating(int score100)
+        {
+            return Mathf.RoundToInt(score100 / 10f);
         }
 
         #endregion
@@ -131,7 +351,6 @@ namespace BarSimulator.Core
 
         /// <summary>
         /// 初始化遊戲系統
-        /// 參考: index.js init() Line 26-81
         /// </summary>
         public void Initialize()
         {
@@ -143,27 +362,13 @@ namespace BarSimulator.Core
 
             Debug.Log("GameManager: 開始初始化遊戲系統...");
 
-            // 1. 驗證必要引用
             ValidateReferences();
-
-            // 2. 初始化玩家控制器
             InitializePlayer();
-
-            // 3. 初始化系統（將在後續階段實作）
-            // InitializePhysicsSystem();
-            // InitializeInteractionSystem();
-            // InitializeCocktailSystem();
-            // InitializeEnvironment();
-            // InitializeNPCManager();
-            // InitializeLightingSystem();
 
             isInitialized = true;
             Debug.Log("GameManager: 遊戲系統初始化完成");
         }
 
-        /// <summary>
-        /// 驗證必要的引用
-        /// </summary>
         private void ValidateReferences()
         {
             if (playerController == null)
@@ -185,15 +390,11 @@ namespace BarSimulator.Core
             }
         }
 
-        /// <summary>
-        /// 初始化玩家控制器
-        /// </summary>
         private void InitializePlayer()
         {
             if (playerController != null)
             {
-                playerController.EnableInput();
-                playerController.LockCursor();
+                // 不自動啟用輸入，等待遊戲開始
                 Debug.Log("GameManager: 玩家控制器已初始化");
             }
         }
@@ -202,9 +403,6 @@ namespace BarSimulator.Core
 
         #region Input Actions 設定
 
-        /// <summary>
-        /// 設定 Input Actions
-        /// </summary>
         private void SetupInputActions()
         {
             if (inputActions == null)
@@ -232,17 +430,16 @@ namespace BarSimulator.Core
 
         /// <summary>
         /// 切換暫停狀態
-        /// 參考: index.js toggleRecipePanel() Line 408-430
         /// </summary>
         public void TogglePause()
         {
-            if (isPaused)
+            if (currentGameState == GameState.Playing)
             {
-                Resume();
+                SetGameState(GameState.Paused);
             }
-            else
+            else if (currentGameState == GameState.Paused)
             {
-                Pause();
+                SetGameState(GameState.Playing);
             }
         }
 
@@ -251,17 +448,10 @@ namespace BarSimulator.Core
         /// </summary>
         public void Pause()
         {
-            isPaused = true;
-            Time.timeScale = 0f;
-
-            // 解鎖游標
-            if (playerController != null)
+            if (currentGameState == GameState.Playing)
             {
-                playerController.UnlockCursor();
-                playerController.DisableInput();
+                SetGameState(GameState.Paused);
             }
-
-            Debug.Log("GameManager: 遊戲已暫停");
         }
 
         /// <summary>
@@ -269,70 +459,57 @@ namespace BarSimulator.Core
         /// </summary>
         public void Resume()
         {
-            isPaused = false;
-            Time.timeScale = 1f;
-
-            // 鎖定游標
-            if (playerController != null)
+            if (currentGameState == GameState.Paused)
             {
-                playerController.LockCursor();
-                playerController.EnableInput();
+                SetGameState(GameState.Playing);
             }
-
-            Debug.Log("GameManager: 遊戲已恢復");
         }
 
         /// <summary>
         /// 切換食譜面板
-        /// 參考: index.js toggleRecipePanel() Line 408-430
         /// </summary>
         public void ToggleRecipePanel()
         {
-            // UI 系統將在階段 4 實作
-            // 這裡先切換暫停狀態
             TogglePause();
-            Debug.Log("GameManager: 切換食譜面板（暫停狀態）");
+            Debug.Log("GameManager: 切換食譜面板");
+        }
+
+        #endregion
+
+        #region 游標控制
+
+        private void LockCursor()
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        private void UnlockCursor()
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         #endregion
 
         #region 公開屬性
 
-        /// <summary>
-        /// 遊戲是否暫停
-        /// </summary>
-        public bool IsPaused => isPaused;
-
-        /// <summary>
-        /// 系統是否已初始化
-        /// </summary>
+        public bool IsPaused => currentGameState == GameState.Paused;
+        public bool IsPlaying => currentGameState == GameState.Playing;
         public bool IsInitialized => isInitialized;
-
-        /// <summary>
-        /// 玩家控制器引用
-        /// </summary>
+        public GameState CurrentGameState => currentGameState;
         public FirstPersonController PlayerController => playerController;
-
-        /// <summary>
-        /// 主攝影機引用
-        /// </summary>
         public Camera MainCamera => mainCamera;
 
         #endregion
 
         #region 公開方法
 
-        /// <summary>
-        /// 取得玩家位置
-        /// </summary>
         public Vector3 GetPlayerPosition()
         {
             return playerController != null ? playerController.Position : Vector3.zero;
         }
 
-        /// <summary>
-        /// 取得攝影機前方方向
-        /// </summary>
         public Vector3 GetCameraForward()
         {
             return mainCamera != null ? mainCamera.transform.forward : Vector3.forward;

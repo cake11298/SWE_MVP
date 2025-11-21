@@ -4,12 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NCU Molecular Innovative Bartending Research Society - Bar Simulator</title>
-    </style>
 </head>
 <body>
     <div id="app">
         <div id="loading">Loading...</div>
-        <div id="controls">
+
+        <!-- 主選單 -->
+        <div id="main-menu">
+            <div class="menu-container">
+                <h1 class="menu-title">調酒模擬器</h1>
+                <p class="menu-subtitle">NCU Molecular Innovative Bartending Research Society</p>
+                <div class="menu-buttons">
+                    <button id="start-game-btn" class="menu-btn primary">開始遊戲</button>
+                    <button id="tutorial-btn" class="menu-btn">遊戲教學</button>
+                    <button id="settings-btn" class="menu-btn">設定</button>
+                    <button id="credits-menu-btn" class="menu-btn">製作人員</button>
+                </div>
+                <div class="menu-info">
+                    <p>目標：為 NPC 調製完美的雞尾酒</p>
+                    <p>完成 5 杯滿意的飲品即可獲勝</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設定面板 -->
+        <div id="settings-panel" style="display: none;">
+            <div class="settings-container">
+                <h2>遊戲設定</h2>
+                <div class="setting-item">
+                    <label>音效音量</label>
+                    <input type="range" id="sfx-volume" min="0" max="100" value="70">
+                    <span id="sfx-volume-value">70%</span>
+                </div>
+                <div class="setting-item">
+                    <label>滑鼠靈敏度</label>
+                    <input type="range" id="mouse-sensitivity" min="1" max="10" value="5">
+                    <span id="sensitivity-value">5</span>
+                </div>
+                <button id="settings-back-btn" class="menu-btn">返回</button>
+            </div>
+        </div>
+
+        <!-- 教學面板 -->
+        <div id="tutorial-panel" style="display: none;">
+            <div class="tutorial-container">
+                <h2>遊戲教學</h2>
+                <div class="tutorial-content">
+                    <div class="tutorial-step">
+                        <h3>1. 基本移動</h3>
+                        <p>WASD - 移動 | 滑鼠 - 視角控制</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>2. 物品互動</h3>
+                        <p>E - 拾取物品 | R - 放回原位</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>3. 調製飲品</h3>
+                        <p>左鍵按住 - 倒酒/搖酒</p>
+                        <p>右鍵 - 自己喝酒</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>4. 服務 NPC</h3>
+                        <p>F - 將飲品給附近的 NPC</p>
+                        <p>NPC 會根據飲品品質給予評分（1-10分）</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>5. 遊戲目標</h3>
+                        <p>調製出讓 NPC 滿意的飲品（7分以上）</p>
+                        <p>累積 5 杯滿意飲品即可獲勝！</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>6. 其他功能</h3>
+                        <p>M - 查看調酒食譜 | P - 製作人資訊</p>
+                    </div>
+                </div>
+                <button id="tutorial-back-btn" class="menu-btn">返回</button>
+                <button id="tutorial-start-btn" class="menu-btn primary">開始遊戲</button>
+            </div>
+        </div>
+
+        <!-- 分數顯示 -->
+        <div id="score-panel">
+            <div class="score-item">
+                <span class="score-label">滿意飲品</span>
+                <span id="satisfied-count">0</span> / 5
+            </div>
+            <div class="score-item">
+                <span class="score-label">總分</span>
+                <span id="total-score">0</span>
+            </div>
+        </div>
+
+        <!-- 最近評分顯示 -->
+        <div id="recent-rating" style="display: none;">
+            <div class="rating-stars" id="rating-stars"></div>
+            <div class="rating-text" id="rating-text"></div>
+        </div>
+
+        <!-- 遊戲結束畫面 -->
+        <div id="game-over-panel" style="display: none;">
+            <div class="game-over-container">
+                <h1 id="game-over-title">恭喜過關！</h1>
+                <div class="final-stats">
+                    <p>滿意飲品: <span id="final-satisfied">0</span> / 5</p>
+                    <p>總分: <span id="final-score">0</span></p>
+                    <p>調製飲品數: <span id="final-drinks">0</span></p>
+                </div>
+                <div class="game-over-buttons">
+                    <button id="play-again-btn" class="menu-btn primary">再玩一次</button>
+                    <button id="back-to-menu-btn" class="menu-btn">返回主選單</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 暫停選單 -->
+        <div id="pause-menu" style="display: none;">
+            <div class="pause-container">
+                <h2>遊戲暫停</h2>
+                <div class="pause-buttons">
+                    <button id="resume-btn" class="menu-btn primary">繼續遊戲</button>
+                    <button id="pause-restart-btn" class="menu-btn">重新開始</button>
+                    <button id="pause-menu-btn" class="menu-btn">返回主選單</button>
+                </div>
+                <p class="pause-hint">按 ESC 繼續遊戲</p>
+            </div>
+        </div>
+
+        <div id="controls" style="display: none;">
             <strong>控制說明:</strong><br>
             WASD - 移動 | 滑鼠 - 視角 | E - 拾取/互動<br>
             R - 放回原位 | 左鍵 - 倒酒/搖酒<br>
@@ -95,5 +216,6 @@
             </div>
         </div>
     </div>
+    <script type="module" src="./index.js"></script>
 </body>
 </html>

@@ -293,6 +293,23 @@ namespace BarSimulator.Player
         }
 
         /// <summary>
+        /// 重置玩家位置到初始點
+        /// </summary>
+        public void ResetPosition()
+        {
+            transform.position = new Vector3(0f, 1.6f, 5f);
+            pitch = 0f;
+            yaw = 0f;
+
+            if (cameraTransform != null)
+            {
+                cameraTransform.localRotation = Quaternion.identity;
+            }
+
+            Debug.Log("FirstPersonController: 玩家位置已重置");
+        }
+
+        /// <summary>
         /// 取得當前移動輸入
         /// </summary>
         public Vector2 MoveInput => moveInput;
