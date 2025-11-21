@@ -1442,4 +1442,33 @@ export default class CocktailSystem {
             }
         ];
     }
+
+    /**
+     * 重置所有容器內容
+     */
+    resetAllContainers() {
+        // 清空所有容器內容
+        this.containerContents.forEach((contents, container) => {
+            contents.ingredients = [];
+            contents.volume = 0;
+            contents.color = new THREE.Color(1, 1, 1);
+
+            // 更新液體視覺效果
+            if (container.userData.liquidMesh) {
+                container.userData.liquidMesh.visible = false;
+            }
+        });
+
+        // 重置所有狀態
+        this.isPouringActive = false;
+        this.isDrinking = false;
+        this.isShakingActive = false;
+        this.lastDrinkInfo = null;
+
+        // 隱藏 UI
+        this.hideContainerInfo();
+        if (this.pourProgressPanel) {
+            this.pourProgressPanel.style.display = 'none';
+        }
+    }
 }

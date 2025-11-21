@@ -19,8 +19,404 @@ class BarSimulator {
         this.lastRightMouse = false;
         this.lastGiveToNPC = false;
         this.isPaused = false;
-        this.targetOutline = null; // 新增：用於顯示目標外框
-        this.init();
+        this.targetOutline = null;
+
+        // 遊戲狀態
+        this.gameState = 'menu'; // menu, playing, gameOver
+        this.score = {
+            satisfiedDrinks: 0,
+            totalScore: 0,
+            totalDrinks: 0,
+            targetSatisfied: 5
+        };
+
+        // 音效系統
+        this.audioContext = null;
+        this.sfxVolume = 0.7;
+        this.mouseSensitivity = 5;
+
+        this.initMenu();
+    }
+
+    initMenu() {
+        // 設定主選單按鈕事件
+        document.getElementById('start-game-btn').addEventListener('click', () => this.startGame());
+        document.getElementById('tutorial-btn').addEventListener('click', () => this.showTutorial());
+        document.getElementById('settings-btn').addEventListener('click', () => this.showSettings());
+        document.getElementById('credits-menu-btn').addEventListener('click', () => this.showCreditsFromMenu());
+
+        // 設定面板
+        document.getElementById('settings-back-btn').addEventListener('click', () => this.hideSettings());
+        document.getElementById('sfx-volume').addEventListener('input', (e) => {
+            this.sfxVolume = e.target.value / 100;
+            document.getElementById('sfx-volume-value').textContent = `${e.target.value}%`;
+        });
+        document.getElementById('mouse-sensitivity').addEventListener('input', (e) => {
+            this.mouseSensitivity = parseInt(e.target.value);
+            document.getElementById('sensitivity-value').textContent = e.target.value;
+            if (this.playerController) {
+                this.playerController.setMouseSensitivity(this.mouseSensitivity / 2500);
+            }
+        });
+
+        // 教學面板
+        document.getElementById('tutorial-back-btn').addEventListener('click', () => this.hideTutorial());
+        document.getElementById('tutorial-start-btn').addEventListener('click', () => {
+            this.hideTutorial();
+            this.startGame();
+        });
+
+        // 遊戲結束面板
+        document.getElementById('play-again-btn').addEventListener('click', () => this.restartGame());
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => this.backToMenu());
+
+        // 暫停選單
+        document.getElementById('resume-btn').addEventListener('click', () => this.resumeGame());
+        document.getElementById('pause-restart-btn').addEventListener('click', () => {
+            this.hidePauseMenu();
+            this.restartGame();
+        });
+        document.getElementById('pause-menu-btn').addEventListener('click', () => {
+            this.hidePauseMenu();
+            this.backToMenu();
+        });
+
+        // ESC 鍵暫停遊戲
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.gameState === 'playing') {
+                if (this.isPaused) {
+                    this.resumeGame();
+                } else {
+                    this.pauseGame();
+                }
+            }
+        });
+
+        // 隱藏載入畫面
+        document.getElementById('loading').classList.add('hidden');
+    }
+
+    pauseGame() {
+        if (this.gameState !== 'playing') return;
+
+        this.isPaused = true;
+        document.exitPointerLock();
+        document.getElementById('pause-menu').style.display = 'flex';
+    }
+
+    resumeGame() {
+        this.isPaused = false;
+        document.getElementById('pause-menu').style.display = 'none';
+        document.body.requestPointerLock();
+    }
+
+    hidePauseMenu() {
+        document.getElementById('pause-menu').style.display = 'none';
+        this.isPaused = false;
+    }
+
+    startGame() {
+        document.getElementById('main-menu').classList.add('hidden');
+        this.gameState = 'playing';
+
+        // 重置分數
+        this.score = {
+            satisfiedDrinks: 0,
+            totalScore: 0,
+            totalDrinks: 0,
+            targetSatisfied: 5
+        };
+        this.updateScoreUI();
+
+        // 顯示分數面板和控制提示
+        document.getElementById('score-panel').classList.add('visible');
+        document.getElementById('controls').style.display = 'block';
+
+        // 初始化遊戲（只在第一次）
+        if (!this.scene) {
+            this.init();
+        } else {
+            // 重置遊戲狀態
+            this.resetGameState();
+        }
+
+        // 請求滑鼠鎖定
+        document.body.requestPointerLock();
+
+        // 播放開始音效
+        this.playSound('start');
+    }
+
+    resetGameState() {
+        // 重置所有容器內容
+        this.cocktailSystem.resetAllContainers();
+
+        // 放回所有物品
+        this.interactionSystem.returnAllObjects();
+
+        // 重置玩家位置
+        if (this.playerController) {
+            this.playerController.position.set(0, 1.6, 5);
+            this.playerController.rotation = 0;
+            this.playerController.pitch = 0;
+        }
+    }
+
+    showTutorial() {
+        document.getElementById('tutorial-panel').style.display = 'flex';
+    }
+
+    hideTutorial() {
+        document.getElementById('tutorial-panel').style.display = 'none';
+    }
+
+    showSettings() {
+        document.getElementById('settings-panel').style.display = 'flex';
+    }
+
+    hideSettings() {
+        document.getElementById('settings-panel').style.display = 'none';
+    }
+
+    showCreditsFromMenu() {
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('credits-panel').style.display = 'block';
+
+        // 修改關閉行為
+        const closeHandler = (e) => {
+            if (e.key.toLowerCase() === 'p') {
+                document.getElementById('credits-panel').style.display = 'none';
+                document.getElementById('main-menu').classList.remove('hidden');
+                window.removeEventListener('keydown', closeHandler);
+            }
+        };
+        window.addEventListener('keydown', closeHandler);
+    }
+
+    gameOver(won) {
+        this.gameState = 'gameOver';
+        this.isPaused = true;
+
+        // 解除滑鼠鎖定
+        document.exitPointerLock();
+
+        // 更新結束畫面
+        document.getElementById('game-over-title').textContent = won ? '恭喜過關！' : '遊戲結束';
+        document.getElementById('final-satisfied').textContent = this.score.satisfiedDrinks;
+        document.getElementById('final-score').textContent = this.score.totalScore;
+        document.getElementById('final-drinks').textContent = this.score.totalDrinks;
+
+        // 顯示結束畫面
+        document.getElementById('game-over-panel').style.display = 'flex';
+
+        // 隱藏遊戲 UI
+        document.getElementById('score-panel').classList.remove('visible');
+        document.getElementById('controls').style.display = 'none';
+
+        // 播放音效
+        this.playSound(won ? 'victory' : 'gameOver');
+    }
+
+    restartGame() {
+        document.getElementById('game-over-panel').style.display = 'none';
+        this.isPaused = false;
+        this.startGame();
+    }
+
+    backToMenu() {
+        document.getElementById('game-over-panel').style.display = 'none';
+        document.getElementById('main-menu').classList.remove('hidden');
+        this.gameState = 'menu';
+        this.isPaused = false;
+    }
+
+    updateScoreUI() {
+        document.getElementById('satisfied-count').textContent = this.score.satisfiedDrinks;
+        document.getElementById('total-score').textContent = this.score.totalScore;
+    }
+
+    addScore(rating, npcName) {
+        this.score.totalDrinks++;
+        this.score.totalScore += rating;
+
+        // 7分以上算滿意
+        if (rating >= 7) {
+            this.score.satisfiedDrinks++;
+            this.playSound('success');
+        } else {
+            this.playSound('fail');
+        }
+
+        this.updateScoreUI();
+        this.showRatingPopup(rating, npcName);
+
+        // 檢查勝利條件
+        if (this.score.satisfiedDrinks >= this.score.targetSatisfied) {
+            setTimeout(() => this.gameOver(true), 2000);
+        }
+    }
+
+    showRatingPopup(rating, npcName) {
+        const ratingPanel = document.getElementById('recent-rating');
+        const starsElement = document.getElementById('rating-stars');
+        const textElement = document.getElementById('rating-text');
+
+        // 生成星星
+        let stars = '';
+        const fullStars = Math.floor(rating / 2);
+        const halfStar = rating % 2 >= 1;
+
+        for (let i = 0; i < fullStars; i++) {
+            stars += '⭐';
+        }
+        if (halfStar) {
+            stars += '✨';
+        }
+
+        starsElement.textContent = stars || '💫';
+
+        // 評價文字
+        let comment = '';
+        if (rating >= 9) {
+            comment = '完美！';
+        } else if (rating >= 7) {
+            comment = '很棒！';
+        } else if (rating >= 5) {
+            comment = '還可以';
+        } else {
+            comment = '需要改進';
+        }
+
+        textElement.textContent = `${npcName}: ${rating}/10 - ${comment}`;
+
+        // 顯示彈窗
+        ratingPanel.style.display = 'block';
+
+        // 3秒後隱藏
+        setTimeout(() => {
+            ratingPanel.style.display = 'none';
+        }, 3000);
+    }
+
+    // 音效系統
+    initAudio() {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    playSound(type) {
+        this.initAudio();
+        if (!this.audioContext) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        gainNode.gain.value = this.sfxVolume * 0.3;
+
+        switch(type) {
+            case 'pour':
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sine';
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.3);
+                break;
+
+            case 'shake':
+                oscillator.frequency.value = 150;
+                oscillator.type = 'triangle';
+                // 搖晃效果
+                const lfo = this.audioContext.createOscillator();
+                lfo.frequency.value = 10;
+                const lfoGain = this.audioContext.createGain();
+                lfoGain.gain.value = 50;
+                lfo.connect(lfoGain);
+                lfoGain.connect(oscillator.frequency);
+                lfo.start();
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.2);
+                lfo.stop(this.audioContext.currentTime + 0.2);
+                break;
+
+            case 'pickup':
+                oscillator.frequency.value = 440;
+                oscillator.type = 'sine';
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.1);
+                break;
+
+            case 'drop':
+                oscillator.frequency.value = 220;
+                oscillator.type = 'sine';
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.15);
+                break;
+
+            case 'success':
+                // 成功音效 - 上升音階
+                oscillator.frequency.value = 523;
+                oscillator.type = 'sine';
+                oscillator.frequency.exponentialRampToValueAtTime(784, this.audioContext.currentTime + 0.2);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.3);
+                break;
+
+            case 'fail':
+                // 失敗音效 - 下降音階
+                oscillator.frequency.value = 440;
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.exponentialRampToValueAtTime(220, this.audioContext.currentTime + 0.3);
+                gainNode.gain.value = this.sfxVolume * 0.15;
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.3);
+                break;
+
+            case 'start':
+                // 遊戲開始音效
+                oscillator.frequency.value = 262;
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(330, this.audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(392, this.audioContext.currentTime + 0.2);
+                oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime + 0.3);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.5);
+                break;
+
+            case 'victory':
+                // 勝利音效 - 歡快旋律
+                const notes = [523, 659, 784, 1047];
+                notes.forEach((freq, i) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.value = this.sfxVolume * 0.2;
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3 + i * 0.15);
+                    osc.start(this.audioContext.currentTime + i * 0.15);
+                    osc.stop(this.audioContext.currentTime + 0.3 + i * 0.15);
+                });
+                break;
+
+            case 'drink':
+                // 喝酒音效
+                oscillator.frequency.value = 100;
+                oscillator.type = 'sine';
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + 0.5);
+                break;
+        }
     }
     
     init() {
@@ -126,6 +522,7 @@ class BarSimulator {
                     // 拾取物品
                     this.interactionSystem.pickupObject();
                     this.updateInteractionHint();
+                    this.playSound('pickup');
                 }
             } else {
                 // 與 NPC 互動
@@ -141,6 +538,7 @@ class BarSimulator {
             if (this.interactionSystem.isHoldingObject()) {
                 this.interactionSystem.dropObject(true);
                 this.updateInteractionHint();
+                this.playSound('drop');
             }
             this.playerController.resetKey('r');
         }
@@ -166,7 +564,12 @@ class BarSimulator {
                 if (nearbyGlass) {
                     const liquorType = heldObject.userData.liquorType;
                     // 傳入相機以進行視角和距離檢測
+                    const wasPouring = this.cocktailSystem.isPouringActive;
                     this.cocktailSystem.pour(heldObject, nearbyGlass, liquorType, deltaTime, this.camera);
+                    // 播放倒酒音效（每秒一次）
+                    if (!wasPouring && this.cocktailSystem.isPouringActive) {
+                        this.playSound('pour');
+                    }
                 }
             } else if (heldType === 'shaker') {
                 // Shaker 邏輯：如果有內容且附近有容器，優先倒酒；否則搖酒
@@ -175,10 +578,19 @@ class BarSimulator {
 
                 if (shakerContents && shakerContents.volume > 0 && nearbyContainer) {
                     // 倒酒：從 shaker 倒入其他容器
+                    const wasPouring = this.cocktailSystem.isPouringActive;
                     this.cocktailSystem.pourFromShaker(heldObject, nearbyContainer, deltaTime);
+                    if (!wasPouring && this.cocktailSystem.isPouringActive) {
+                        this.playSound('pour');
+                    }
                 } else {
                     // 搖酒
+                    const wasShaking = this.cocktailSystem.isShakingActive;
                     this.cocktailSystem.shake(heldObject, deltaTime);
+                    // 播放搖酒音效（開始時）
+                    if (!wasShaking && this.cocktailSystem.isShakingActive) {
+                        this.playSound('shake');
+                    }
                 }
             }
         } else {
@@ -197,6 +609,7 @@ class BarSimulator {
             if (heldType === 'glass') {
                 // 開始喝酒動畫
                 this.cocktailSystem.drink(heldObject, true);
+                this.playSound('drink');
             }
             this.playerController.resetMouseButton('right');
         }
@@ -218,7 +631,12 @@ class BarSimulator {
                     // NPC喝酒並給予評分（不使用動畫）
                     const drinkInfo = this.cocktailSystem.drink(heldObject, false);
                     if (drinkInfo) {
-                        this.npcManager.npcDrinkCocktail(nearbyNPC, drinkInfo);
+                        const evaluation = this.npcManager.npcDrinkCocktail(nearbyNPC, drinkInfo);
+                        // 加入分數系統
+                        if (evaluation && evaluation.rating) {
+                            const npcName = nearbyNPC.userData.name || 'NPC';
+                            this.addScore(evaluation.rating, npcName);
+                        }
                     }
                 }
             }
