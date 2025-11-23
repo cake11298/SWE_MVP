@@ -34,7 +34,7 @@ namespace BarSimulator.Objects
 
         private bool isShaking;
         private float shakeTime;
-        private bool isPouring;
+        private bool isPouringAnimation;
         private float currentTilt;
         private Quaternion baseRotation;
 
@@ -52,13 +52,18 @@ namespace BarSimulator.Objects
             maxVolume = Constants.ShakerMaxVolume;
         }
 
-        private void Update()
+        protected override void Update()
         {
+            // 呼叫基礎類別的 Update 以更新動態液體效果
+            base.Update();
+
             if (isShaking)
             {
                 UpdateShakeAnimation();
+                // 搖酒時增加波動效果
+                TriggerWobble(0.05f);
             }
-            else if (isPouring)
+            else if (isPouringAnimation)
             {
                 UpdatePourAnimation();
             }
@@ -131,7 +136,7 @@ namespace BarSimulator.Objects
         public void StartPouring()
         {
             if (contents.IsEmpty) return;
-            isPouring = true;
+            isPouringAnimation = true;
         }
 
         /// <summary>
@@ -139,7 +144,7 @@ namespace BarSimulator.Objects
         /// </summary>
         public void StopPouring()
         {
-            isPouring = false;
+            isPouringAnimation = false;
         }
 
         /// <summary>
@@ -166,7 +171,7 @@ namespace BarSimulator.Objects
         {
             base.OnDrop(returnToOriginal);
             isShaking = false;
-            isPouring = false;
+            isPouringAnimation = false;
             shakeTime = 0f;
             currentTilt = 0f;
         }
@@ -193,9 +198,9 @@ namespace BarSimulator.Objects
         public bool IsShaking => isShaking;
 
         /// <summary>
-        /// 是否正在倒酒
+        /// 是否正在倒酒動畫
         /// </summary>
-        public bool IsPouring => isPouring;
+        public bool IsPouringAnimation => isPouringAnimation;
 
         /// <summary>
         /// 搖酒時間

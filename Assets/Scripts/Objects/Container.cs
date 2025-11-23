@@ -30,12 +30,45 @@ namespace BarSimulator.Objects
         [Tooltip("液體底部 Y 位置")]
         [SerializeField] protected float liquidBaseY = 0.08f;
 
+        [Header("動態液體效果")]
+        [Tooltip("液體高度平滑速度")]
+        [SerializeField] protected float heightLerpSpeed = 8f;
+
+        [Tooltip("顏色混合平滑速度")]
+        [SerializeField] protected float colorLerpSpeed = 6f;
+
+        [Tooltip("波動衰減速度")]
+        [SerializeField] protected float wobbleDecay = 3f;
+
+        [Tooltip("最大波動強度")]
+        [SerializeField] protected float maxWobbleIntensity = 0.15f;
+
+        [Tooltip("倒酒時的波動強度")]
+        [SerializeField] protected float pourWobbleIntensity = 0.08f;
+
         #endregion
 
         #region 私有欄位
 
         protected ContainerContents contents;
         protected Material liquidMaterial;
+
+        // 動態液體變數
+        protected float currentLiquidHeight;
+        protected float targetLiquidHeight;
+        protected Color currentLiquidColor;
+        protected Color targetLiquidColor;
+        protected float currentWobbleIntensity;
+        protected Vector3 lastPosition;
+        protected Vector3 velocity;
+        protected float wobbleTime;
+        protected bool isPouring;
+
+        // Shader 屬性 ID
+        protected static readonly int WobbleXProperty = Shader.PropertyToID("_WobbleX");
+        protected static readonly int WobbleZProperty = Shader.PropertyToID("_WobbleZ");
+        protected static readonly int FillAmountProperty = Shader.PropertyToID("_FillAmount");
+        protected static readonly int WobbleIntensityProperty = Shader.PropertyToID("_WobbleIntensity");
 
         #endregion
 
@@ -53,6 +86,97 @@ namespace BarSimulator.Objects
             {
                 liquidMaterial = liquidRenderer.material;
                 liquidRenderer.enabled = false; // 初始隱藏
+            }
+
+            // 初始化動態液體變數
+            currentLiquidHeight = 0f;
+            targetLiquidHeight = 0f;
+            currentLiquidColor = Color.clear;
+            targetLiquidColor = Color.clear;
+            currentWobbleIntensity = 0f;
+            lastPosition = transform.position;
+        }
+
+        protected virtual void Update()
+        {
+            UpdateDynamicLiquid();
+        }
+
+        /// <summary>
+        /// 更新動態液體效果
+        /// </summary>
+        protected virtual void UpdateDynamicLiquid()
+        {
+            if (liquidRenderer == null || liquidTransform == null) return;
+
+            // 計算容器移動速度
+            Vector3 currentPosition = transform.position;
+            velocity = (currentPosition - lastPosition) / Time.deltaTime;
+            lastPosition = currentPosition;
+
+            // 根據移動產生波動
+            float movementMagnitude = velocity.magnitude;
+            if (movementMagnitude > 0.1f)
+            {
+                currentWobbleIntensity = Mathf.Min(currentWobbleIntensity + movementMagnitude * 0.1f, maxWobbleIntensity);
+            }
+
+            // 波動衰減
+            currentWobbleIntensity = Mathf.Lerp(currentWobbleIntensity, 0f, wobbleDecay * Time.deltaTime);
+
+            // 平滑插值液體高度
+            currentLiquidHeight = Mathf.Lerp(currentLiquidHeight, targetLiquidHeight, heightLerpSpeed * Time.deltaTime);
+
+            // 平滑插值液體顏色
+            currentLiquidColor = Color.Lerp(currentLiquidColor, targetLiquidColor, colorLerpSpeed * Time.deltaTime);
+
+            // 更新實際視覺
+            ApplyLiquidVisual();
+
+            // 更新波動時間
+            wobbleTime += Time.deltaTime;
+        }
+
+        /// <summary>
+        /// 應用液體視覺效果
+        /// </summary>
+        protected virtual void ApplyLiquidVisual()
+        {
+            if (currentLiquidHeight > 0.001f)
+            {
+                liquidRenderer.enabled = true;
+
+                // 更新材質顏色
+                if (liquidMaterial != null)
+                {
+                    liquidMaterial.color = currentLiquidColor;
+
+                    // 更新波動效果到 Shader
+                    float wobbleX = Mathf.Sin(wobbleTime * 4f) * currentWobbleIntensity;
+                    float wobbleZ = Mathf.Cos(wobbleTime * 3.5f) * currentWobbleIntensity;
+
+                    if (liquidMaterial.HasProperty(WobbleXProperty))
+                        liquidMaterial.SetFloat(WobbleXProperty, wobbleX);
+                    if (liquidMaterial.HasProperty(WobbleZProperty))
+                        liquidMaterial.SetFloat(WobbleZProperty, wobbleZ);
+                    if (liquidMaterial.HasProperty(FillAmountProperty))
+                        liquidMaterial.SetFloat(FillAmountProperty, contents.FillRatio);
+                    if (liquidMaterial.HasProperty(WobbleIntensityProperty))
+                        liquidMaterial.SetFloat(WobbleIntensityProperty, currentWobbleIntensity);
+                }
+
+                // 更新高度和位置
+                float yPos = liquidBaseY + currentLiquidHeight / 2f;
+                liquidTransform.localPosition = new Vector3(0f, yPos, 0f);
+                liquidTransform.localScale = new Vector3(
+                    liquidTransform.localScale.x,
+                    currentLiquidHeight,
+                    liquidTransform.localScale.z
+                );
+            }
+            else
+            {
+                liquidRenderer.enabled = false;
             }
         }
 
@@ -158,31 +282,66 @@ namespace BarSimulator.Objects
 
             if (fillRatio > 0)
             {
-                liquidRenderer.enabled = true;
+                // 設定目標高度和顏色（會通過 Update 平滑插值）
+                targetLiquidHeight = Mathf.Max(0.01f, liquidMaxHeight * fillRatio);
+                targetLiquidColor = contents.mixedColor;
 
-                // 更新顏色
-                if (liquidMaterial != null)
+                // 如果正在倒酒，增加波動
+                if (isPouring)
                 {
-                    liquidMaterial.color = contents.mixedColor;
-                }
-
-                // 更新高度
-                if (liquidTransform != null)
-                {
-                    float liquidHeight = Mathf.Max(0.01f, liquidMaxHeight * fillRatio);
-                    float yPos = liquidBaseY + liquidHeight / 2f;
-
-                    liquidTransform.localPosition = new Vector3(0f, yPos, 0f);
-                    liquidTransform.localScale = new Vector3(
-                        liquidTransform.localScale.x,
-                        liquidHeight,
-                        liquidTransform.localScale.z
-                    );
+                    currentWobbleIntensity = Mathf.Max(currentWobbleIntensity, pourWobbleIntensity);
                 }
             }
             else
             {
-                liquidRenderer.enabled = false;
+                targetLiquidHeight = 0f;
+                targetLiquidColor = Color.clear;
+            }
+        }
+
+        /// <summary>
+        /// 設置倒酒狀態
+        /// </summary>
+        public virtual void SetPouringState(bool pouring)
+        {
+            isPouring = pouring;
+            if (pouring)
+            {
+                // 開始倒酒時觸發波動
+                currentWobbleIntensity = Mathf.Max(currentWobbleIntensity, pourWobbleIntensity);
+            }
+        }
+
+        /// <summary>
+        /// 觸發波動效果（例如被碰撞時）
+        /// </summary>
+        public virtual void TriggerWobble(float intensity = 0.1f)
+        {
+            currentWobbleIntensity = Mathf.Min(currentWobbleIntensity + intensity, maxWobbleIntensity);
+        }
+
+        /// <summary>
+        /// 立即設置液體狀態（跳過插值）
+        /// </summary>
+        public virtual void SetLiquidImmediate()
+        {
+            float fillRatio = contents.FillRatio;
+            if (fillRatio > 0)
+            {
+                currentLiquidHeight = Mathf.Max(0.01f, liquidMaxHeight * fillRatio);
+                targetLiquidHeight = currentLiquidHeight;
+                currentLiquidColor = contents.mixedColor;
+                targetLiquidColor = currentLiquidColor;
+                ApplyLiquidVisual();
+            }
+            else
+            {
+                currentLiquidHeight = 0f;
+                targetLiquidHeight = 0f;
+                currentLiquidColor = Color.clear;
+                targetLiquidColor = Color.clear;
+                if (liquidRenderer != null)
+                    liquidRenderer.enabled = false;
             }
         }
 
