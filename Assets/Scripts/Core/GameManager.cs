@@ -25,14 +25,51 @@ namespace BarSimulator.Core
         public int satisfiedDrinks;
         public int totalScore;
         public int totalDrinks;
+        public int totalCoins;
         public int targetSatisfied = 5;
         public int satisfactionThreshold = 70; // 70/100 分算滿意
+
+        // 金幣計算常數
+        public const int BaseCoins = 300;
+        public const int PerfectBonus = 150;    // 90+ 分加成
+        public const int ExcellentBonus = 100;  // 80+ 分加成
+        public const int GoodBonus = 50;        // 70+ 分加成
 
         public void Reset()
         {
             satisfiedDrinks = 0;
             totalScore = 0;
             totalDrinks = 0;
+            totalCoins = 0;
+        }
+
+        /// <summary>
+        /// 根據評分計算獲得的金幣
+        /// </summary>
+        public static int CalculateCoins(int rating)
+        {
+            int coins = BaseCoins;
+
+            // 根據分數添加加成
+            if (rating >= 90)
+            {
+                coins += PerfectBonus;
+            }
+            else if (rating >= 80)
+            {
+                coins += ExcellentBonus;
+            }
+            else if (rating >= 70)
+            {
+                coins += GoodBonus;
+            }
+            else if (rating < 50)
+            {
+                // 太差的飲品減少金幣
+                coins = Mathf.Max(50, coins - 100);
+            }
+
+            return coins;
         }
     }
 
@@ -84,6 +121,11 @@ namespace BarSimulator.Core
         /// 飲品評分事件
         /// </summary>
         public event Action<int, string> OnDrinkRated;
+
+        /// <summary>
+        /// 金幣更新事件
+        /// </summary>
+        public event Action<int, int> OnCoinsUpdated; // (獲得金幣, 總金幣)
 
         #endregion
 
@@ -301,20 +343,25 @@ namespace BarSimulator.Core
             score.totalDrinks++;
             score.totalScore += rating;
 
+            // 計算金幣獎勵
+            int coinsEarned = GameScore.CalculateCoins(rating);
+            score.totalCoins += coinsEarned;
+
             // 檢查是否滿意 (>= 門檻分數)
             if (rating >= score.satisfactionThreshold)
             {
                 score.satisfiedDrinks++;
-                Debug.Log($"GameManager: {npcName} 對飲品滿意！({score.satisfiedDrinks}/{score.targetSatisfied})");
+                Debug.Log($"GameManager: {npcName} 對飲品滿意！({score.satisfiedDrinks}/{score.targetSatisfied}) 獲得 {coinsEarned} 金幣");
             }
             else
             {
-                Debug.Log($"GameManager: {npcName} 對飲品不太滿意 ({rating}分)");
+                Debug.Log($"GameManager: {npcName} 對飲品不太滿意 ({rating}分) 獲得 {coinsEarned} 金幣");
             }
 
             // 觸發事件
             OnScoreUpdated?.Invoke(score);
             OnDrinkRated?.Invoke(rating, npcName);
+            OnCoinsUpdated?.Invoke(coinsEarned, score.totalCoins);
 
             // 檢查勝利條件
             if (score.satisfiedDrinks >= score.targetSatisfied)
