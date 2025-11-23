@@ -204,13 +204,27 @@ namespace BarSimulator.Managers
         }
 
         /// <summary>
-        /// 與 NPC 互動（對話）
+        /// 與 NPC 互動（對話/點單）
         /// </summary>
         public void InteractWithNPC(NPCController npc)
         {
             if (npc == null) return;
 
-            string dialogue = npc.GetNextDialogue();
+            string dialogue;
+
+            // 如果 NPC 沒有活動訂單，開始點單流程
+            if (!npc.HasActiveOrder)
+            {
+                npc.StartOrderingProcess();
+                dialogue = npc.GetOrderDescription();
+            }
+            else
+            {
+                // 已有訂單，顯示當前訂單狀態
+                float timeLeft = npc.PatienceRemaining;
+                dialogue = $"Still waiting for my {npc.CurrentOrder.drinkName}... ({timeLeft:F0}s left)";
+            }
+
             OnNPCDialogue?.Invoke(npc, dialogue);
 
             // 顯示對話框
@@ -219,6 +233,26 @@ namespace BarSimulator.Managers
             {
                 dialogueBox.ShowDialogue(npc.NPCName, dialogue);
             }
+        }
+
+        /// <summary>
+        /// 嘗試送酒給附近的 NPC
+        /// </summary>
+        public bool TryServeNearbyNPC(Vector3 playerPosition, DrinkInfo drinkInfo)
+        {
+            var npc = GetNearbyNPC(playerPosition);
+            if (npc == null || !npc.HasActiveOrder)
+            {
+                return false;
+            }
+
+            // 完成訂單
+            npc.CompleteOrder();
+
+            // 評分並給 NPC 喝
+            NPCDrinkCocktail(npc, drinkInfo);
+
+            return true;
         }
 
         /// <summary>

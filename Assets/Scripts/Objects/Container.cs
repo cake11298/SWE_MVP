@@ -70,6 +70,21 @@ namespace BarSimulator.Objects
         protected static readonly int FillAmountProperty = Shader.PropertyToID("_FillAmount");
         protected static readonly int WobbleIntensityProperty = Shader.PropertyToID("_WobbleIntensity");
 
+        // Advanced shader properties
+        protected static readonly int BubbleIntensityProperty = Shader.PropertyToID("_BubbleIntensity");
+        protected static readonly int FoamThicknessProperty = Shader.PropertyToID("_FoamThickness");
+        protected static readonly int LayerEnabledProperty = Shader.PropertyToID("_LayerEnabled");
+        protected static readonly int Layer2ColorProperty = Shader.PropertyToID("_Layer2Color");
+        protected static readonly int Layer2HeightProperty = Shader.PropertyToID("_Layer2Height");
+        protected static readonly int RefractionStrengthProperty = Shader.PropertyToID("_RefractionStrength");
+
+        // Liquid type effects
+        protected float bubbleIntensity = 0f;
+        protected float foamThickness = 0f;
+        protected bool hasLayering = false;
+        protected Color layer2Color = Color.clear;
+        protected float layer2Height = 0.5f;
+
         #endregion
 
         #region Unity 生命週期
@@ -163,6 +178,18 @@ namespace BarSimulator.Objects
                         liquidMaterial.SetFloat(FillAmountProperty, contents.FillRatio);
                     if (liquidMaterial.HasProperty(WobbleIntensityProperty))
                         liquidMaterial.SetFloat(WobbleIntensityProperty, currentWobbleIntensity);
+
+                    // Advanced shader properties
+                    if (liquidMaterial.HasProperty(BubbleIntensityProperty))
+                        liquidMaterial.SetFloat(BubbleIntensityProperty, bubbleIntensity);
+                    if (liquidMaterial.HasProperty(FoamThicknessProperty))
+                        liquidMaterial.SetFloat(FoamThicknessProperty, foamThickness);
+                    if (liquidMaterial.HasProperty(LayerEnabledProperty))
+                        liquidMaterial.SetFloat(LayerEnabledProperty, hasLayering ? 1f : 0f);
+                    if (liquidMaterial.HasProperty(Layer2ColorProperty))
+                        liquidMaterial.SetColor(Layer2ColorProperty, layer2Color);
+                    if (liquidMaterial.HasProperty(Layer2HeightProperty))
+                        liquidMaterial.SetFloat(Layer2HeightProperty, layer2Height);
                 }
 
                 // 更新高度和位置
@@ -177,6 +204,70 @@ namespace BarSimulator.Objects
             else
             {
                 liquidRenderer.enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// 設置氣泡效果（用於啤酒、汽水）
+        /// </summary>
+        public virtual void SetBubbleEffect(float intensity)
+        {
+            bubbleIntensity = Mathf.Clamp01(intensity);
+        }
+
+        /// <summary>
+        /// 設置泡沫效果（用於啤酒）
+        /// </summary>
+        public virtual void SetFoamEffect(float thickness)
+        {
+            foamThickness = Mathf.Clamp(thickness, 0f, 0.3f);
+        }
+
+        /// <summary>
+        /// 設置分層效果（用於雞尾酒）
+        /// </summary>
+        public virtual void SetLayeringEffect(bool enabled, Color secondColor = default, float height = 0.5f)
+        {
+            hasLayering = enabled;
+            layer2Color = secondColor;
+            layer2Height = Mathf.Clamp01(height);
+        }
+
+        /// <summary>
+        /// 根據飲料類型自動設置效果
+        /// </summary>
+        public virtual void AutoSetEffectsForDrink(string drinkType)
+        {
+            // Reset effects
+            bubbleIntensity = 0f;
+            foamThickness = 0f;
+            hasLayering = false;
+
+            // Set effects based on drink type
+            switch (drinkType.ToLower())
+            {
+                case "beer":
+                case "lager":
+                case "ale":
+                    bubbleIntensity = 0.6f;
+                    foamThickness = 0.15f;
+                    break;
+
+                case "soda":
+                case "cola":
+                case "sparkling":
+                case "champagne":
+                    bubbleIntensity = 0.8f;
+                    break;
+
+                case "b52":
+                case "pousse cafe":
+                case "layered":
+                    hasLayering = true;
+                    // Default brown/orange layers
+                    layer2Color = new Color(0.6f, 0.3f, 0.1f, 0.8f);
+                    layer2Height = 0.5f;
+                    break;
             }
         }
 

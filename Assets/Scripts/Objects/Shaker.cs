@@ -38,8 +38,16 @@ namespace BarSimulator.Objects
         private float currentTilt;
         private Quaternion baseRotation;
 
+        // Visual feedback
+        private bool shakeCompleteNotified;
+        private float shakeProgressVisual;
+        private ParticleSystem shakeParticles;
+        private float lastShakeIntensityPeak;
+
         // 事件
         public System.Action OnShakeCompleted;
+        public System.Action<float> OnShakeProgress;
+        public System.Action OnShakeStart;
 
         #endregion
 
@@ -82,7 +90,14 @@ namespace BarSimulator.Objects
             if (contents.IsEmpty) return;
 
             isShaking = true;
+            shakeCompleteNotified = false;
             baseRotation = transform.localRotation;
+
+            // Create particle effect if not exists
+            CreateShakeParticles();
+
+            OnShakeStart?.Invoke();
+            Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml");
         }
 
         /// <summary>
@@ -100,11 +115,23 @@ namespace BarSimulator.Objects
                 contents.UpdateMixedColor();
                 UpdateLiquidVisual();
                 OnShakeCompleted?.Invoke();
+                Debug.Log($"Shaker: Shake completed! Contents well mixed.");
+            }
+            else
+            {
+                Debug.Log($"Shaker: Shake incomplete ({shakeTime:F1}s / {minShakeTime:F1}s required)");
+            }
+
+            // Stop particles
+            if (shakeParticles != null)
+            {
+                shakeParticles.Stop();
             }
 
             // 重置
             isShaking = false;
             shakeTime = 0f;
+            shakeProgressVisual = 0f;
             transform.localRotation = baseRotation;
         }
 
@@ -115,15 +142,80 @@ namespace BarSimulator.Objects
         {
             shakeTime += Time.deltaTime;
 
+            // Calculate progress
+            float progress = Mathf.Clamp01(shakeTime / minShakeTime);
+            shakeProgressVisual = progress;
+            OnShakeProgress?.Invoke(progress);
+
+            // Notify when shake is complete
+            if (progress >= 1f && !shakeCompleteNotified)
+            {
+                shakeCompleteNotified = true;
+                Debug.Log("Shaker: Shake ready! You can stop shaking now.");
+
+                // Visual cue - brief intensity increase
+                TriggerWobble(0.15f);
+            }
+
+            // Dynamic shake intensity - increases as it gets closer to completion
+            float dynamicIntensity = shakeIntensity * (0.8f + progress * 0.4f);
+
             // 正弦波搖晃
-            float shakeZ = Mathf.Sin(shakeTime * shakeFrequency) * shakeIntensity;
-            float shakeX = Mathf.Sin(shakeTime * shakeFrequency * 0.75f) * shakeIntensity * 0.6f;
+            float shakeZ = Mathf.Sin(shakeTime * shakeFrequency) * dynamicIntensity;
+            float shakeX = Mathf.Sin(shakeTime * shakeFrequency * 0.75f) * dynamicIntensity * 0.6f;
+
+            // Add some randomness for more natural shake
+            float noise = Mathf.PerlinNoise(shakeTime * 5f, 0f) * 0.02f - 0.01f;
+            shakeZ += noise;
+            shakeX += noise * 0.5f;
 
             transform.localRotation = baseRotation * Quaternion.Euler(
                 shakeX * Mathf.Rad2Deg,
                 0f,
                 shakeZ * Mathf.Rad2Deg
             );
+
+            // Update particles
+            if (shakeParticles != null && !shakeParticles.isPlaying)
+            {
+                shakeParticles.Play();
+            }
+        }
+
+        /// <summary>
+        /// 創建搖酒粒子效果
+        /// </summary>
+        private void CreateShakeParticles()
+        {
+            if (shakeParticles != null) return;
+
+            // Create simple particle effect
+            GameObject particleObj = new GameObject("ShakeParticles");
+            particleObj.transform.SetParent(transform);
+            particleObj.transform.localPosition = Vector3.up * 0.1f;
+
+            shakeParticles = particleObj.AddComponent<ParticleSystem>();
+
+            // Configure particle system
+            var main = shakeParticles.main;
+            main.startColor = new Color(1f, 1f, 1f, 0.3f);
+            main.startSize = 0.02f;
+            main.startSpeed = 0.5f;
+            main.startLifetime = 0.3f;
+            main.maxParticles = 20;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = shakeParticles.emission;
+            emission.rateOverTime = 30f;
+
+            var shape = shakeParticles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.05f;
+
+            // Renderer settings
+            var renderer = particleObj.GetComponent<ParticleSystemRenderer>();
+            renderer.material = new Material(Shader.Find("Particles/Standard Unlit"));
+            renderer.material.color = Color.white;
         }
 
         #endregion
@@ -211,6 +303,21 @@ namespace BarSimulator.Objects
         /// 是否完成搖酒
         /// </summary>
         public bool IsShakeComplete => shakeTime >= minShakeTime;
+
+        /// <summary>
+        /// 搖酒進度 (0-1)
+        /// </summary>
+        public float ShakeProgress => Mathf.Clamp01(shakeTime / minShakeTime);
+
+        /// <summary>
+        /// 最短搖酒時間
+        /// </summary>
+        public float MinShakeTime => minShakeTime;
+
+        /// <summary>
+        /// 剩餘搖酒時間
+        /// </summary>
+        public float RemainingShakeTime => Mathf.Max(0f, minShakeTime - shakeTime);
 
         #endregion
     }
