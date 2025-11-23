@@ -96,6 +96,18 @@ namespace BarSimulator.Objects
             // 初始化容器內容
             contents = new ContainerContents(maxVolume);
 
+            // 自動尋找液體子物件（如果未指定）
+            if (liquidRenderer == null || liquidTransform == null)
+            {
+                Transform liquidChild = transform.Find("Liquid");
+                if (liquidChild != null)
+                {
+                    liquidTransform = liquidChild;
+                    liquidRenderer = liquidChild.GetComponent<MeshRenderer>();
+                    Debug.Log($"Container: Auto-found Liquid child object on {gameObject.name}");
+                }
+            }
+
             // 取得液體材質
             if (liquidRenderer != null)
             {
@@ -157,14 +169,23 @@ namespace BarSimulator.Objects
         /// </summary>
         protected virtual void ApplyLiquidVisual()
         {
+            if (liquidRenderer == null || liquidTransform == null) return;
+
             if (currentLiquidHeight > 0.001f)
             {
+                // 顯示液體物件
+                if (!liquidTransform.gameObject.activeSelf)
+                    liquidTransform.gameObject.SetActive(true);
                 liquidRenderer.enabled = true;
 
                 // 更新材質顏色
                 if (liquidMaterial != null)
                 {
                     liquidMaterial.color = currentLiquidColor;
+
+                    // 更新 Shader 的液體顏色屬性
+                    if (liquidMaterial.HasProperty("_LiquidColor"))
+                        liquidMaterial.SetColor("_LiquidColor", currentLiquidColor);
 
                     // 更新波動效果到 Shader
                     float wobbleX = Mathf.Sin(wobbleTime * 4f) * currentWobbleIntensity;
@@ -203,6 +224,9 @@ namespace BarSimulator.Objects
             }
             else
             {
+                // 隱藏液體物件
+                if (liquidTransform.gameObject.activeSelf)
+                    liquidTransform.gameObject.SetActive(false);
                 liquidRenderer.enabled = false;
             }
         }

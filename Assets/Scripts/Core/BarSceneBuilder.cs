@@ -4,6 +4,9 @@ using BarSimulator.Data;
 using BarSimulator.Objects;
 using BarSimulator.Interaction;
 using BarSimulator.NPC;
+using BarSimulator.Managers;
+using BarSimulator.Systems;
+using BarSimulator.UI;
 
 namespace BarSimulator.Core
 {
@@ -96,6 +99,9 @@ namespace BarSimulator.Core
         {
             Debug.Log("BarSceneBuilder: Building bar scene...");
 
+            // 0. 設置系統
+            SetupSystems();
+
             // 1. 建造基礎結構
             BuildFloor();
             BuildWalls();
@@ -116,7 +122,63 @@ namespace BarSimulator.Core
             // 5. 設置燈光
             SetupLighting();
 
+            // 6. 設置後處理
+            SetupPostProcessing();
+
             Debug.Log($"BarSceneBuilder: Scene built - {bottles.Count} bottles, {glasses.Count} glasses, {npcs.Count} NPCs");
+        }
+
+        /// <summary>
+        /// 設置遊戲系統
+        /// </summary>
+        private void SetupSystems()
+        {
+            // NPC 管理器（必須最先建立）
+            if (NPCManager.Instance == null)
+            {
+                var npcManagerObj = new GameObject("NPCManager");
+                npcManagerObj.AddComponent<NPCManager>();
+                structureObjects.Add(npcManagerObj);
+            }
+
+            // 環境設置
+            var envSetup = new GameObject("EnvironmentSetup");
+            envSetup.AddComponent<EnvironmentSetup>();
+            structureObjects.Add(envSetup);
+
+            // 材質管理器
+            var materialManager = new GameObject("MaterialManager");
+            materialManager.AddComponent<MaterialManager>();
+            structureObjects.Add(materialManager);
+
+            // 放置預覽系統
+            var placementSystem = new GameObject("PlacementPreviewSystem");
+            placementSystem.AddComponent<PlacementPreviewSystem>();
+            structureObjects.Add(placementSystem);
+
+            // 耐心條 UI
+            var patienceUI = new GameObject("PatienceBarUI");
+            patienceUI.AddComponent<PatienceBarUI>();
+            structureObjects.Add(patienceUI);
+
+            Debug.Log("BarSceneBuilder: Systems initialized");
+        }
+
+        /// <summary>
+        /// 設置後處理效果
+        /// </summary>
+        private void SetupPostProcessing()
+        {
+            var mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                // 添加後處理
+                if (mainCamera.GetComponent<PostProcessingSetup>() == null)
+                {
+                    mainCamera.gameObject.AddComponent<PostProcessingSetup>();
+                }
+                Debug.Log("BarSceneBuilder: Post-processing added to camera");
+            }
         }
 
         #endregion
@@ -456,20 +518,78 @@ namespace BarSimulator.Core
             glassObj.name = "Glass";
             glassObj.transform.localScale = new Vector3(0.25f, 0.3f, 0.25f); // 放大酒杯
 
-            // 透明玻璃材質
+            // 嘗試使用進階玻璃材質
             var renderer = glassObj.GetComponent<Renderer>();
-            var material = new Material(Shader.Find("Standard"));
-            material.SetFloat("_Mode", 3); // Transparent
-            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetInt("_ZWrite", 0);
-            material.DisableKeyword("_ALPHATEST_ON");
-            material.DisableKeyword("_ALPHABLEND_ON");
-            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-            material.renderQueue = 3000;
-            material.color = new Color(0.9f, 0.9f, 0.9f, 0.3f);
-            material.SetFloat("_Glossiness", 0.95f);
-            renderer.material = material;
+            var advancedGlassShader = Shader.Find("Custom/GlassShaderAdvanced");
+
+            if (advancedGlassShader != null)
+            {
+                var material = new Material(advancedGlassShader);
+                material.SetColor("_GlassColor", new Color(0.95f, 0.95f, 1f, 0.15f));
+                material.SetFloat("_Transparency", 0.85f);
+                material.SetFloat("_Glossiness", 0.95f);
+                material.SetFloat("_FresnelPower", 3f);
+                renderer.material = material;
+            }
+            else
+            {
+                // 備用透明玻璃材質
+                var material = new Material(Shader.Find("Standard"));
+                material.SetFloat("_Mode", 3); // Transparent
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.DisableKeyword("_ALPHABLEND_ON");
+                material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+                material.renderQueue = 3000;
+                material.color = new Color(0.9f, 0.9f, 0.9f, 0.3f);
+                material.SetFloat("_Glossiness", 0.95f);
+                renderer.material = material;
+            }
+
+            // 添加液體視覺化子物件
+            var liquidObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            liquidObj.name = "Liquid";
+            liquidObj.transform.SetParent(glassObj.transform);
+            liquidObj.transform.localPosition = new Vector3(0f, -0.15f, 0f); // 從底部開始
+            liquidObj.transform.localScale = new Vector3(0.85f, 0.3f, 0.85f); // 稍小於玻璃杯
+            liquidObj.SetActive(false); // 預設隱藏，有液體時才顯示
+
+            // 移除液體的碰撞體
+            var liquidCollider = liquidObj.GetComponent<Collider>();
+            if (liquidCollider != null) Object.Destroy(liquidCollider);
+
+            // 液體材質 - 嘗試使用進階液體shader
+            var liquidRenderer = liquidObj.GetComponent<Renderer>();
+            var advancedLiquidShader = Shader.Find("Custom/LiquidShaderAdvanced");
+
+            if (advancedLiquidShader != null)
+            {
+                var liquidMaterial = new Material(advancedLiquidShader);
+                liquidMaterial.SetColor("_LiquidColor", new Color(0.8f, 0.4f, 0.1f, 0.9f));
+                liquidMaterial.SetFloat("_FillAmount", 0f);
+                liquidMaterial.SetFloat("_Transparency", 0.9f);
+                liquidMaterial.SetFloat("_WobbleX", 0f);
+                liquidMaterial.SetFloat("_WobbleZ", 0f);
+                liquidRenderer.material = liquidMaterial;
+            }
+            else
+            {
+                // 備用液體材質
+                var liquidMaterial = new Material(Shader.Find("Standard"));
+                liquidMaterial.SetFloat("_Mode", 3); // Transparent
+                liquidMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                liquidMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                liquidMaterial.SetInt("_ZWrite", 0);
+                liquidMaterial.DisableKeyword("_ALPHATEST_ON");
+                liquidMaterial.EnableKeyword("_ALPHABLEND_ON");
+                liquidMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                liquidMaterial.renderQueue = 2999;
+                liquidMaterial.color = new Color(0.8f, 0.4f, 0.1f, 0.8f);
+                liquidMaterial.SetFloat("_Glossiness", 0.8f);
+                liquidRenderer.material = liquidMaterial;
+            }
 
             // 添加 Glass 組件
             var glass = glassObj.AddComponent<Glass>();
