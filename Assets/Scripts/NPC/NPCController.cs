@@ -39,6 +39,18 @@ namespace BarSimulator.NPC
         // 情緒狀態
         private NPCMood currentMood = NPCMood.Neutral;
 
+        // 點單系統
+        private DrinkOrder currentOrder;
+        private bool hasActiveOrder;
+        private float orderStartTime;
+        private float patienceRemaining;
+        private bool orderTimedOut;
+
+        // 事件
+        public System.Action<NPCController, DrinkOrder> OnOrderPlaced;
+        public System.Action<NPCController> OnOrderTimedOut;
+        public System.Action<NPCController, float> OnPatienceChanged;
+
         #endregion
 
         #region Unity 生命週期
@@ -108,6 +120,9 @@ namespace BarSimulator.NPC
             {
                 UpdateIdleAnimation(deltaTime);
             }
+
+            // 更新點單計時器
+            UpdateOrderTimer(deltaTime);
         }
 
         /// <summary>
@@ -122,6 +137,156 @@ namespace BarSimulator.NPC
             float swayZ = Mathf.Cos(animationTime * 0.7f) * idleSwayAmount * 0.5f;
 
             transform.position = basePosition + new Vector3(swayX, 0f, swayZ);
+        }
+
+        /// <summary>
+        /// 更新點單計時器
+        /// </summary>
+        private void UpdateOrderTimer(float deltaTime)
+        {
+            if (!hasActiveOrder || orderTimedOut) return;
+
+            patienceRemaining -= deltaTime;
+            float patienceRatio = patienceRemaining / currentOrder.patienceTime;
+
+            // 觸發耐心值變化事件
+            OnPatienceChanged?.Invoke(this, patienceRatio);
+
+            // 根據耐心值改變情緒
+            if (patienceRatio < 0.25f)
+            {
+                SetMood(NPCMood.Angry);
+            }
+            else if (patienceRatio < 0.5f)
+            {
+                SetMood(NPCMood.Disappointed);
+            }
+
+            // 超時處理
+            if (patienceRemaining <= 0)
+            {
+                orderTimedOut = true;
+                hasActiveOrder = false;
+                SetMood(NPCMood.Angry);
+                OnOrderTimedOut?.Invoke(this);
+                Debug.Log($"{NPCName} order timed out! They left disappointed.");
+            }
+        }
+
+        #endregion
+
+        #region 點單系統
+
+        /// <summary>
+        /// 放置新訂單
+        /// </summary>
+        public void PlaceOrder(DrinkOrder order)
+        {
+            currentOrder = order;
+            hasActiveOrder = true;
+            orderStartTime = Time.time;
+            patienceRemaining = order.patienceTime;
+            orderTimedOut = false;
+
+            SetMood(NPCMood.Neutral);
+            OnOrderPlaced?.Invoke(this, order);
+
+            Debug.Log($"{NPCName} ordered: {order.drinkName} with requirements: {order.GetRequirementsText()}");
+        }
+
+        /// <summary>
+        /// 生成隨機訂單
+        /// </summary>
+        public DrinkOrder GenerateRandomOrder()
+        {
+            string[] drinks = {
+                "Martini", "Negroni", "Margarita", "Daiquiri", "Old Fashioned",
+                "Manhattan", "Mojito", "Whiskey Sour", "Cosmopolitan"
+            };
+
+            string drinkName = drinks[Random.Range(0, drinks.Length)];
+            DrinkOrder order = new DrinkOrder(drinkName);
+
+            // 隨機添加特殊要求
+            if (Random.value > 0.6f)
+            {
+                order.AddRequirement(DrinkRequirement.ExtraIce);
+            }
+            if (Random.value > 0.7f)
+            {
+                order.AddRequirement(DrinkRequirement.LessSugar);
+            }
+            if (Random.value > 0.75f)
+            {
+                order.AddRequirement(DrinkRequirement.MoreSour);
+            }
+            if (Random.value > 0.8f)
+            {
+                order.AddRequirement(DrinkRequirement.Strong);
+            }
+
+            return order;
+        }
+
+        /// <summary>
+        /// 開始點單流程（詢問 NPC）
+        /// </summary>
+        public void StartOrderingProcess()
+        {
+            if (hasActiveOrder) return;
+
+            DrinkOrder order = GenerateRandomOrder();
+            PlaceOrder(order);
+        }
+
+        /// <summary>
+        /// 完成訂單（送酒給 NPC）
+        /// </summary>
+        public void CompleteOrder()
+        {
+            if (!hasActiveOrder) return;
+
+            hasActiveOrder = false;
+            float timeUsed = Time.time - orderStartTime;
+            float patienceRatio = patienceRemaining / currentOrder.patienceTime;
+
+            Debug.Log($"{NPCName} order completed! Time used: {timeUsed:F1}s, Patience remaining: {patienceRatio * 100:F0}%");
+        }
+
+        /// <summary>
+        /// 取消訂單
+        /// </summary>
+        public void CancelOrder()
+        {
+            if (!hasActiveOrder) return;
+
+            hasActiveOrder = false;
+            currentOrder = null;
+            SetMood(NPCMood.Disappointed);
+
+            Debug.Log($"{NPCName}'s order was cancelled.");
+        }
+
+        /// <summary>
+        /// 獲取訂單描述文本
+        /// </summary>
+        public string GetOrderDescription()
+        {
+            if (!hasActiveOrder || currentOrder == null)
+            {
+                return "I'd like to order something...";
+            }
+
+            string desc = $"I'll have a {currentOrder.drinkName}";
+            string requirements = currentOrder.GetRequirementsText();
+
+            if (!string.IsNullOrEmpty(requirements))
+            {
+                desc += $", {requirements}";
+            }
+
+            desc += " please!";
+            return desc;
         }
 
         #endregion
@@ -241,6 +406,32 @@ namespace BarSimulator.NPC
         /// </summary>
         public NPCData Data => npcData;
 
+        /// <summary>
+        /// 當前訂單
+        /// </summary>
+        public DrinkOrder CurrentOrder => currentOrder;
+
+        /// <summary>
+        /// 是否有活動訂單
+        /// </summary>
+        public bool HasActiveOrder => hasActiveOrder;
+
+        /// <summary>
+        /// 剩餘耐心值（0-1）
+        /// </summary>
+        public float PatienceRatio => hasActiveOrder && currentOrder != null ?
+            patienceRemaining / currentOrder.patienceTime : 1f;
+
+        /// <summary>
+        /// 剩餘耐心時間（秒）
+        /// </summary>
+        public float PatienceRemaining => patienceRemaining;
+
+        /// <summary>
+        /// 訂單是否超時
+        /// </summary>
+        public bool OrderTimedOut => orderTimedOut;
+
         #endregion
     }
 
@@ -254,5 +445,79 @@ namespace BarSimulator.NPC
         Excited,
         Disappointed,
         Angry
+    }
+
+    /// <summary>
+    /// 特殊要求類型
+    /// </summary>
+    public enum DrinkRequirement
+    {
+        None,
+        ExtraIce,
+        NoIce,
+        LessSugar,
+        MoreSugar,
+        MoreSour,
+        LessSour,
+        Strong,
+        Light,
+        Neat,
+        OnTheRocks
+    }
+
+    /// <summary>
+    /// 飲料訂單
+    /// </summary>
+    [System.Serializable]
+    public class DrinkOrder
+    {
+        public string drinkName;
+        public float patienceTime;
+        public System.Collections.Generic.List<DrinkRequirement> requirements;
+
+        public DrinkOrder(string name, float patience = 120f)
+        {
+            drinkName = name;
+            patienceTime = patience;
+            requirements = new System.Collections.Generic.List<DrinkRequirement>();
+        }
+
+        public void AddRequirement(DrinkRequirement req)
+        {
+            if (!requirements.Contains(req))
+            {
+                requirements.Add(req);
+            }
+        }
+
+        public bool HasRequirement(DrinkRequirement req)
+        {
+            return requirements.Contains(req);
+        }
+
+        public string GetRequirementsText()
+        {
+            if (requirements.Count == 0) return "";
+
+            var texts = new System.Collections.Generic.List<string>();
+            foreach (var req in requirements)
+            {
+                switch (req)
+                {
+                    case DrinkRequirement.ExtraIce: texts.Add("extra ice"); break;
+                    case DrinkRequirement.NoIce: texts.Add("no ice"); break;
+                    case DrinkRequirement.LessSugar: texts.Add("less sugar"); break;
+                    case DrinkRequirement.MoreSugar: texts.Add("more sugar"); break;
+                    case DrinkRequirement.MoreSour: texts.Add("more sour"); break;
+                    case DrinkRequirement.LessSour: texts.Add("less sour"); break;
+                    case DrinkRequirement.Strong: texts.Add("strong"); break;
+                    case DrinkRequirement.Light: texts.Add("light"); break;
+                    case DrinkRequirement.Neat: texts.Add("neat"); break;
+                    case DrinkRequirement.OnTheRocks: texts.Add("on the rocks"); break;
+                }
+            }
+
+            return string.Join(", ", texts);
+        }
     }
 }
