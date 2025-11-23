@@ -15,7 +15,7 @@ namespace BarSimulator.Data
     /// NPC 資料 ScriptableObject
     /// 參考: NPCManager.js NPC 資料結構
     /// </summary>
-    [CreateAssetMenu(fileName = "NPCData", menuName = "Bar/NPC Data")]
+    [CreateAssetMenu(fileName = "NewNPCData", menuName = "Bar/NPC Data (ScriptableObject)")]
     public class NPCData : ScriptableObject
     {
         [Header("基本資訊")]
@@ -44,9 +44,7 @@ namespace BarSimulator.Data
 
         [Header("對話")]
         [Tooltip("對話內容列表")]
-        [TextArea(3, 10)]
-        public string[] dialogues;
-
+        public NPCDialogue dialogue;
         /// <summary>
         /// 取得旋轉角度（度數）
         /// </summary>

@@ -7,6 +7,7 @@ using BarSimulator.Managers;
 using BarSimulator.NPC;
 using BarSimulator.Player;
 using BarSimulator.UI;
+using System.Collections.Generic;
 
 namespace BarSimulator.Editor
 {
@@ -350,16 +351,7 @@ namespace BarSimulator.Editor
             var controller = npc.AddComponent<NPCController>();
 
             // Initialize NPC data
-            var npcData = new BarSimulator.Data.NPCData
-            {
-                npcName = name,
-                position = position,
-                dialogues = new string[] {
-                    "Hello! I'd like a drink please.",
-                    "What cocktails do you recommend?",
-                    "I'm feeling like something strong today."
-                }
-            };
+            var npcData = Resources.Load<BarSimulator.Data.NPCData>("TestNPC");
 
             controller.Initialize(npcData);
 

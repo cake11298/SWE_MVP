@@ -750,110 +750,32 @@ namespace BarSimulator.Core
         #region NPC 生成
 
         /// <summary>
-        /// 建造 NPC
-        /// 參考: NPCManager.js createNPCs()
+        /// 透過載入現有的NPC資料(Resource/MainNPCs資料夾內的NPCData)來建造 NPC
         /// </summary>
         private void BuildNPCs()
         {
             // Gustave - 調酒社創始社長
-            var gustave = CreateNPCWithDetails(
-                "Gustave",
-                "Founder President",
-                new Vector3(2f, 0f, -5f),
-                HexToColor(0x0066cc), // 藍色上衣
-                HexToColor(0x1a1a1a), // 黑色褲子
-                0f,
-                new string[] {
-                    "Hi! I'm Gustave Yang, founder of NCU Molecular Mixology Club!",
-                    "Molecular mixology is the fusion of science and art",
-                    "Freedom is priceless",
-                    "Some things can't be solved by morning coffee, but forgotten by evening cocktails"
-                }
-            );
+            var gustave = CreateNPCFromResourceData("MainNPCs/Gustave_NPCData");
             npcs.Add(gustave);
 
             // Seaton - 調酒社共同創辦人
-            var seaton = CreateNPCWithDetails(
-                "Seaton",
-                "Co-founder",
-                new Vector3(-2f, 0f, -5f),
-                HexToColor(0xcc0066), // 粉紅色上衣
-                HexToColor(0x333333), // 深灰褲子
-                0f,
-                new string[] {
-                    "Hello! I'm Seaton, also a co-founder of the club!",
-                    "My favorite is Japanese whiskey",
-                    "I love the classic Old Fashioned"
-                }
-            );
+            var seaton = CreateNPCFromResourceData("MainNPCs/Seaton_NPCData");
             npcs.Add(seaton);
 
             // 正安 - 公關兼副社長
-            var zhengan = CreateNPCWithDetails(
-                "Zheng An",
-                "PR & Vice President",
-                new Vector3(9f, 0f, 1f),
-                HexToColor(0xffb6c1), // 淺粉紅色
-                HexToColor(0x4169e1), // 藍色牛仔褲
-                -90f,
-                new string[] {
-                    "Hi! I'm Zheng An, in charge of event planning~",
-                    "Want to join our molecular mixology workshop?",
-                    "I love planning themed parties!",
-                    "Follow our social media!"
-                },
-                true // 女性
-            );
+            var zhengan = CreateNPCFromResourceData("MainNPCs/ZhengAn_NPCData");
             npcs.Add(zhengan);
 
             // 瑜柔 - 學術研究長
-            var yurou = CreateNPCWithDetails(
-                "Yu Rou",
-                "Academic Director",
-                new Vector3(9f, 0f, 3f),
-                HexToColor(0x90ee90), // 淺綠色
-                HexToColor(0x2f4f4f), // 深灰色
-                -90f,
-                new string[] {
-                    "I'm Yu Rou, in charge of academic research",
-                    "Molecular mixology has deep chemistry principles",
-                    "Theory and practice are equally important"
-                },
-                true // 女性
-            );
+            var yurou = CreateNPCFromResourceData("MainNPCs/YuRou_NPCData");
             npcs.Add(yurou);
 
             // 恩若 - 美宣長
-            var enruo = CreateNPCWithDetails(
-                "En Ruo",
-                "Art Director",
-                new Vector3(9f, 0f, -1f),
-                HexToColor(0xffd700), // 金黃色
-                HexToColor(0x8b4513), // 棕色
-                -90f,
-                new string[] {
-                    "Hi hi! I'm En Ruo, in charge of art design",
-                    "Have you followed our social media? Like and share!",
-                    "I'm best at building friendly relationships"
-                },
-                true // 女性
-            );
+            var enruo = CreateNPCFromResourceData("MainNPCs/EnRuo_NPCData");
             npcs.Add(enruo);
 
             // 旻偉 - 器材長
-            var minwei = CreateNPCWithDetails(
-                "Min Wei",
-                "Equipment Manager",
-                new Vector3(9f, 0f, 5f),
-                HexToColor(0x708090), // 灰藍色
-                HexToColor(0x556b2f), // 軍綠色
-                -90f,
-                new string[] {
-                    "I'm Min Wei, in charge of equipment management",
-                    "All bar tools are maintained by me",
-                    "Budget planning and procurement are my job"
-                }
-            );
+            var minwei = CreateNPCFromResourceData("MainNPCs/MinWei_NPCData");
             npcs.Add(minwei);
         }
 
@@ -869,7 +791,7 @@ namespace BarSimulator.Core
         }
 
         /// <summary>
-        /// 建立詳細 NPC
+        /// 建立詳細 NPC (參考用: 無實際引用)
         /// </summary>
         private GameObject CreateNPCWithDetails(string npcName, string role, Vector3 position,
             Color shirtColor, Color pantsColor, float rotationY, string[] dialogues, bool isFemale = false)
@@ -950,7 +872,107 @@ namespace BarSimulator.Core
 
             // 添加 NPCController
             var controller = npcRoot.AddComponent<NPCController>();
-            controller.InitializeNPC(npcName, role, dialogues);
+            //controller.InitializeNPC(npcName, role, dialogues);
+            controller.Initialize(Resources.Load<NPCData>("TestNPCData"));
+            // 添加碰撞體
+            var collider = npcRoot.AddComponent<CapsuleCollider>();
+            collider.height = 2f;
+            collider.radius = 0.4f;
+            collider.center = new Vector3(0f, 1f, 0f);
+
+            // 添加 InteractableNPC 使 NPC 可以被互動
+            npcRoot.AddComponent<InteractableNPC>();
+
+            return npcRoot;
+        }
+
+        /// <summary>
+        ///  透過載入現有的NPC資料來建立詳細 NPC
+        /// </summary>
+        /// <param name="resourceDataPath">NPCData的路徑 (通常為 "MainNPCs/{NPCName}")</param>
+        private GameObject CreateNPCFromResourceData(string resourceDataPath)
+        {
+            var npcResourceData = Resources.Load<NPCData>(resourceDataPath);
+            bool isFemale = (npcResourceData.gender == Gender.Female);
+
+            var npcRoot = new GameObject($"NPC_{npcResourceData.npcName}");
+            npcRoot.transform.position = npcResourceData.position;
+            npcRoot.transform.rotation = Quaternion.Euler(0f, npcResourceData.rotation, 0f);
+
+            // 身體比例根據性別調整
+            float shoulderWidth = isFemale ? 0.35f : 0.4f;
+
+            // 上衣
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            body.transform.SetParent(npcRoot.transform);
+            body.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+            body.transform.localScale = isFemale ?
+                new Vector3(0.35f, 0.45f, 0.35f) :
+                new Vector3(0.4f, 0.5f, 0.4f);
+
+            var bodyMaterial = new Material(Shader.Find("Standard"));
+            bodyMaterial.color = npcResourceData.shirtColor;
+            body.GetComponent<Renderer>().material = bodyMaterial;
+
+            // 褲子
+            var pants = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            pants.name = "Pants";
+            pants.transform.SetParent(npcRoot.transform);
+            pants.transform.localPosition = new Vector3(0f, 0.4f, 0f);
+            pants.transform.localScale = new Vector3(0.35f, 0.5f, 0.35f);
+
+            var pantsMaterial = new Material(Shader.Find("Standard"));
+            pantsMaterial.color = npcResourceData.pantsColor;
+            pants.GetComponent<Renderer>().material = pantsMaterial;
+
+            // 頭部
+            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            head.name = "Head";
+            head.transform.SetParent(npcRoot.transform);
+            head.transform.localPosition = new Vector3(0f, 1.9f, 0f);
+            head.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
+
+            var headMaterial = new Material(Shader.Find("Standard"));
+            headMaterial.color = new Color(0.99f, 0.74f, 0.71f); // 膚色 0xfdbcb4
+            head.GetComponent<Renderer>().material = headMaterial;
+
+            // 頭髮
+            var hair = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            hair.name = "Hair";
+            hair.transform.SetParent(npcRoot.transform);
+            hair.transform.localPosition = new Vector3(0f, 2.0f, 0f);
+            hair.transform.localScale = isFemale ?
+                new Vector3(0.38f, 0.25f, 0.38f) : // 女性長髮
+                new Vector3(0.36f, 0.2f, 0.36f);   // 男性短髮
+
+            var hairMaterial = new Material(Shader.Find("Standard"));
+            hairMaterial.color = new Color(0.2f, 0.2f, 0.2f); // 黑髮
+            hair.GetComponent<Renderer>().material = hairMaterial;
+
+            // 左手臂
+            var leftArm = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            leftArm.name = "LeftArm";
+            leftArm.transform.SetParent(npcRoot.transform);
+            leftArm.transform.localPosition = new Vector3(-shoulderWidth - 0.15f, 1.2f, 0f);
+            leftArm.transform.localScale = new Vector3(0.12f, 0.4f, 0.12f);
+
+            var armMaterial = new Material(Shader.Find("Standard"));
+            armMaterial.color = new Color(0.99f, 0.74f, 0.71f); // 膚色
+            leftArm.GetComponent<Renderer>().material = armMaterial;
+
+            // 右手臂
+            var rightArm = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            rightArm.name = "RightArm";
+            rightArm.transform.SetParent(npcRoot.transform);
+            rightArm.transform.localPosition = new Vector3(shoulderWidth + 0.15f, 1.2f, 0f);
+            rightArm.transform.localScale = new Vector3(0.12f, 0.4f, 0.12f);
+            rightArm.GetComponent<Renderer>().material = armMaterial;
+
+            // 添加 NPCController
+            var controller = npcRoot.AddComponent<NPCController>();
+            //controller.InitializeNPC(npcName, role, dialogues);
+            controller.Initialize(npcResourceData);
 
             // 添加碰撞體
             var collider = npcRoot.AddComponent<CapsuleCollider>();
@@ -963,6 +985,7 @@ namespace BarSimulator.Core
 
             return npcRoot;
         }
+
 
         #endregion
 
