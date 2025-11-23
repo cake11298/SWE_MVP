@@ -44,8 +44,11 @@ namespace BarSimulator.Objects
             maxVolume = Constants.GlassMaxVolume;
         }
 
-        private void Update()
+        protected override void Update()
         {
+            // 呼叫基礎類別的 Update 以更新動態液體效果
+            base.Update();
+
             // 更新喝酒動畫
             if (isDrinking)
             {

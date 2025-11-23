@@ -40,6 +40,9 @@ namespace BarSimulator.Systems
         [Tooltip("互動系統")]
         [SerializeField] private InteractionSystem interactionSystem;
 
+        [Tooltip("倒酒視覺效果系統")]
+        [SerializeField] private PouringSystem pouringSystem;
+
         #endregion
 
         #region 私有欄位
@@ -89,6 +92,11 @@ namespace BarSimulator.Systems
             if (interactionSystem == null)
             {
                 interactionSystem = InteractionSystem.Instance;
+            }
+
+            if (pouringSystem == null)
+            {
+                pouringSystem = PouringSystem.Instance;
             }
         }
 
@@ -243,6 +251,23 @@ namespace BarSimulator.Systems
                 currentPouringTarget = target;
                 currentPouringAmount = 0f;
                 bottle.StartPouring();
+
+                // 設置目標容器的倒酒狀態
+                target.SetPouringState(true);
+
+                // 開始倒酒視覺效果
+                if (pouringSystem != null)
+                {
+                    pouringSystem.StartPourEffect(bottle.transform, target.transform, bottle.LiquorData.color);
+                }
+            }
+            else
+            {
+                // 更新倒酒視覺效果位置
+                if (pouringSystem != null)
+                {
+                    pouringSystem.UpdatePourEffect(bottle.transform, target.transform);
+                }
             }
 
             currentPouringAmount += amountPoured;
@@ -268,6 +293,9 @@ namespace BarSimulator.Systems
                 currentPouringTarget = target;
                 currentPouringAmount = 0f;
                 shaker.StartPouring();
+
+                // 設置目標容器的倒酒狀態
+                target.SetPouringState(true);
             }
 
             currentPouringAmount += amountPoured;
@@ -284,6 +312,18 @@ namespace BarSimulator.Systems
             if (currentPouringBottle != null)
             {
                 currentPouringBottle.StopPouring();
+            }
+
+            // 停止目標容器的倒酒狀態
+            if (currentPouringTarget != null)
+            {
+                currentPouringTarget.SetPouringState(false);
+            }
+
+            // 停止倒酒視覺效果
+            if (pouringSystem != null)
+            {
+                pouringSystem.StopPourEffect();
             }
 
             OnPourComplete?.Invoke(currentPouringTarget, currentPouringAmount);

@@ -162,29 +162,34 @@ namespace BarSimulator.Data
         {
             if (ingredients.Count == 0 || volume <= 0)
             {
-                mixedColor = Color.white;
+                mixedColor = new Color(1f, 1f, 1f, 0f);
                 return;
             }
 
-            Vector3 rgb = Vector3.zero;
+            Vector4 rgba = Vector4.zero;
             float totalAmount = 0f;
 
-            // 加權平均計算混合顏色
+            // 加權平均計算混合顏色（包含透明度）
             foreach (var ingredient in ingredients)
             {
                 float weight = ingredient.amount;
-                rgb.x += ingredient.color.r * weight;
-                rgb.y += ingredient.color.g * weight;
-                rgb.z += ingredient.color.b * weight;
+                rgba.x += ingredient.color.r * weight;
+                rgba.y += ingredient.color.g * weight;
+                rgba.z += ingredient.color.b * weight;
+                // 使用成分顏色的透明度，如果沒有則使用預設值
+                float alpha = ingredient.color.a > 0 ? ingredient.color.a : 0.8f;
+                rgba.w += alpha * weight;
                 totalAmount += weight;
             }
 
             if (totalAmount > 0)
             {
-                rgb /= totalAmount;
+                rgba /= totalAmount;
             }
 
-            mixedColor = new Color(rgb.x, rgb.y, rgb.z);
+            // 確保透明度在合理範圍內（0.6-0.9 for nice liquid appearance）
+            float finalAlpha = Mathf.Clamp(rgba.w, 0.6f, 0.9f);
+            mixedColor = new Color(rgba.x, rgba.y, rgba.z, finalAlpha);
         }
 
         /// <summary>
@@ -217,7 +222,7 @@ namespace BarSimulator.Data
         {
             ingredients.Clear();
             volume = 0f;
-            mixedColor = Color.white;
+            mixedColor = new Color(1f, 1f, 1f, 0f);
         }
 
         /// <summary>

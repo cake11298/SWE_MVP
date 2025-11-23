@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using BarSimulator.Data;
 using BarSimulator.Objects;
@@ -6,6 +7,21 @@ using BarSimulator.Systems;
 
 namespace BarSimulator.NPC
 {
+    /// <summary>
+    /// 雞尾酒配方資料
+    /// </summary>
+    public class RecipeData
+    {
+        public string name;
+        public Dictionary<string, float> ingredients; // 成分類型 -> 比例 (標準化為1)
+
+        public RecipeData(string name, Dictionary<string, float> ingredients)
+        {
+            this.name = name;
+            this.ingredients = ingredients;
+        }
+    }
+
     /// <summary>
     /// 飲料評估結果
     /// </summary>
@@ -55,6 +71,83 @@ namespace BarSimulator.NPC
         private const float OptimalAlcoholMax = 35f;
         private const int AlcoholBonus = 10;
 
+        // 幾何距離評分
+        private const float PerfectDistanceThreshold = 0.1f;  // 10% 誤差為滿分
+        private const float GoodDistanceThreshold = 0.3f;     // 30% 誤差為良好
+        private const int GeometricDistanceBonus = 20;
+
+        #endregion
+
+        #region 配方資料庫
+
+        /// <summary>
+        /// 標準雞尾酒配方（比例標準化）
+        /// </summary>
+        private static readonly Dictionary<string, RecipeData> RecipeDatabase = new Dictionary<string, RecipeData>
+        {
+            // Martini: 2份琴酒 + 1份乾苦艾酒
+            { "Martini", new RecipeData("Martini", new Dictionary<string, float> {
+                { "gin", 0.67f },
+                { "vermouth_dry", 0.33f }
+            })},
+
+            // Vodka Martini: 2份伏特加 + 1份乾苦艾酒
+            { "Vodka Martini", new RecipeData("Vodka Martini", new Dictionary<string, float> {
+                { "vodka", 0.67f },
+                { "vermouth_dry", 0.33f }
+            })},
+
+            // Negroni: 1:1:1 比例
+            { "Negroni", new RecipeData("Negroni", new Dictionary<string, float> {
+                { "gin", 0.33f },
+                { "campari", 0.33f },
+                { "vermouth_sweet", 0.33f }
+            })},
+
+            // Margarita: 2份龍舌蘭 + 1份橙酒 + 1份青檸汁
+            { "Margarita", new RecipeData("Margarita", new Dictionary<string, float> {
+                { "tequila", 0.5f },
+                { "triple_sec", 0.25f },
+                { "lime_juice", 0.25f }
+            })},
+
+            // Daiquiri: 2份朗姆酒 + 1份青檸汁 + 0.5份糖漿
+            { "Daiquiri", new RecipeData("Daiquiri", new Dictionary<string, float> {
+                { "rum", 0.57f },
+                { "lime_juice", 0.29f },
+                { "simple_syrup", 0.14f }
+            })},
+
+            // Cosmopolitan: 1.5份伏特加 + 1份橙酒 + 0.5份青檸汁 + 1份蔓越莓汁
+            { "Cosmopolitan", new RecipeData("Cosmopolitan", new Dictionary<string, float> {
+                { "vodka", 0.375f },
+                { "triple_sec", 0.25f },
+                { "lime_juice", 0.125f },
+                { "cranberry_juice", 0.25f }
+            })},
+
+            // Whiskey Sour: 2份威士忌 + 1份檸檬汁 + 0.5份糖漿
+            { "Whiskey Sour", new RecipeData("Whiskey Sour", new Dictionary<string, float> {
+                { "whiskey", 0.57f },
+                { "lemon_juice", 0.29f },
+                { "simple_syrup", 0.14f }
+            })},
+
+            // Mojito: 2份朗姆酒 + 1份青檸汁 + 0.5份糖漿
+            { "Mojito", new RecipeData("Mojito", new Dictionary<string, float> {
+                { "rum", 0.57f },
+                { "lime_juice", 0.29f },
+                { "simple_syrup", 0.14f }
+            })},
+
+            // Pina Colada: 2份朗姆酒 + 2份鳳梨汁 + 1份椰漿
+            { "Pina Colada", new RecipeData("Pina Colada", new Dictionary<string, float> {
+                { "rum", 0.4f },
+                { "pineapple_juice", 0.4f },
+                { "coconut_cream", 0.2f }
+            })}
+        };
+
         #endregion
 
         #region 公開方法
@@ -88,6 +181,10 @@ namespace BarSimulator.NPC
             if (evaluation.isValidCocktail)
             {
                 evaluation.score += ValidCocktailBonus;
+
+                // 使用幾何距離評估配方準確度
+                int geometricScore = EvaluateGeometricDistance(drinkInfo.cocktailName, drinkInfo.ingredients);
+                evaluation.score += geometricScore;
             }
 
             // 評估容量
@@ -249,6 +346,141 @@ namespace BarSimulator.NPC
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// 使用幾何距離評估配方準確度
+        /// 計算實際成分比例與標準配方的歐幾里得距離
+        /// </summary>
+        private static int EvaluateGeometricDistance(string cocktailName, Ingredient[] ingredients)
+        {
+            // 檢查是否有對應配方
+            if (!RecipeDatabase.TryGetValue(cocktailName, out RecipeData recipe))
+            {
+                return 0; // 無配方資料，不額外評分
+            }
+
+            if (ingredients == null || ingredients.Length == 0)
+            {
+                return -GeometricDistanceBonus;
+            }
+
+            // 計算實際成分的總量
+            float totalAmount = ingredients.Sum(i => i.amount);
+            if (totalAmount <= 0) return -GeometricDistanceBonus;
+
+            // 轉換實際成分為比例字典
+            var actualRatios = new Dictionary<string, float>();
+            foreach (var ingredient in ingredients)
+            {
+                float ratio = ingredient.amount / totalAmount;
+                if (actualRatios.ContainsKey(ingredient.type))
+                {
+                    actualRatios[ingredient.type] += ratio;
+                }
+                else
+                {
+                    actualRatios[ingredient.type] = ratio;
+                }
+            }
+
+            // 計算幾何距離
+            float distance = CalculateEuclideanDistance(recipe.ingredients, actualRatios);
+
+            // 根據距離計算分數
+            if (distance <= PerfectDistanceThreshold)
+            {
+                // 誤差在 10% 以內，滿分
+                return GeometricDistanceBonus;
+            }
+            else if (distance <= GoodDistanceThreshold)
+            {
+                // 誤差在 30% 以內，部分加分
+                float factor = 1f - ((distance - PerfectDistanceThreshold) / (GoodDistanceThreshold - PerfectDistanceThreshold));
+                return Mathf.RoundToInt(GeometricDistanceBonus * factor * 0.7f);
+            }
+            else
+            {
+                // 誤差太大，遞減給分
+                float factor = Mathf.Max(0f, 1f - (distance - GoodDistanceThreshold));
+                return Mathf.RoundToInt(GeometricDistanceBonus * factor * 0.3f) - 5;
+            }
+        }
+
+        /// <summary>
+        /// 計算兩個成分比例向量的歐幾里得距離
+        /// </summary>
+        private static float CalculateEuclideanDistance(Dictionary<string, float> expected, Dictionary<string, float> actual)
+        {
+            // 收集所有成分類型
+            var allTypes = new HashSet<string>(expected.Keys);
+            foreach (var type in actual.Keys)
+            {
+                allTypes.Add(type);
+            }
+
+            // 計算距離平方和
+            float sumSquared = 0f;
+            foreach (var type in allTypes)
+            {
+                float expectedValue = expected.TryGetValue(type, out float e) ? e : 0f;
+                float actualValue = actual.TryGetValue(type, out float a) ? a : 0f;
+                float diff = expectedValue - actualValue;
+                sumSquared += diff * diff;
+            }
+
+            return Mathf.Sqrt(sumSquared);
+        }
+
+        /// <summary>
+        /// 尋找最接近的雞尾酒配方
+        /// </summary>
+        public static string FindClosestRecipe(Ingredient[] ingredients)
+        {
+            if (ingredients == null || ingredients.Length == 0)
+            {
+                return "Empty Glass";
+            }
+
+            // 計算實際成分比例
+            float totalAmount = ingredients.Sum(i => i.amount);
+            if (totalAmount <= 0) return "Unknown Mix";
+
+            var actualRatios = new Dictionary<string, float>();
+            foreach (var ingredient in ingredients)
+            {
+                float ratio = ingredient.amount / totalAmount;
+                if (actualRatios.ContainsKey(ingredient.type))
+                {
+                    actualRatios[ingredient.type] += ratio;
+                }
+                else
+                {
+                    actualRatios[ingredient.type] = ratio;
+                }
+            }
+
+            // 找到距離最近的配方
+            string closestRecipe = "Custom Cocktail";
+            float minDistance = float.MaxValue;
+
+            foreach (var recipe in RecipeDatabase)
+            {
+                float distance = CalculateEuclideanDistance(recipe.Value.ingredients, actualRatios);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestRecipe = recipe.Key;
+                }
+            }
+
+            // 如果最近距離太大，返回自定義
+            if (minDistance > 0.5f)
+            {
+                return "Custom Cocktail";
+            }
+
+            return closestRecipe;
         }
 
         /// <summary>
