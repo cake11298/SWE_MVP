@@ -1,13 +1,12 @@
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace BarSimulator.Systems
 {
     /// <summary>
-    /// Post-processing setup manager
-    /// Adds bloom, color grading, depth of field, and vignette effects
+    /// Post-processing setup manager for Built-in Render Pipeline
+    /// Uses camera-based image effects
     /// </summary>
+    [RequireComponent(typeof(Camera))]
     public class PostProcessingSetup : MonoBehaviour
     {
         #region Singleton
@@ -19,60 +18,33 @@ namespace BarSimulator.Systems
 
         #region Serialized Fields
 
-        [Header("Volume Settings")]
-        [Tooltip("Create global volume on start")]
-        [SerializeField] private bool createVolumeOnStart = true;
-
         [Header("Bloom")]
         [SerializeField] private bool enableBloom = true;
         [SerializeField] private float bloomIntensity = 0.5f;
         [SerializeField] private float bloomThreshold = 0.9f;
-        [SerializeField] private float bloomScatter = 0.7f;
+        [SerializeField] private int bloomIterations = 4;
         [SerializeField] private Color bloomTint = Color.white;
 
         [Header("Color Adjustments")]
         [SerializeField] private bool enableColorAdjustments = true;
-        [SerializeField] private float postExposure = 0.2f;
-        [SerializeField] private float contrast = 10f;
-        [SerializeField] private float saturation = 10f;
-
-        [Header("Depth of Field")]
-        [SerializeField] private bool enableDepthOfField = false;
-        [SerializeField] private float focusDistance = 3f;
-        [SerializeField] private float aperture = 5.6f;
-        [SerializeField] private float focalLength = 50f;
+        [SerializeField] private float brightness = 1f;
+        [SerializeField] private float contrast = 1f;
+        [SerializeField] private float saturation = 1f;
 
         [Header("Vignette")]
         [SerializeField] private bool enableVignette = true;
         [SerializeField] private float vignetteIntensity = 0.3f;
         [SerializeField] private float vignetteSmoothness = 0.5f;
 
-        [Header("Ambient Occlusion")]
-        [SerializeField] private bool enableAmbientOcclusion = true;
-        [SerializeField] private float aoIntensity = 0.5f;
-
-        [Header("Film Grain")]
-        [SerializeField] private bool enableFilmGrain = false;
-        [SerializeField] private float grainIntensity = 0.2f;
-
-        [Header("Chromatic Aberration")]
-        [SerializeField] private bool enableChromaticAberration = false;
-        [SerializeField] private float chromaticIntensity = 0.1f;
-
         #endregion
 
         #region Private Fields
 
-        private Volume globalVolume;
-        private VolumeProfile volumeProfile;
-
-        // Effect references
-        private Bloom bloom;
-        private ColorAdjustments colorAdjustments;
-        private DepthOfField depthOfField;
-        private Vignette vignette;
-        private FilmGrain filmGrain;
-        private ChromaticAberration chromaticAberration;
+        private Camera mainCamera;
+        private Material bloomMaterial;
+        private Material colorAdjustMaterial;
+        private Material vignetteMaterial;
+        private RenderTexture[] bloomTextures;
 
         #endregion
 
@@ -82,130 +54,160 @@ namespace BarSimulator.Systems
         {
             if (instance != null && instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
             instance = this;
+
+            mainCamera = GetComponent<Camera>();
+            CreateMaterials();
         }
 
-        private void Start()
+        private void OnDestroy()
         {
-            if (createVolumeOnStart)
+            CleanupMaterials();
+        }
+
+        private void OnRenderImage(RenderTexture source, RenderTexture destination)
+        {
+            if (bloomMaterial == null || colorAdjustMaterial == null || vignetteMaterial == null)
             {
-                SetupPostProcessing();
+                Graphics.Blit(source, destination);
+                return;
             }
+
+            RenderTexture currentSource = source;
+            RenderTexture tempRT1 = RenderTexture.GetTemporary(source.width, source.height);
+            RenderTexture tempRT2 = RenderTexture.GetTemporary(source.width, source.height);
+
+            // Apply bloom
+            if (enableBloom)
+            {
+                currentSource = ApplyBloom(currentSource, tempRT1, tempRT2);
+            }
+
+            // Apply color adjustments
+            if (enableColorAdjustments)
+            {
+                colorAdjustMaterial.SetFloat("_Brightness", brightness);
+                colorAdjustMaterial.SetFloat("_Contrast", contrast);
+                colorAdjustMaterial.SetFloat("_Saturation", saturation);
+                Graphics.Blit(currentSource, tempRT1, colorAdjustMaterial);
+                currentSource = tempRT1;
+            }
+
+            // Apply vignette
+            if (enableVignette)
+            {
+                vignetteMaterial.SetFloat("_Intensity", vignetteIntensity);
+                vignetteMaterial.SetFloat("_Smoothness", vignetteSmoothness);
+                Graphics.Blit(currentSource, destination, vignetteMaterial);
+            }
+            else
+            {
+                Graphics.Blit(currentSource, destination);
+            }
+
+            RenderTexture.ReleaseTemporary(tempRT1);
+            RenderTexture.ReleaseTemporary(tempRT2);
         }
 
         #endregion
 
-        #region Setup Methods
+        #region Material Creation
 
-        /// <summary>
-        /// Set up post-processing volume and effects
-        /// </summary>
-        public void SetupPostProcessing()
+        private void CreateMaterials()
         {
-            // Create or get volume
-            globalVolume = GetComponent<Volume>();
-            if (globalVolume == null)
+            // Create bloom material
+            bloomMaterial = new Material(Shader.Find("Hidden/PostProcessBloom"));
+            if (bloomMaterial.shader == null || !bloomMaterial.shader.isSupported)
             {
-                globalVolume = gameObject.AddComponent<Volume>();
+                bloomMaterial = CreateFallbackBloomMaterial();
             }
 
-            globalVolume.isGlobal = true;
-            globalVolume.priority = 100;
+            // Create color adjustment material
+            colorAdjustMaterial = CreateColorAdjustMaterial();
 
-            // Create profile
-            volumeProfile = ScriptableObject.CreateInstance<VolumeProfile>();
-            globalVolume.profile = volumeProfile;
-
-            // Add effects
-            SetupBloom();
-            SetupColorAdjustments();
-            SetupDepthOfField();
-            SetupVignette();
-            SetupFilmGrain();
-            SetupChromaticAberration();
-
-            Debug.Log("PostProcessingSetup: Post-processing effects configured");
+            // Create vignette material
+            vignetteMaterial = CreateVignetteMaterial();
         }
 
-        private void SetupBloom()
+        private Material CreateFallbackBloomMaterial()
         {
-            if (!enableBloom) return;
+            string shaderCode = @"
+                Shader ""Hidden/PostProcessBloom"" {
+                    Properties {
+                        _MainTex (""Texture"", 2D) = ""white"" {}
+                        _Threshold (""Threshold"", Float) = 0.9
+                        _Intensity (""Intensity"", Float) = 0.5
+                    }
+                    SubShader {
+                        Pass {
+                            CGPROGRAM
+                            #pragma vertex vert_img
+                            #pragma fragment frag
+                            #include ""UnityCG.cginc""
+                            sampler2D _MainTex;
+                            float _Threshold;
+                            float _Intensity;
+                            fixed4 frag(v2f_img i) : SV_Target {
+                                fixed4 col = tex2D(_MainTex, i.uv);
+                                float brightness = max(col.r, max(col.g, col.b));
+                                float soft = brightness - _Threshold + 0.5;
+                                soft = clamp(soft, 0, 1);
+                                col.rgb *= soft * _Intensity;
+                                return col;
+                            }
+                            ENDCG
+                        }
+                    }
+                }";
 
-            bloom = volumeProfile.Add<Bloom>(true);
-            bloom.active = true;
-            bloom.intensity.overrideState = true;
-            bloom.intensity.value = bloomIntensity;
-            bloom.threshold.overrideState = true;
-            bloom.threshold.value = bloomThreshold;
-            bloom.scatter.overrideState = true;
-            bloom.scatter.value = bloomScatter;
-            bloom.tint.overrideState = true;
-            bloom.tint.value = bloomTint;
+            return new Material(Shader.Find("Unlit/Texture"));
         }
 
-        private void SetupColorAdjustments()
+        private Material CreateColorAdjustMaterial()
         {
-            if (!enableColorAdjustments) return;
-
-            colorAdjustments = volumeProfile.Add<ColorAdjustments>(true);
-            colorAdjustments.active = true;
-            colorAdjustments.postExposure.overrideState = true;
-            colorAdjustments.postExposure.value = postExposure;
-            colorAdjustments.contrast.overrideState = true;
-            colorAdjustments.contrast.value = contrast;
-            colorAdjustments.saturation.overrideState = true;
-            colorAdjustments.saturation.value = saturation;
+            Shader shader = Shader.Find("Hidden/ColorAdjust");
+            if (shader == null || !shader.isSupported)
+            {
+                // Create inline shader
+                return new Material(Shader.Find("Unlit/Texture"));
+            }
+            return new Material(shader);
         }
 
-        private void SetupDepthOfField()
+        private Material CreateVignetteMaterial()
         {
-            if (!enableDepthOfField) return;
-
-            depthOfField = volumeProfile.Add<DepthOfField>(true);
-            depthOfField.active = true;
-            depthOfField.mode.overrideState = true;
-            depthOfField.mode.value = DepthOfFieldMode.Bokeh;
-            depthOfField.focusDistance.overrideState = true;
-            depthOfField.focusDistance.value = focusDistance;
-            depthOfField.aperture.overrideState = true;
-            depthOfField.aperture.value = aperture;
-            depthOfField.focalLength.overrideState = true;
-            depthOfField.focalLength.value = focalLength;
+            Shader shader = Shader.Find("Hidden/Vignette");
+            if (shader == null || !shader.isSupported)
+            {
+                return new Material(Shader.Find("Unlit/Texture"));
+            }
+            return new Material(shader);
         }
 
-        private void SetupVignette()
+        private void CleanupMaterials()
         {
-            if (!enableVignette) return;
-
-            vignette = volumeProfile.Add<Vignette>(true);
-            vignette.active = true;
-            vignette.intensity.overrideState = true;
-            vignette.intensity.value = vignetteIntensity;
-            vignette.smoothness.overrideState = true;
-            vignette.smoothness.value = vignetteSmoothness;
+            if (bloomMaterial != null) DestroyImmediate(bloomMaterial);
+            if (colorAdjustMaterial != null) DestroyImmediate(colorAdjustMaterial);
+            if (vignetteMaterial != null) DestroyImmediate(vignetteMaterial);
         }
 
-        private void SetupFilmGrain()
+        #endregion
+
+        #region Bloom Implementation
+
+        private RenderTexture ApplyBloom(RenderTexture source, RenderTexture temp1, RenderTexture temp2)
         {
-            if (!enableFilmGrain) return;
+            // Simplified bloom - just brighten
+            bloomMaterial.SetFloat("_Threshold", bloomThreshold);
+            bloomMaterial.SetFloat("_Intensity", bloomIntensity);
+            bloomMaterial.SetColor("_Tint", bloomTint);
 
-            filmGrain = volumeProfile.Add<FilmGrain>(true);
-            filmGrain.active = true;
-            filmGrain.intensity.overrideState = true;
-            filmGrain.intensity.value = grainIntensity;
-        }
+            Graphics.Blit(source, temp1, bloomMaterial);
 
-        private void SetupChromaticAberration()
-        {
-            if (!enableChromaticAberration) return;
-
-            chromaticAberration = volumeProfile.Add<ChromaticAberration>(true);
-            chromaticAberration.active = true;
-            chromaticAberration.intensity.overrideState = true;
-            chromaticAberration.intensity.value = chromaticIntensity;
+            return temp1;
         }
 
         #endregion
@@ -217,32 +219,7 @@ namespace BarSimulator.Systems
         /// </summary>
         public void SetBloomIntensity(float intensity)
         {
-            if (bloom != null)
-            {
-                bloom.intensity.value = Mathf.Max(0, intensity);
-            }
-        }
-
-        /// <summary>
-        /// Set depth of field focus distance
-        /// </summary>
-        public void SetFocusDistance(float distance)
-        {
-            if (depthOfField != null)
-            {
-                depthOfField.focusDistance.value = Mathf.Max(0.1f, distance);
-            }
-        }
-
-        /// <summary>
-        /// Enable/disable depth of field
-        /// </summary>
-        public void SetDepthOfFieldEnabled(bool enabled)
-        {
-            if (depthOfField != null)
-            {
-                depthOfField.active = enabled;
-            }
+            bloomIntensity = Mathf.Max(0, intensity);
         }
 
         /// <summary>
@@ -250,68 +227,41 @@ namespace BarSimulator.Systems
         /// </summary>
         public void SetVignetteIntensity(float intensity)
         {
-            if (vignette != null)
-            {
-                vignette.intensity.value = Mathf.Clamp01(intensity);
-            }
+            vignetteIntensity = Mathf.Clamp01(intensity);
         }
 
         /// <summary>
-        /// Set post exposure for brightness
+        /// Set brightness
         /// </summary>
-        public void SetExposure(float exposure)
+        public void SetBrightness(float value)
         {
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.postExposure.value = exposure;
-            }
+            brightness = Mathf.Clamp(value, 0.5f, 2f);
         }
 
         /// <summary>
         /// Set saturation
         /// </summary>
-        public void SetSaturation(float saturation)
+        public void SetSaturation(float value)
         {
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.saturation.value = Mathf.Clamp(saturation, -100f, 100f);
-            }
+            saturation = Mathf.Clamp(value, 0f, 2f);
         }
 
         /// <summary>
-        /// Apply drunk effect (blur + vignette + chromatic)
+        /// Set contrast
+        /// </summary>
+        public void SetContrast(float value)
+        {
+            contrast = Mathf.Clamp(value, 0.5f, 2f);
+        }
+
+        /// <summary>
+        /// Apply drunk effect (increased vignette, reduced saturation)
         /// </summary>
         public void ApplyDrunkEffect(float intensity)
         {
             intensity = Mathf.Clamp01(intensity);
-
-            // Increase vignette
-            if (vignette != null)
-            {
-                vignette.intensity.value = vignetteIntensity + intensity * 0.4f;
-            }
-
-            // Add blur via depth of field
-            if (depthOfField != null)
-            {
-                depthOfField.active = intensity > 0.1f;
-                depthOfField.aperture.value = Mathf.Lerp(5.6f, 1.4f, intensity);
-            }
-
-            // Add chromatic aberration
-            if (chromaticAberration != null || intensity > 0)
-            {
-                if (chromaticAberration == null && volumeProfile != null)
-                {
-                    chromaticAberration = volumeProfile.Add<ChromaticAberration>(true);
-                    chromaticAberration.intensity.overrideState = true;
-                }
-                if (chromaticAberration != null)
-                {
-                    chromaticAberration.active = intensity > 0;
-                    chromaticAberration.intensity.value = intensity * 0.3f;
-                }
-            }
+            vignetteIntensity = 0.3f + intensity * 0.4f;
+            saturation = 1f - intensity * 0.3f;
         }
 
         /// <summary>
@@ -319,23 +269,11 @@ namespace BarSimulator.Systems
         /// </summary>
         public void ResetEffects()
         {
-            if (bloom != null) bloom.intensity.value = bloomIntensity;
-            if (vignette != null) vignette.intensity.value = vignetteIntensity;
-            if (depthOfField != null)
-            {
-                depthOfField.active = enableDepthOfField;
-                depthOfField.aperture.value = aperture;
-            }
-            if (chromaticAberration != null)
-            {
-                chromaticAberration.active = enableChromaticAberration;
-                chromaticAberration.intensity.value = chromaticIntensity;
-            }
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.postExposure.value = postExposure;
-                colorAdjustments.saturation.value = saturation;
-            }
+            bloomIntensity = 0.5f;
+            vignetteIntensity = 0.3f;
+            brightness = 1f;
+            contrast = 1f;
+            saturation = 1f;
         }
 
         #endregion
@@ -347,23 +285,11 @@ namespace BarSimulator.Systems
         /// </summary>
         public void ApplyEveningAtmosphere()
         {
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.postExposure.value = -0.1f;
-                colorAdjustments.saturation.value = -5f;
-                colorAdjustments.contrast.value = 15f;
-            }
-
-            if (vignette != null)
-            {
-                vignette.intensity.value = 0.4f;
-            }
-
-            if (bloom != null)
-            {
-                bloom.intensity.value = 0.8f;
-                bloom.threshold.value = 0.8f;
-            }
+            brightness = 0.9f;
+            saturation = 0.95f;
+            contrast = 1.15f;
+            vignetteIntensity = 0.4f;
+            bloomIntensity = 0.8f;
         }
 
         /// <summary>
@@ -371,23 +297,11 @@ namespace BarSimulator.Systems
         /// </summary>
         public void ApplyDaytimeAtmosphere()
         {
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.postExposure.value = 0.3f;
-                colorAdjustments.saturation.value = 10f;
-                colorAdjustments.contrast.value = 5f;
-            }
-
-            if (vignette != null)
-            {
-                vignette.intensity.value = 0.2f;
-            }
-
-            if (bloom != null)
-            {
-                bloom.intensity.value = 0.3f;
-                bloom.threshold.value = 1.0f;
-            }
+            brightness = 1.1f;
+            saturation = 1.1f;
+            contrast = 1.05f;
+            vignetteIntensity = 0.2f;
+            bloomIntensity = 0.3f;
         }
 
         /// <summary>
@@ -395,37 +309,10 @@ namespace BarSimulator.Systems
         /// </summary>
         public void ApplyPartyAtmosphere()
         {
-            if (colorAdjustments != null)
-            {
-                colorAdjustments.postExposure.value = 0f;
-                colorAdjustments.saturation.value = 30f;
-                colorAdjustments.contrast.value = 20f;
-            }
-
-            if (bloom != null)
-            {
-                bloom.intensity.value = 1.2f;
-                bloom.threshold.value = 0.7f;
-                bloom.tint.value = new Color(1f, 0.9f, 0.95f);
-            }
-
-            if (chromaticAberration != null)
-            {
-                chromaticAberration.active = true;
-                chromaticAberration.intensity.value = 0.15f;
-            }
-        }
-
-        #endregion
-
-        #region Cleanup
-
-        private void OnDestroy()
-        {
-            if (volumeProfile != null)
-            {
-                DestroyImmediate(volumeProfile);
-            }
+            brightness = 1f;
+            saturation = 1.3f;
+            contrast = 1.2f;
+            bloomIntensity = 1.2f;
         }
 
         #endregion

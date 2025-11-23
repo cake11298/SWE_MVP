@@ -169,13 +169,13 @@ Shader "BarSimulator/LiquidAdvanced"
                         float2 cellPos = cell + neighbor;
 
                         // Random position within cell
-                        float2 point = noise(cellPos) * 0.5 + 0.25;
-                        point += neighbor;
+                        float2 bubblePos = noise(cellPos) * 0.5 + 0.25;
+                        bubblePos += neighbor;
 
                         // Animate Y position
-                        point.y += frac(time * _BubbleSpeed * (0.5 + noise(cellPos + 100))) * 2;
+                        bubblePos.y += frac(time * _BubbleSpeed * (0.5 + noise(cellPos + 100))) * 2;
 
-                        float dist = length(cellUV - point);
+                        float dist = length(cellUV - bubblePos);
                         float size = (0.05 + noise(cellPos + 200) * 0.05) / _BubbleSize;
                         bubble = max(bubble, smoothstep(size, size * 0.1, dist));
                     }
