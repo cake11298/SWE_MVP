@@ -64,6 +64,15 @@ namespace BarSimulator.NPC
 
             if (npcController == null) return;
 
+            // 使用 NPCManager 來處理互動（會觸發點單系統）
+            var npcManager = Managers.NPCManager.Instance;
+            if (npcManager != null)
+            {
+                npcManager.InteractWithNPC(npcController);
+                return;
+            }
+
+            // 備用：如果沒有 NPCManager，使用基本對話
             // 取得下一句對話
             currentDialogue = npcController.GetNextDialogue();
             isShowingDialogue = true;
