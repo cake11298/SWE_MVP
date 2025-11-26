@@ -349,6 +349,14 @@ namespace BarSimulator.Managers
         public IReadOnlyList<NPCController> NPCs => npcs.AsReadOnly();
 
         /// <summary>
+        /// 取得所有活躍的 NPC（用於遍歷）
+        /// </summary>
+        public IEnumerable<NPCController> GetActiveNPCs()
+        {
+            return npcs;
+        }
+
+        /// <summary>
         /// 音樂是否正在播放
         /// </summary>
         public bool MusicPlaying => musicPlaying;

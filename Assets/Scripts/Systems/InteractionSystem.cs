@@ -219,6 +219,82 @@ namespace BarSimulator.Systems
                     DropObject(false); // Drop in place
                 }
             }
+
+            // F 鍵：送酒給 NPC
+            bool servePressed = false;
+            if (useFallbackInput)
+            {
+                servePressed = Input.GetKeyDown(KeyCode.F);
+            }
+
+            if (servePressed && isHolding)
+            {
+                TryServeToNPC();
+            }
+        }
+
+        /// <summary>
+        /// 嘗試將手持的飲料送給附近的 NPC
+        /// </summary>
+        private void TryServeToNPC()
+        {
+            if (!isHolding || heldObject == null) return;
+
+            // 檢查是否是可送出的容器（Glass 或 Shaker）
+            var container = heldObject as BarSimulator.Objects.Container;
+            if (container == null)
+            {
+                Debug.Log("InteractionSystem: 手持物品不是可送出的容器");
+                return;
+            }
+
+            // 尋找附近有訂單的 NPC
+            var npcManager = BarSimulator.Managers.NPCManager.Instance;
+            if (npcManager == null)
+            {
+                Debug.LogWarning("InteractionSystem: NPCManager not found");
+                return;
+            }
+
+            // 取得玩家位置
+            Vector3 playerPos = mainCamera.transform.position;
+            float serveDistance = 3f;
+
+            // 尋找最近的有訂單的 NPC
+            BarSimulator.NPC.NPCController nearestNPC = null;
+            float nearestDist = float.MaxValue;
+
+            foreach (var npc in npcManager.GetActiveNPCs())
+            {
+                if (npc == null || !npc.HasPendingOrder) continue;
+
+                float dist = Vector3.Distance(playerPos, npc.transform.position);
+                if (dist < serveDistance && dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    nearestNPC = npc;
+                }
+            }
+
+            if (nearestNPC != null)
+            {
+                // 送酒給 NPC
+                bool success = nearestNPC.ServeDrink(container);
+                if (success)
+                {
+                    Debug.Log($"InteractionSystem: 成功送酒給 {nearestNPC.name}");
+                    // 放下物品（會被銷毀或回收）
+                    DropObject(false);
+                }
+                else
+                {
+                    Debug.Log($"InteractionSystem: {nearestNPC.name} 不接受這杯飲料");
+                }
+            }
+            else
+            {
+                Debug.Log("InteractionSystem: 附近沒有需要服務的 NPC");
+            }
         }
 
         #endregion

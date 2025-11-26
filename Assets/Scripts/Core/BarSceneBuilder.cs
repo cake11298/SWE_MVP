@@ -105,6 +105,7 @@ namespace BarSimulator.Core
             // 1. 建造基礎結構
             BuildFloor();
             BuildWalls();
+            BuildRoof();
             BuildBarCounter();
             BuildLiquorShelf();
 
@@ -240,6 +241,52 @@ namespace BarSimulator.Core
                 renderer.material = wallMaterial;
 
                 structureObjects.Add(wall);
+            }
+        }
+
+        /// <summary>
+        /// 建造屋頂
+        /// </summary>
+        private void BuildRoof()
+        {
+            // 主屋頂
+            var roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            roof.name = "Roof";
+            roof.transform.position = new Vector3(0f, roomSize.y, 0f);
+            roof.transform.localScale = new Vector3(roomSize.x + 0.4f, 0.3f, roomSize.z + 0.4f);
+
+            var roofMaterial = new Material(Shader.Find("Standard"));
+            roofMaterial.color = new Color(0.15f, 0.12f, 0.1f); // 深色天花板
+            roofMaterial.SetFloat("_Glossiness", 0.1f);
+            roof.GetComponent<Renderer>().material = roofMaterial;
+
+            structureObjects.Add(roof);
+
+            // 天花板裝飾橫樑
+            var beamMaterial = new Material(Shader.Find("Standard"));
+            beamMaterial.color = new Color(0.2f, 0.15f, 0.1f);
+            beamMaterial.SetFloat("_Glossiness", 0.3f);
+
+            // 橫向樑
+            for (int i = -1; i <= 1; i++)
+            {
+                var beam = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                beam.name = $"CeilingBeam_H_{i}";
+                beam.transform.position = new Vector3(0f, roomSize.y - 0.3f, i * 6f);
+                beam.transform.localScale = new Vector3(roomSize.x - 1f, 0.3f, 0.3f);
+                beam.GetComponent<Renderer>().material = beamMaterial;
+                structureObjects.Add(beam);
+            }
+
+            // 縱向樑
+            for (int i = -1; i <= 1; i++)
+            {
+                var beam = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                beam.name = $"CeilingBeam_V_{i}";
+                beam.transform.position = new Vector3(i * 6f, roomSize.y - 0.3f, 0f);
+                beam.transform.localScale = new Vector3(0.3f, 0.3f, roomSize.z - 1f);
+                beam.GetComponent<Renderer>().material = beamMaterial;
+                structureObjects.Add(beam);
             }
         }
 
@@ -610,25 +657,64 @@ namespace BarSimulator.Core
         }
 
         /// <summary>
-        /// 建造搖酒器
+        /// 建造搖酒器 (Boston Shaker 風格)
         /// </summary>
         private void BuildShaker()
         {
-            var shakerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            shakerObj.name = "Shaker";
-            shakerObj.transform.position = new Vector3(3f, 1.2f, -2.5f);
-            shakerObj.transform.localScale = new Vector3(0.15f, 0.2f, 0.15f);
+            Vector3 shakerPos = new Vector3(3f, 1.15f, -2.5f);
+
+            // 建立 Shaker 容器物件
+            var shakerObj = new GameObject("Shaker");
+            shakerObj.transform.position = shakerPos;
+
+            // 金屬底部 (錫杯)
+            var metalBottom = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            metalBottom.name = "MetalTin";
+            metalBottom.transform.SetParent(shakerObj.transform);
+            metalBottom.transform.localPosition = new Vector3(0f, 0f, 0f);
+            metalBottom.transform.localScale = new Vector3(0.12f, 0.15f, 0.12f);
 
             // 金屬材質
-            var renderer = shakerObj.GetComponent<Renderer>();
-            var material = new Material(Shader.Find("Standard"));
-            material.color = new Color(0.8f, 0.8f, 0.85f);
-            material.SetFloat("_Metallic", 0.8f);
-            material.SetFloat("_Glossiness", 0.7f);
-            renderer.material = material;
+            var metalMaterial = new Material(Shader.Find("Standard"));
+            metalMaterial.color = new Color(0.75f, 0.75f, 0.8f);
+            metalMaterial.SetFloat("_Metallic", 0.9f);
+            metalMaterial.SetFloat("_Glossiness", 0.85f);
+            metalBottom.GetComponent<Renderer>().material = metalMaterial;
+
+            // 玻璃頂部 (波士頓玻璃杯)
+            var glassTop = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            glassTop.name = "GlassMixer";
+            glassTop.transform.SetParent(shakerObj.transform);
+            glassTop.transform.localPosition = new Vector3(0f, 0.22f, 0f);
+            glassTop.transform.localScale = new Vector3(0.1f, 0.12f, 0.1f);
+
+            // 玻璃材質 (半透明)
+            var glassMaterial = new Material(Shader.Find("Standard"));
+            glassMaterial.SetFloat("_Mode", 3); // Transparent
+            glassMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            glassMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            glassMaterial.SetInt("_ZWrite", 0);
+            glassMaterial.DisableKeyword("_ALPHATEST_ON");
+            glassMaterial.EnableKeyword("_ALPHABLEND_ON");
+            glassMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            glassMaterial.renderQueue = 3000;
+            glassMaterial.color = new Color(0.9f, 0.95f, 1f, 0.3f);
+            glassMaterial.SetFloat("_Glossiness", 0.9f);
+            glassTop.GetComponent<Renderer>().material = glassMaterial;
+
+            // 移除子物件的碰撞體，使用父物件的
+            Destroy(metalBottom.GetComponent<Collider>());
+            Destroy(glassTop.GetComponent<Collider>());
+
+            // 添加整體碰撞體
+            var collider = shakerObj.AddComponent<CapsuleCollider>();
+            collider.height = 0.5f;
+            collider.radius = 0.08f;
+            collider.center = new Vector3(0f, 0.1f, 0f);
 
             // 添加 Shaker 組件
             shaker = shakerObj.AddComponent<Shaker>();
+            shaker.SetOriginalPosition(shakerPos);
 
             // 添加 Rigidbody
             var rb = shakerObj.AddComponent<Rigidbody>();
@@ -1093,29 +1179,148 @@ namespace BarSimulator.Core
         /// </summary>
         private void SetupLighting()
         {
-            // 主方向光 - 降低強度
+            // 主方向光 - 室內環境較暗
             var mainLight = new GameObject("MainLight");
             var light = mainLight.AddComponent<Light>();
             light.type = LightType.Directional;
             light.color = new Color(1f, 0.95f, 0.8f);
-            light.intensity = 0.5f; // 降低主光源強度
+            light.intensity = 0.3f; // 室內環境降低方向光
             mainLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            // 環境光設置 - 略微提高以平衡降低的主光源
+            // 環境光設置 - 酒吧暖色調
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.15f, 0.12f, 0.1f);
+            RenderSettings.ambientLight = new Color(0.12f, 0.1f, 0.08f);
 
-            // 霧效
+            // 霧效 - 煙霧氛圍
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.1f, 0f, 0.2f);
-            RenderSettings.fogStartDistance = 10f;
-            RenderSettings.fogEndDistance = 30f;
+            RenderSettings.fogColor = new Color(0.05f, 0.02f, 0.1f);
+            RenderSettings.fogStartDistance = 8f;
+            RenderSettings.fogEndDistance = 25f;
 
-            // 吧台聚光燈 - 降低強度
-            CreateSpotlight(new Vector3(-3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 5f);
-            CreateSpotlight(new Vector3(0f, 4f, -3f), new Color(0.8f, 0.8f, 1f), 5f);
-            CreateSpotlight(new Vector3(3f, 4f, -3f), new Color(1f, 0.8f, 0.6f), 5f);
+            // 吧台聚光燈
+            CreateSpotlight(new Vector3(-3f, 9f, -3f), new Color(1f, 0.8f, 0.6f), 8f);
+            CreateSpotlight(new Vector3(0f, 9f, -3f), new Color(0.9f, 0.85f, 1f), 8f);
+            CreateSpotlight(new Vector3(3f, 9f, -3f), new Color(1f, 0.8f, 0.6f), 8f);
+
+            // 天花板吊燈 (室內主要光源)
+            CreateCeilingLight(new Vector3(-4f, 8.5f, 0f), new Color(1f, 0.9f, 0.7f), 6f);
+            CreateCeilingLight(new Vector3(4f, 8.5f, 0f), new Color(1f, 0.9f, 0.7f), 6f);
+            CreateCeilingLight(new Vector3(0f, 8.5f, 5f), new Color(1f, 0.9f, 0.7f), 5f);
+
+            // 牆壁壁燈
+            CreateWallSconce(new Vector3(-12f, 4f, 0f), new Color(1f, 0.7f, 0.4f), 3f);
+            CreateWallSconce(new Vector3(12f, 4f, 0f), new Color(1f, 0.7f, 0.4f), 3f);
+
+            // 酒架背光
+            CreatePointLight(new Vector3(0f, 4f, -7.5f), new Color(0.8f, 0.8f, 1f), 4f, 8f);
+        }
+
+        /// <summary>
+        /// 建立天花板吊燈
+        /// </summary>
+        private void CreateCeilingLight(Vector3 position, Color color, float intensity)
+        {
+            var lightRoot = new GameObject("CeilingLight");
+            lightRoot.transform.position = position;
+
+            // 燈具外觀
+            var fixture = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            fixture.name = "LightFixture";
+            fixture.transform.SetParent(lightRoot.transform);
+            fixture.transform.localPosition = Vector3.zero;
+            fixture.transform.localScale = new Vector3(0.4f, 0.15f, 0.4f);
+
+            var fixtureMaterial = new Material(Shader.Find("Standard"));
+            fixtureMaterial.color = new Color(0.2f, 0.2f, 0.2f);
+            fixtureMaterial.SetFloat("_Metallic", 0.8f);
+            fixture.GetComponent<Renderer>().material = fixtureMaterial;
+            Destroy(fixture.GetComponent<Collider>());
+
+            // 燈泡 (發光)
+            var bulb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            bulb.name = "Bulb";
+            bulb.transform.SetParent(lightRoot.transform);
+            bulb.transform.localPosition = new Vector3(0f, -0.1f, 0f);
+            bulb.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            var bulbMaterial = new Material(Shader.Find("Standard"));
+            bulbMaterial.color = color;
+            bulbMaterial.EnableKeyword("_EMISSION");
+            bulbMaterial.SetColor("_EmissionColor", color * 2f);
+            bulb.GetComponent<Renderer>().material = bulbMaterial;
+            Destroy(bulb.GetComponent<Collider>());
+
+            // 點光源
+            var lightComp = lightRoot.AddComponent<Light>();
+            lightComp.type = LightType.Point;
+            lightComp.color = color;
+            lightComp.intensity = intensity;
+            lightComp.range = 12f;
+
+            structureObjects.Add(lightRoot);
+        }
+
+        /// <summary>
+        /// 建立牆壁壁燈
+        /// </summary>
+        private void CreateWallSconce(Vector3 position, Color color, float intensity)
+        {
+            var sconceObj = new GameObject("WallSconce");
+            sconceObj.transform.position = position;
+
+            // 壁燈支架
+            var bracket = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bracket.name = "Bracket";
+            bracket.transform.SetParent(sconceObj.transform);
+            bracket.transform.localPosition = Vector3.zero;
+            bracket.transform.localScale = new Vector3(0.15f, 0.3f, 0.1f);
+
+            var bracketMaterial = new Material(Shader.Find("Standard"));
+            bracketMaterial.color = new Color(0.6f, 0.5f, 0.3f);
+            bracketMaterial.SetFloat("_Metallic", 0.7f);
+            bracket.GetComponent<Renderer>().material = bracketMaterial;
+            Destroy(bracket.GetComponent<Collider>());
+
+            // 燈罩
+            var shade = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            shade.name = "Shade";
+            shade.transform.SetParent(sconceObj.transform);
+            shade.transform.localPosition = new Vector3(0f, 0f, 0.15f);
+            shade.transform.localScale = new Vector3(0.15f, 0.1f, 0.15f);
+
+            var shadeMaterial = new Material(Shader.Find("Standard"));
+            shadeMaterial.color = new Color(1f, 0.95f, 0.8f);
+            shadeMaterial.EnableKeyword("_EMISSION");
+            shadeMaterial.SetColor("_EmissionColor", color * 0.5f);
+            shade.GetComponent<Renderer>().material = shadeMaterial;
+            Destroy(shade.GetComponent<Collider>());
+
+            // 點光源
+            var lightComp = sconceObj.AddComponent<Light>();
+            lightComp.type = LightType.Point;
+            lightComp.color = color;
+            lightComp.intensity = intensity;
+            lightComp.range = 6f;
+
+            structureObjects.Add(sconceObj);
+        }
+
+        /// <summary>
+        /// 建立點光源
+        /// </summary>
+        private void CreatePointLight(Vector3 position, Color color, float intensity, float range)
+        {
+            var lightObj = new GameObject("PointLight");
+            lightObj.transform.position = position;
+
+            var lightComp = lightObj.AddComponent<Light>();
+            lightComp.type = LightType.Point;
+            lightComp.color = color;
+            lightComp.intensity = intensity;
+            lightComp.range = range;
+
+            structureObjects.Add(lightObj);
         }
 
         /// <summary>

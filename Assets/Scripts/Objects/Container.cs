@@ -505,5 +505,71 @@ namespace BarSimulator.Objects
         public Color MixedColor => contents.mixedColor;
 
         #endregion
+
+        #region 飲料資訊
+
+        /// <summary>
+        /// 取得飲料資訊（用於評分）
+        /// </summary>
+        public virtual DrinkInfo GetDrinkInfo()
+        {
+            if (contents.IsEmpty) return null;
+
+            var info = new DrinkInfo
+            {
+                volume = contents.volume,
+                color = contents.mixedColor,
+                ingredients = contents.ingredients.ToArray()
+            };
+
+            // 根據成分識別雞尾酒
+            info.cocktailName = RecognizeCocktailName();
+
+            return info;
+        }
+
+        /// <summary>
+        /// 根據成分識別雞尾酒名稱
+        /// </summary>
+        protected virtual string RecognizeCocktailName()
+        {
+            // 簡單識別邏輯
+            bool hasGin = false;
+            bool hasVodka = false;
+            bool hasRum = false;
+            bool hasTequila = false;
+            bool hasWhiskey = false;
+            bool hasVermouth = false;
+            bool hasTripleSec = false;
+            bool hasCitrus = false;
+
+            foreach (var ingredient in contents.ingredients)
+            {
+                string name = ingredient.name.ToLower();
+                if (name.Contains("gin")) hasGin = true;
+                if (name.Contains("vodka")) hasVodka = true;
+                if (name.Contains("rum")) hasRum = true;
+                if (name.Contains("tequila")) hasTequila = true;
+                if (name.Contains("whiskey") || name.Contains("bourbon")) hasWhiskey = true;
+                if (name.Contains("vermouth")) hasVermouth = true;
+                if (name.Contains("triple sec") || name.Contains("cointreau")) hasTripleSec = true;
+                if (name.Contains("lime") || name.Contains("lemon")) hasCitrus = true;
+            }
+
+            // 識別雞尾酒
+            if (hasGin && hasVermouth) return "Martini";
+            if (hasTequila && hasTripleSec && hasCitrus) return "Margarita";
+            if (hasRum && hasCitrus) return "Daiquiri";
+            if (hasVodka && hasTripleSec) return "Cosmopolitan";
+            if (hasWhiskey && hasVermouth) return "Manhattan";
+            if (hasWhiskey) return "Whiskey Cocktail";
+            if (hasGin) return "Gin Cocktail";
+            if (hasVodka) return "Vodka Cocktail";
+            if (hasRum) return "Rum Cocktail";
+
+            return "Mixed Drink";
+        }
+
+        #endregion
     }
 }

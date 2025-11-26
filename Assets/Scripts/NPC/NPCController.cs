@@ -1,5 +1,7 @@
 using UnityEngine;
 using BarSimulator.Data;
+using BarSimulator.Objects;
+using BarSimulator.UI;
 
 namespace BarSimulator.NPC
 {
@@ -255,6 +257,75 @@ namespace BarSimulator.NPC
         }
 
         /// <summary>
+        /// 接受飲料送達
+        /// </summary>
+        /// <param name="container">送來的容器（Glass 或 Shaker）</param>
+        /// <returns>是否接受飲料</returns>
+        public bool ServeDrink(Container container)
+        {
+            if (!hasActiveOrder || container == null)
+            {
+                return false;
+            }
+
+            // 取得容器中的飲料資訊
+            DrinkInfo drinkInfo = container.GetDrinkInfo();
+
+            // 完成訂單
+            CompleteOrder();
+
+            // 評分並反應
+            if (drinkInfo != null)
+            {
+                var evaluation = DrinkEvaluator.Evaluate(drinkInfo);
+                ReactToDrink(evaluation);
+
+                // 顯示評價
+                var dialogueBox = UI.DialogueBox.Instance;
+                if (dialogueBox != null)
+                {
+                    string response = GetDrinkResponse(evaluation);
+                    dialogueBox.ShowDialogue(NPCName, response);
+                }
+
+                Debug.Log($"{NPCName} received drink: {drinkInfo.cocktailName}, Score: {evaluation.score}");
+            }
+            else
+            {
+                SetMood(NPCMood.Disappointed);
+                Debug.Log($"{NPCName} received an empty container.");
+            }
+
+            // 銷毀容器
+            Destroy(container.gameObject);
+
+            return true;
+        }
+
+        /// <summary>
+        /// 取得對飲料的評價回應
+        /// </summary>
+        private string GetDrinkResponse(DrinkEvaluation evaluation)
+        {
+            if (evaluation.score >= 90)
+            {
+                return $"Excellent! This {evaluation.cocktailName} is perfect! Score: {evaluation.score}/100";
+            }
+            else if (evaluation.score >= 70)
+            {
+                return $"Good job! This {evaluation.cocktailName} is pretty good. Score: {evaluation.score}/100";
+            }
+            else if (evaluation.score >= 50)
+            {
+                return $"Not bad, but this {evaluation.cocktailName} could be better. Score: {evaluation.score}/100";
+            }
+            else
+            {
+                return $"Hmm... This doesn't quite taste right. Score: {evaluation.score}/100";
+            }
+        }
+
+        /// <summary>
         /// 取消訂單
         /// </summary>
         public void CancelOrder()
@@ -400,6 +471,11 @@ namespace BarSimulator.NPC
         /// 是否有活動訂單
         /// </summary>
         public bool HasActiveOrder => hasActiveOrder;
+
+        /// <summary>
+        /// 是否有待處理的訂單（HasActiveOrder 的別名）
+        /// </summary>
+        public bool HasPendingOrder => hasActiveOrder;
 
         /// <summary>
         /// 剩餘耐心值（0-1）
