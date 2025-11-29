@@ -43,6 +43,9 @@ namespace BarSimulator.Core
         /// <summary>Shaker 最大容量 (ml)</summary>
         public const float ShakerMaxVolume = 500f;
 
+        /// <summary>Mixing Glass 最大容量 (ml)</summary>
+        public const float MixingGlassMaxVolume = 500f;
+
         // === 物理參數 ===
 
         /// <summary>重力加速度</summary>

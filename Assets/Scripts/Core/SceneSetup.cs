@@ -210,10 +210,10 @@ namespace BarSimulator.Core
             }
 
             // AudioManager
-            if (AudioManager.Instance == null)
+            if (BarSimulator.Systems.AudioManager.Instance == null)
             {
                 var audioObj = new GameObject("AudioManager");
-                audioObj.AddComponent<AudioManager>();
+                audioObj.AddComponent<BarSimulator.Systems.AudioManager>();
             }
 
             // LightingManager

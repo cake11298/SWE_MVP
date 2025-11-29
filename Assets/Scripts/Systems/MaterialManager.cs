@@ -36,9 +36,6 @@ namespace BarSimulator.Systems
         [SerializeField] private Shader standardShader;
         [SerializeField] private Shader glassShader;
 
-        [Header("PBR Material Properties")]
-        [SerializeField] private bool useUnityStandard = true;
-
         #endregion
 
         #region Private Fields
