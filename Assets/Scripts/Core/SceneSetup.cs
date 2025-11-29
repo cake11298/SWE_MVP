@@ -85,26 +85,32 @@ namespace BarSimulator.Core
 
             Debug.Log("SceneSetup: Initializing scene...");
 
-            // 建立基本場景物件
-            if (autoCreateScene)
-            {
-                CreateBasicScene();
-            }
-
-            // 建立系統管理器
+            // 步驟 1: 建立核心系統管理器（GameManager, AudioManager 等）
             if (autoCreateSystems)
             {
-                CreateSystemManagers();
+                CreateCoreSystemManagers();
             }
 
-            // 生成玩家
+            // 步驟 2: 建立物理環境（使用 BarSceneBuilder）
+            if (autoCreateScene)
+            {
+                BuildPhysicsEnvironment();
+            }
+
+            // 步驟 3: 生成玩家
             SpawnPlayer();
 
-            // 設置攝影機
+            // 步驟 4: 設置攝影機
             SetupCamera();
 
-            // 生成場景道具
-            SpawnBarProps();
+            // 步驟 5: 初始化 UI 系統（UIBuilder 和 UIFactory）
+            InitializeUISystem();
+
+            // 步驟 6: 生成可互動物件（如果 BarSceneBuilder 未啟用）
+            if (!autoCreateScene || BarSceneBuilder.Instance == null)
+            {
+                SpawnBarProps();
+            }
 
             isInitialized = true;
 
@@ -112,61 +118,69 @@ namespace BarSimulator.Core
         }
 
         /// <summary>
-        /// 建立基本場景物件
+        /// 建立物理環境（統一使用 BarSceneBuilder）
         /// </summary>
-        private void CreateBasicScene()
+        private void BuildPhysicsEnvironment()
         {
-            // 使用 BarSceneBuilder 建立完整場景
+            // 優先使用 BarSceneBuilder 建立完整場景
             if (BarSceneBuilder.Instance == null)
             {
+                Debug.Log("SceneSetup: Creating BarSceneBuilder for physics environment...");
                 var builderObj = new GameObject("BarSceneBuilder");
                 var builder = builderObj.AddComponent<BarSceneBuilder>();
                 // BarSceneBuilder 會在 Start 時自動建立場景
+            }
+            else
+            {
+                Debug.Log("SceneSetup: BarSceneBuilder already exists, skipping creation");
             }
 
             // 如果 BarSceneBuilder 沒有啟用，則建立基本場景作為後備
             if (floor == null && BarSceneBuilder.Instance == null)
             {
-                floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                floor.name = "Floor";
-                floor.transform.position = Vector3.zero;
-                floor.transform.localScale = new Vector3(2f, 1f, 2f);
+                Debug.LogWarning("SceneSetup: BarSceneBuilder not found, creating fallback scene");
+                CreateFallbackScene();
+            }
+        }
 
-                var renderer = floor.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    renderer.material.color = new Color(0.2f, 0.15f, 0.1f); // 深木色
-                }
+        /// <summary>
+        /// 建立後備場景（當 BarSceneBuilder 不可用時）
+        /// </summary>
+        private void CreateFallbackScene()
+        {
+            floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.name = "Floor";
+            floor.transform.position = Vector3.zero;
+            floor.transform.localScale = new Vector3(2f, 1f, 2f);
+
+            var renderer = floor.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.2f, 0.15f, 0.1f); // 深木色
             }
 
             // 建立吧台
-            if (barCounter == null && BarSceneBuilder.Instance == null)
-            {
-                barCounter = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                barCounter.name = "BarCounter";
-                barCounter.transform.position = new Vector3(0f, 0.5f, 2f);
-                barCounter.transform.localScale = new Vector3(4f, 1f, 0.8f);
+            barCounter = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            barCounter.name = "BarCounter";
+            barCounter.transform.position = new Vector3(0f, 0.5f, 2f);
+            barCounter.transform.localScale = new Vector3(4f, 1f, 0.8f);
 
-                var renderer = barCounter.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    renderer.material.color = new Color(0.4f, 0.25f, 0.15f); // 木頭色
-                }
+            renderer = barCounter.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.4f, 0.25f, 0.15f); // 木頭色
             }
 
             // 建立後牆
-            if ((walls == null || walls.Length == 0) && BarSceneBuilder.Instance == null)
-            {
-                var backWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                backWall.name = "BackWall";
-                backWall.transform.position = new Vector3(0f, 1.5f, 3f);
-                backWall.transform.localScale = new Vector3(6f, 3f, 0.1f);
+            var backWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            backWall.name = "BackWall";
+            backWall.transform.position = new Vector3(0f, 1.5f, 3f);
+            backWall.transform.localScale = new Vector3(6f, 3f, 0.1f);
 
-                var renderer = backWall.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    renderer.material.color = new Color(0.3f, 0.25f, 0.2f);
-                }
+            renderer = backWall.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.3f, 0.25f, 0.2f);
             }
 
             // 建立燈光
@@ -196,10 +210,12 @@ namespace BarSimulator.Core
         }
 
         /// <summary>
-        /// 建立系統管理器
+        /// 建立核心系統管理器（不包含 UI 相關）
         /// </summary>
-        private void CreateSystemManagers()
+        private void CreateCoreSystemManagers()
         {
+            Debug.Log("SceneSetup: Creating core system managers...");
+
             // GameManager
             if (GameManager.Instance == null)
             {
@@ -228,11 +244,12 @@ namespace BarSimulator.Core
                 lightObj.AddComponent<LightingManager>();
             }
 
-            // EnvironmentManager
+            // EnvironmentManager - 禁用自動生成（由 BarSceneBuilder 處理）
             if (EnvironmentManager.Instance == null)
             {
                 var envObj = new GameObject("EnvironmentManager");
-                envObj.AddComponent<EnvironmentManager>();
+                var envMgr = envObj.AddComponent<EnvironmentManager>();
+                // 註：不在此生成物件，由 BarSceneBuilder 處理
             }
 
             // CocktailSystem
@@ -256,20 +273,6 @@ namespace BarSimulator.Core
                 interactionObj.AddComponent<InteractionSystem>();
             }
 
-            // UIBuilder
-            if (UIBuilder.Instance == null)
-            {
-                var uiObj = new GameObject("UIBuilder");
-                uiObj.AddComponent<UIBuilder>();
-            }
-
-            // ShopManager
-            if (BarSimulator.UI.ShopManager.Instance == null)
-            {
-                var shopObj = new GameObject("ShopManager");
-                shopObj.AddComponent<BarSimulator.UI.ShopManager>();
-            }
-
             // UpgradeSystem
             if (UpgradeSystem.Instance == null)
             {
@@ -291,13 +294,6 @@ namespace BarSimulator.Core
                 saveObj.AddComponent<SaveLoadSystem>();
             }
 
-            // SettingsManager
-            if (BarSimulator.UI.SettingsManager.Instance == null)
-            {
-                var settingsObj = new GameObject("SettingsManager");
-                settingsObj.AddComponent<BarSimulator.UI.SettingsManager>();
-            }
-
             // SceneLoader
             if (SceneLoader.Instance == null)
             {
@@ -311,6 +307,72 @@ namespace BarSimulator.Core
                 var previewObj = new GameObject("PlacementPreviewSystem");
                 previewObj.AddComponent<PlacementPreviewSystem>();
             }
+
+            Debug.Log("SceneSetup: Core system managers created");
+        }
+
+        /// <summary>
+        /// 初始化 UI 系統（UIBuilder 和 UIFactory）
+        /// </summary>
+        private void InitializeUISystem()
+        {
+            Debug.Log("SceneSetup: Initializing UI system...");
+
+            // 創建 UIBuilder（基礎 UI：準心、提示等）
+            if (UIBuilder.Instance == null)
+            {
+                var uiObj = new GameObject("UIBuilder");
+                uiObj.AddComponent<UIBuilder>();
+            }
+
+            // 創建 UIFactory（複雜 UI 面板）
+            UIFactory uiFactory = null;
+            if (UIFactory.Instance == null)
+            {
+                var factoryObj = new GameObject("UIFactory");
+                uiFactory = factoryObj.AddComponent<UIFactory>();
+            }
+            else
+            {
+                uiFactory = UIFactory.Instance;
+            }
+
+            // 建構所有 UI
+            uiFactory.BuildAllUI();
+
+            // 創建 ShopManager 並注入 UI
+            BarSimulator.UI.ShopManager shopManager = null;
+            if (BarSimulator.UI.ShopManager.Instance == null)
+            {
+                var shopObj = new GameObject("ShopManager");
+                shopManager = shopObj.AddComponent<BarSimulator.UI.ShopManager>();
+            }
+            else
+            {
+                shopManager = BarSimulator.UI.ShopManager.Instance;
+            }
+
+            // 建構並注入 Shop UI
+            var shopUI = uiFactory.BuildShopUI();
+            shopManager.InitializeReferences(shopUI);
+
+            // 創建 SettingsManager 並注入 UI
+            BarSimulator.UI.SettingsManager settingsManager = null;
+            if (BarSimulator.UI.SettingsManager.Instance == null)
+            {
+                var settingsObj = new GameObject("SettingsManager");
+                settingsManager = settingsObj.AddComponent<BarSimulator.UI.SettingsManager>();
+            }
+            else
+            {
+                settingsManager = BarSimulator.UI.SettingsManager.Instance;
+            }
+
+            // 建構並注入 Settings UI
+            var settingsUI = uiFactory.BuildSettingsUI();
+            settingsManager.InitializeReferences(settingsUI);
+
+            Debug.Log("SceneSetup: UI system initialized successfully");
         }
 
         /// <summary>

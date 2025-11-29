@@ -72,15 +72,33 @@ namespace BarSimulator.UI
             sceneLoader = SceneLoader.Instance;
             settingsManager = SettingsManager.Instance;
 
-            SetupUI();
-            UpdateSaveInfo();
-
             // Show cursor in main menu
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
             // Resume time (in case we came from paused game)
             Time.timeScale = 1f;
+        }
+
+        /// <summary>
+        /// 初始化 UI 引用（從外部注入）
+        /// </summary>
+        public void InitializeReferences(MainMenuUIReferences refs)
+        {
+            mainMenuPanel = refs.mainMenuPanel;
+            newGameConfirmPanel = refs.newGameConfirmPanel;
+            newGameButton = refs.newGameButton;
+            continueButton = refs.continueButton;
+            settingsButton = refs.settingsButton;
+            quitButton = refs.quitButton;
+            confirmNewGameButton = refs.confirmNewGameButton;
+            cancelNewGameButton = refs.cancelNewGameButton;
+            saveInfoText = refs.saveInfoText;
+            versionText = refs.versionText;
+
+            SetupUI();
+            UpdateSaveInfo();
+            Debug.Log("MainMenuManager: UI references initialized");
         }
 
         #endregion

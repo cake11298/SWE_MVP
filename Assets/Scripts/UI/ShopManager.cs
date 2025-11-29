@@ -107,7 +107,31 @@ namespace BarSimulator.UI
             instance = this;
 
             SetupInputActions();
+        }
+
+        /// <summary>
+        /// 初始化 UI 引用（從外部注入）
+        /// </summary>
+        public void InitializeReferences(ShopUIReferences refs)
+        {
+            shopPanel = refs.shopPanel;
+            moneyText = refs.moneyText;
+            liquorListContainer = refs.liquorListContainer;
+            recipeListContainer = refs.recipeListContainer;
+            liquorItemPrefab = refs.liquorItemPrefab;
+            recipeItemPrefab = refs.recipeItemPrefab;
+            liquorTabButton = refs.liquorTabButton;
+            recipeTabButton = refs.recipeTabButton;
+            liquorTabPanel = refs.liquorTabPanel;
+            recipeTabPanel = refs.recipeTabPanel;
+            allCategoryButton = refs.allCategoryButton;
+            baseSpiritButton = refs.baseSpiritButton;
+            mixerButton = refs.mixerButton;
+            juiceButton = refs.juiceButton;
+            liqueurButton = refs.liqueurButton;
+
             SetupUI();
+            Debug.Log("ShopManager: UI references initialized");
         }
 
         private void Start()

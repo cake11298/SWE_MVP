@@ -102,8 +102,9 @@ namespace BarSimulator.Managers
                 }
             }
 
-            // 生成環境物件
-            SpawnEnvironmentObjects();
+            // 註：環境物件生成由 BarSceneBuilder 統一處理
+            // 如果需要手動生成，請調用 SpawnEnvironmentObjects()
+            Debug.Log("EnvironmentManager: Initialized (objects spawned by BarSceneBuilder)");
         }
 
         #endregion

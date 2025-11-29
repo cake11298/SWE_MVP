@@ -99,8 +99,29 @@ namespace BarSimulator.UI
             }
             instance = this;
 
-            SetupUI();
             LoadSettings();
+        }
+
+        /// <summary>
+        /// 初始化 UI 引用（從外部注入）
+        /// </summary>
+        public void InitializeReferences(SettingsUIReferences refs)
+        {
+            settingsPanel = refs.settingsPanel;
+            masterVolumeSlider = refs.masterVolumeSlider;
+            musicVolumeSlider = refs.musicVolumeSlider;
+            sfxVolumeSlider = refs.sfxVolumeSlider;
+            qualityDropdown = refs.qualityDropdown;
+            fullscreenToggle = refs.fullscreenToggle;
+            vsyncToggle = refs.vsyncToggle;
+            mouseSensitivitySlider = refs.mouseSensitivitySlider;
+            sensitivityValueText = refs.sensitivityValueText;
+            applyButton = refs.applyButton;
+            resetButton = refs.resetButton;
+            closeButton = refs.closeButton;
+
+            SetupUI();
+            Debug.Log("SettingsManager: UI references initialized");
         }
 
         private void Start()
