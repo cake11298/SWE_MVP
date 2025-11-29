@@ -140,7 +140,7 @@ namespace BarSimulator.Objects
         /// <summary>
         /// 取得飲品資訊
         /// </summary>
-        public DrinkInfo GetDrinkInfo()
+        public override DrinkInfo GetDrinkInfo()
         {
             if (contents.IsEmpty) return null;
 

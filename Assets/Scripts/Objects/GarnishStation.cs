@@ -7,7 +7,7 @@ namespace BarSimulator.Objects
     /// <summary>
     /// 裝飾物工作站 - 儲存和提供各種雞尾酒裝飾物
     /// </summary>
-    public class GarnishStation : MonoBehaviour, IInteractable
+    public class GarnishStation : InteractableBase
     {
         #region 序列化欄位
 
@@ -38,6 +38,15 @@ namespace BarSimulator.Objects
         #endregion
 
         #region Unity 生命週期
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            interactableType = InteractableType.Station;
+            displayName = "Garnish Station";
+            canPickup = false;
+        }
 
         private void Start()
         {
@@ -273,14 +282,9 @@ namespace BarSimulator.Objects
 
         #endregion
 
-        #region IInteractable 實作
+        #region IInteractable 覆寫
 
-        public InteractableType GetInteractableType()
-        {
-            return InteractableType.Station;
-        }
-
-        public void OnInteract()
+        public override void OnInteract()
         {
             // Open/close garnish selection UI
             if (displayPanel != null)
@@ -302,26 +306,6 @@ namespace BarSimulator.Objects
                 // If no UI, just take selected garnish
                 TakeSelectedGarnish();
             }
-        }
-
-        public void OnPickup()
-        {
-            // Station cannot be picked up
-        }
-
-        public void OnDrop(bool returnToOriginal)
-        {
-            // Station cannot be dropped
-        }
-
-        public bool CanInteract()
-        {
-            return true;
-        }
-
-        public string GetInteractPrompt()
-        {
-            return "E: Take Garnish";
         }
 
         #endregion

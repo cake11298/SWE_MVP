@@ -7,7 +7,7 @@ namespace BarSimulator.Objects
     /// <summary>
     /// 冰塊組件 - 可以降低飲品溫度並稀釋飲品
     /// </summary>
-    public class IceCube : MonoBehaviour, IInteractable
+    public class IceCube : InteractableBase
     {
         #region 序列化欄位
 
@@ -41,8 +41,6 @@ namespace BarSimulator.Objects
         private float currentSize;
         private bool isMelting;
 
-        private Vector3 originalPosition;
-        private Quaternion originalRotation;
         private Rigidbody rb;
 
         // Events
@@ -53,8 +51,14 @@ namespace BarSimulator.Objects
 
         #region Unity 生命週期
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
+            interactableType = InteractableType.Ingredient;
+            displayName = "Ice Cube";
+            canPickup = true;
+
             rb = GetComponent<Rigidbody>();
             if (rb == null)
             {
@@ -62,8 +66,6 @@ namespace BarSimulator.Objects
                 rb.mass = 0.05f;
             }
 
-            originalPosition = transform.position;
-            originalRotation = transform.rotation;
             currentSize = size;
         }
 
@@ -231,14 +233,9 @@ namespace BarSimulator.Objects
 
         #endregion
 
-        #region IInteractable 實作
+        #region IInteractable 覆寫
 
-        public InteractableType GetInteractableType()
-        {
-            return InteractableType.Ingredient;
-        }
-
-        public void OnInteract()
+        public override void OnInteract()
         {
             // Remove from container if inside one
             if (isInContainer)
@@ -247,8 +244,10 @@ namespace BarSimulator.Objects
             }
         }
 
-        public void OnPickup()
+        public override void OnPickup()
         {
+            base.OnPickup();
+
             isPickedUp = true;
 
             // Remove from container if inside
@@ -266,8 +265,10 @@ namespace BarSimulator.Objects
             Debug.Log("IceCube: Picked up");
         }
 
-        public void OnDrop(bool returnToOriginal)
+        public override void OnDrop(bool returnToOriginal)
         {
+            base.OnDrop(returnToOriginal);
+
             isPickedUp = false;
 
             if (rb != null)
@@ -276,32 +277,7 @@ namespace BarSimulator.Objects
                 rb.useGravity = true;
             }
 
-            if (returnToOriginal && !isInContainer)
-            {
-                transform.position = originalPosition;
-                transform.rotation = originalRotation;
-                if (rb != null)
-                {
-                    rb.velocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
-            }
-
             Debug.Log("IceCube: Dropped");
-        }
-
-        public bool CanInteract()
-        {
-            return true;
-        }
-
-        public string GetInteractPrompt()
-        {
-            if (isPickedUp)
-            {
-                return isInContainer ? "E: Remove Ice" : "Add to glass";
-            }
-            return "E: Pick Up Ice";
         }
 
         #endregion

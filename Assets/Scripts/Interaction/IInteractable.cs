@@ -11,6 +11,8 @@ namespace BarSimulator.Interaction
         Bottle,
         /// <summary>杯子</summary>
         Glass,
+        /// <summary>容器</summary>
+        Container,
         /// <summary>搖酒器</summary>
         Shaker,
         /// <summary>量酒器</summary>
@@ -19,6 +21,12 @@ namespace BarSimulator.Interaction
         Guitar,
         /// <summary>NPC</summary>
         NPC,
+        /// <summary>工具</summary>
+        Tool,
+        /// <summary>食材</summary>
+        Ingredient,
+        /// <summary>工作站</summary>
+        Station,
         /// <summary>其他</summary>
         Other
     }
