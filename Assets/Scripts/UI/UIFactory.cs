@@ -241,18 +241,18 @@ namespace BarSimulator.UI
 
             // 名稱文字
             var nameText = CreateText(itemObj.transform, "NameText", "Vodka", 18, TextAlignmentOptions.Left);
-            var nameLayout = nameText.AddComponent<LayoutElement>();
+            var nameLayout = nameText.gameObject.AddComponent<LayoutElement>();
             nameLayout.preferredHeight = 25;
 
             // 等級文字
             var levelText = CreateText(itemObj.transform, "LevelText", "Level 1/3", 14, TextAlignmentOptions.Left);
-            var levelLayout = levelText.AddComponent<LayoutElement>();
+            var levelLayout = levelText.gameObject.AddComponent<LayoutElement>();
             levelLayout.preferredHeight = 20;
 
             // 描述文字
             var descText = CreateText(itemObj.transform, "DescriptionText", "Description here", 12, TextAlignmentOptions.Left);
             descText.color = new Color(0.8f, 0.8f, 0.8f);
-            var descLayout = descText.AddComponent<LayoutElement>();
+            var descLayout = descText.gameObject.AddComponent<LayoutElement>();
             descLayout.preferredHeight = 30;
 
             // 底部容器 (價格 + 按鈕)
@@ -267,12 +267,12 @@ namespace BarSimulator.UI
             // 價格文字
             var priceText = CreateText(bottomContainer.transform, "PriceText", "$100", 16, TextAlignmentOptions.Left);
             priceText.color = Color.yellow;
-            var priceLayout = priceText.AddComponent<LayoutElement>();
+            var priceLayout = priceText.gameObject.AddComponent<LayoutElement>();
             priceLayout.flexibleWidth = 1;
 
             // 購買按鈕
             var purchaseBtn = CreateButton(bottomContainer.transform, "PurchaseButton", "購買", 14);
-            var purchaseBtnLayout = purchaseBtn.AddComponent<LayoutElement>();
+            var purchaseBtnLayout = purchaseBtn.gameObject.AddComponent<LayoutElement>();
             purchaseBtnLayout.preferredWidth = 100;
 
             return itemObj;
@@ -300,18 +300,18 @@ namespace BarSimulator.UI
 
             // 名稱文字
             var nameText = CreateText(itemObj.transform, "NameText", "??? (鎖定)", 16, TextAlignmentOptions.Left);
-            var nameLayout = nameText.AddComponent<LayoutElement>();
+            var nameLayout = nameText.gameObject.AddComponent<LayoutElement>();
             nameLayout.preferredHeight = 22;
 
             // 難度文字
             var diffText = CreateText(itemObj.transform, "DifficultyText", "★★★", 14, TextAlignmentOptions.Left);
             diffText.color = Color.yellow;
-            var diffLayout = diffText.AddComponent<LayoutElement>();
+            var diffLayout = diffText.gameObject.AddComponent<LayoutElement>();
             diffLayout.preferredHeight = 20;
 
             // 描述文字
             var descText = CreateText(itemObj.transform, "DescriptionText", "解鎖以查看配方", 12, TextAlignmentOptions.Left);
-            var descLayout = descText.AddComponent<LayoutElement>();
+            var descLayout = descText.gameObject.AddComponent<LayoutElement>();
             descLayout.flexibleHeight = 1;
 
             // 底部
@@ -324,11 +324,11 @@ namespace BarSimulator.UI
 
             var priceText = CreateText(bottomContainer.transform, "PriceText", "$500", 14, TextAlignmentOptions.Left);
             priceText.color = Color.yellow;
-            var priceLayout = priceText.AddComponent<LayoutElement>();
+            var priceLayout = priceText.gameObject.AddComponent<LayoutElement>();
             priceLayout.flexibleWidth = 1;
 
             var purchaseBtn = CreateButton(bottomContainer.transform, "PurchaseButton", "解鎖", 14);
-            var purchaseBtnLayout = purchaseBtn.AddComponent<LayoutElement>();
+            var purchaseBtnLayout = purchaseBtn.gameObject.AddComponent<LayoutElement>();
             purchaseBtnLayout.preferredWidth = 100;
 
             return itemObj;
