@@ -46,6 +46,22 @@ namespace BarSimulator.Data
         [TextArea(2, 5)]
         public string method;
 
+        // === 商店解鎖系統新增欄位 ===
+
+        /// <summary>是否已解鎖（用於稀有配方）</summary>
+        public bool isLocked = false;
+
+        /// <summary>解鎖價格（金幣）</summary>
+        public int unlockPrice = 0;
+
+        /// <summary>配方難度（1-5星）</summary>
+        [Range(1, 5)]
+        public int difficulty = 1;
+
+        /// <summary>配方描述</summary>
+        [TextArea(2, 3)]
+        public string description = "";
+
         /// <summary>
         /// 預設建構子
         /// </summary>
