@@ -183,23 +183,6 @@ namespace BarSimulator.Objects
 
         #region IInteractable 覆寫
 
-        public override string GetInteractPrompt()
-        {
-            if (currentStirrer != null && !contents.IsEmpty)
-            {
-                return currentStirrer.IsStirring
-                    ? $"E: Stop Stirring ({currentStirrer.StirProgress * 100:F0}%)"
-                    : "E: Start Stirring";
-            }
-
-            if (!contents.IsEmpty)
-            {
-                return $"E: Pick Up ({contents.volume:F0}ml)";
-            }
-
-            return "E: Pick Up";
-        }
-
         public override void OnInteract()
         {
             // If stirrer is attached, toggle stirring

@@ -25,7 +25,7 @@ namespace BarSimulator.Objects
     /// <summary>
     /// 裝飾物基礎類別
     /// </summary>
-    public class Garnish : MonoBehaviour, IInteractable
+    public class Garnish : InteractableBase
     {
         #region 序列化欄位
 
@@ -57,8 +57,6 @@ namespace BarSimulator.Objects
         private bool isPickedUp;
         private bool isAttached;
         private Container attachedContainer;
-        private Vector3 originalPosition;
-        private Quaternion originalRotation;
         private Transform originalParent;
         private Rigidbody rb;
         private Collider col;
@@ -71,8 +69,14 @@ namespace BarSimulator.Objects
 
         #region Unity 生命週期
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
+            interactableType = InteractableType.Ingredient;
+            displayName = garnishName;
+            canPickup = true;
+
             rb = GetComponent<Rigidbody>();
             if (rb == null)
             {
@@ -87,9 +91,7 @@ namespace BarSimulator.Objects
                 ((SphereCollider)col).radius = 0.02f;
             }
 
-            // Store original transform
-            originalPosition = transform.position;
-            originalRotation = transform.rotation;
+            // Store original parent
             originalParent = transform.parent;
         }
 
@@ -164,14 +166,9 @@ namespace BarSimulator.Objects
 
         #endregion
 
-        #region IInteractable 實作
+        #region IInteractable 覆寫
 
-        public InteractableType GetInteractableType()
-        {
-            return InteractableType.Ingredient;
-        }
-
-        public void OnInteract()
+        public override void OnInteract()
         {
             // Toggle attachment if near container
             if (isAttached)
@@ -180,8 +177,10 @@ namespace BarSimulator.Objects
             }
         }
 
-        public void OnPickup()
+        public override void OnPickup()
         {
+            base.OnPickup();
+
             isPickedUp = true;
 
             // Detach if currently attached
@@ -199,8 +198,10 @@ namespace BarSimulator.Objects
             Debug.Log($"Garnish: {garnishName} picked up");
         }
 
-        public void OnDrop(bool returnToOriginal)
+        public override void OnDrop(bool returnToOriginal)
         {
+            base.OnDrop(returnToOriginal);
+
             isPickedUp = false;
 
             if (rb != null)
@@ -209,32 +210,7 @@ namespace BarSimulator.Objects
                 rb.useGravity = true;
             }
 
-            if (returnToOriginal && !isAttached)
-            {
-                transform.position = originalPosition;
-                transform.rotation = originalRotation;
-                if (rb != null)
-                {
-                    rb.velocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
-            }
-
             Debug.Log($"Garnish: {garnishName} dropped");
-        }
-
-        public bool CanInteract()
-        {
-            return true;
-        }
-
-        public string GetInteractPrompt()
-        {
-            if (isPickedUp)
-            {
-                return isAttached ? $"E: Remove {garnishName}" : $"Attach {garnishName} to glass";
-            }
-            return $"E: Pick Up {garnishName}";
         }
 
         #endregion

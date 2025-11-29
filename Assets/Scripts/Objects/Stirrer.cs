@@ -8,7 +8,7 @@ namespace BarSimulator.Objects
     /// 攪拌器組件 - 用於攪拌法調製雞尾酒（如Martini）
     /// 參考: CocktailSystem.js stir() Line 722-743
     /// </summary>
-    public class Stirrer : MonoBehaviour, IInteractable
+    public class Stirrer : InteractableBase
     {
         #region 序列化欄位
 
@@ -47,27 +47,27 @@ namespace BarSimulator.Objects
         public System.Action<float> OnStirProgress;
         public System.Action OnStirStart;
 
-        // IInteractable
+        // Components
         private bool isPickedUp;
-        private Vector3 originalPosition;
-        private Quaternion originalRotation;
         private Rigidbody rb;
 
         #endregion
 
         #region Unity 生命週期
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
+            interactableType = InteractableType.Tool;
+            displayName = "Stirrer";
+            canPickup = true;
+
             rb = GetComponent<Rigidbody>();
             if (rb == null)
             {
                 rb = gameObject.AddComponent<Rigidbody>();
             }
-
-            // Store original position
-            originalPosition = transform.position;
-            originalRotation = transform.rotation;
         }
 
         private void Update()
@@ -242,14 +242,9 @@ namespace BarSimulator.Objects
 
         #endregion
 
-        #region IInteractable 實作
+        #region IInteractable 覆寫
 
-        public InteractableType GetInteractableType()
-        {
-            return InteractableType.Tool;
-        }
-
-        public void OnInteract()
+        public override void OnInteract()
         {
             // Toggle stirring if inside container
             if (targetContainer != null)
@@ -265,8 +260,10 @@ namespace BarSimulator.Objects
             }
         }
 
-        public void OnPickup()
+        public override void OnPickup()
         {
+            base.OnPickup();
+
             isPickedUp = true;
 
             if (rb != null)
@@ -278,8 +275,10 @@ namespace BarSimulator.Objects
             Debug.Log("Stirrer: Picked up");
         }
 
-        public void OnDrop(bool returnToOriginal)
+        public override void OnDrop(bool returnToOriginal)
         {
+            base.OnDrop(returnToOriginal);
+
             isPickedUp = false;
             StopStirring();
             targetContainer = null;
@@ -290,36 +289,7 @@ namespace BarSimulator.Objects
                 rb.useGravity = true;
             }
 
-            if (returnToOriginal)
-            {
-                transform.position = originalPosition;
-                transform.rotation = originalRotation;
-                if (rb != null)
-                {
-                    rb.velocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
-            }
-
             Debug.Log("Stirrer: Dropped");
-        }
-
-        public bool CanInteract()
-        {
-            return true;
-        }
-
-        public string GetInteractPrompt()
-        {
-            if (isPickedUp)
-            {
-                if (targetContainer != null)
-                {
-                    return isStirring ? "E: Stop Stirring" : "E: Start Stirring";
-                }
-                return "Insert into glass to stir";
-            }
-            return "E: Pick Up Stirrer";
         }
 
         #endregion
