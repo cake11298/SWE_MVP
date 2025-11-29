@@ -24,16 +24,6 @@ namespace BarSimulator.Systems
         [Tooltip("粒子顏色")]
         [SerializeField] private Color defaultParticleColor = new Color(0.67f, 0.8f, 1f, 0.8f);
 
-        [Tooltip("粒子數量")]
-        [SerializeField] private int particleCount = 200;
-
-        [Tooltip("粒子大小")]
-        [SerializeField] private float particleSize = 0.05f;
-
-        [Header("流體設定")]
-        [Tooltip("倒酒流體線寬")]
-        [SerializeField] private float streamWidth = 0.02f;
-
         #endregion
 
         #region 私有欄位

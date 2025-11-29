@@ -56,7 +56,6 @@ namespace BarSimulator.Systems
         #region 私有欄位
 
         private int currentStepIndex = 0;
-        private bool tutorialCompleted = false;
         private bool tutorialActive = false;
 
         // 事件

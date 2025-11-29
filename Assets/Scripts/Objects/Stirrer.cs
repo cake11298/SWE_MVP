@@ -13,12 +13,6 @@ namespace BarSimulator.Objects
         #region 序列化欄位
 
         [Header("Stirring Settings")]
-        [Tooltip("攪拌強度")]
-        [SerializeField] private float stirIntensity = 0.03f;
-
-        [Tooltip("攪拌頻率")]
-        [SerializeField] private float stirFrequency = 15f;
-
         [Tooltip("需要攪拌的最短時間（秒）才能完成混合")]
         [SerializeField] private float minStirTime = 3f;
 

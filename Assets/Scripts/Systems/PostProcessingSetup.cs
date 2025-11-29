@@ -22,7 +22,6 @@ namespace BarSimulator.Systems
         [SerializeField] private bool enableBloom = true;
         [SerializeField] private float bloomIntensity = 0.5f;
         [SerializeField] private float bloomThreshold = 0.9f;
-        [SerializeField] private int bloomIterations = 4;
         [SerializeField] private Color bloomTint = Color.white;
 
         [Header("Color Adjustments")]
@@ -134,35 +133,8 @@ namespace BarSimulator.Systems
 
         private Material CreateFallbackBloomMaterial()
         {
-            string shaderCode = @"
-                Shader ""Hidden/PostProcessBloom"" {
-                    Properties {
-                        _MainTex (""Texture"", 2D) = ""white"" {}
-                        _Threshold (""Threshold"", Float) = 0.9
-                        _Intensity (""Intensity"", Float) = 0.5
-                    }
-                    SubShader {
-                        Pass {
-                            CGPROGRAM
-                            #pragma vertex vert_img
-                            #pragma fragment frag
-                            #include ""UnityCG.cginc""
-                            sampler2D _MainTex;
-                            float _Threshold;
-                            float _Intensity;
-                            fixed4 frag(v2f_img i) : SV_Target {
-                                fixed4 col = tex2D(_MainTex, i.uv);
-                                float brightness = max(col.r, max(col.g, col.b));
-                                float soft = brightness - _Threshold + 0.5;
-                                soft = clamp(soft, 0, 1);
-                                col.rgb *= soft * _Intensity;
-                                return col;
-                            }
-                            ENDCG
-                        }
-                    }
-                }";
-
+            // Note: Shader code for future custom shader implementation
+            // For now, using Unity's built-in shader
             return new Material(Shader.Find("Unlit/Texture"));
         }
 
