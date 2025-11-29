@@ -53,6 +53,9 @@ namespace BarSimulator.Objects
         protected ContainerContents contents;
         protected Material liquidMaterial;
 
+        // 溫度系統
+        protected float temperature = 25f; // 預設室溫 25°C
+
         // 動態液體變數
         protected float currentLiquidHeight;
         protected float targetLiquidHeight;
@@ -127,6 +130,7 @@ namespace BarSimulator.Objects
         protected virtual void Update()
         {
             UpdateDynamicLiquid();
+            UpdateTemperature();
         }
 
         /// <summary>
@@ -369,6 +373,17 @@ namespace BarSimulator.Objects
             // 更新體積
             contents.volume -= actualAmount;
 
+            // 轉移溫度（混合溫度）
+            if (actualAmount > 0)
+            {
+                float targetTotalVolume = target.Volume;
+                float sourceTemp = this.temperature;
+                float targetTemp = target.temperature;
+
+                // 體積加權平均溫度
+                target.temperature = (targetTemp * (targetTotalVolume - actualAmount) + sourceTemp * actualAmount) / targetTotalVolume;
+            }
+
             // 清理空成分
             contents.ingredients.RemoveAll(i => i.amount <= 0.01f);
 
@@ -379,6 +394,86 @@ namespace BarSimulator.Objects
             UpdateLiquidVisual();
 
             return actualAmount;
+        }
+
+        /// <summary>
+        /// 倒入目標容器（便捷方法）
+        /// </summary>
+        public virtual void PourInto(Container target, float amount)
+        {
+            TransferTo(target, amount);
+        }
+
+        /// <summary>
+        /// 添加液體（通用方法，用於水等非酒類）
+        /// </summary>
+        public virtual void AddLiquid(string liquidType, float amount)
+        {
+            if (contents.IsFull) return;
+
+            float actualAmount = Mathf.Min(amount, contents.RemainingSpace);
+
+            // 根據類型設定顏色
+            Color liquidColor = Color.white;
+            string displayName = liquidType;
+
+            switch (liquidType.ToLower())
+            {
+                case "water":
+                    liquidColor = new Color(0.9f, 0.95f, 1f, 0.3f);
+                    displayName = "Water";
+                    break;
+                case "ice":
+                    liquidColor = new Color(0.85f, 0.92f, 1f, 0.4f);
+                    displayName = "Melted Ice";
+                    break;
+            }
+
+            var ingredient = new Ingredient(
+                liquidType,
+                liquidType,
+                displayName,
+                actualAmount,
+                liquidColor
+            );
+
+            contents.AddIngredient(ingredient);
+            UpdateLiquidVisual();
+        }
+
+        #endregion
+
+        #region 溫度系統
+
+        /// <summary>
+        /// 設定溫度
+        /// </summary>
+        public virtual void SetTemperature(float temp)
+        {
+            temperature = Mathf.Clamp(temp, -20f, 100f); // -20°C to 100°C range
+        }
+
+        /// <summary>
+        /// 獲取溫度
+        /// </summary>
+        public virtual float GetTemperature()
+        {
+            return temperature;
+        }
+
+        /// <summary>
+        /// 溫度自然趨向室溫
+        /// </summary>
+        protected virtual void UpdateTemperature()
+        {
+            // 自然趨向室溫 (25°C)
+            const float roomTemp = 25f;
+            const float coolingRate = 0.5f; // degrees per second
+
+            if (Mathf.Abs(temperature - roomTemp) > 0.1f)
+            {
+                temperature = Mathf.Lerp(temperature, roomTemp, coolingRate * Time.deltaTime / 10f);
+            }
         }
 
         #endregion
@@ -503,6 +598,11 @@ namespace BarSimulator.Objects
         /// 混合顏色
         /// </summary>
         public Color MixedColor => contents.mixedColor;
+
+        /// <summary>
+        /// 當前溫度（°C）
+        /// </summary>
+        public float Temperature => temperature;
 
         #endregion
 

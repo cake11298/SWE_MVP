@@ -76,6 +76,14 @@ namespace BarSimulator.NPC
         private const float GoodDistanceThreshold = 0.3f;     // 30% 誤差為良好
         private const int GeometricDistanceBonus = 20;
 
+        // === 升級系統新增參數 ===
+
+        /// <summary>等級分數上限加成 (Level 2: +10, Level 3: +20)</summary>
+        private static readonly int[] LevelScoreBonus = { 0, 10, 20 };
+
+        /// <summary>等級容錯率乘數 (Level 1: 1.0, Level 2: 1.3, Level 3: 1.6)</summary>
+        private static readonly float[] LevelToleranceMultiplier = { 1.0f, 1.3f, 1.6f };
+
         #endregion
 
         #region 配方資料庫
@@ -155,7 +163,9 @@ namespace BarSimulator.NPC
         /// <summary>
         /// 評估飲料品質
         /// </summary>
-        public static DrinkEvaluation Evaluate(DrinkInfo drinkInfo)
+        /// <param name="drinkInfo">飲料資訊</param>
+        /// <param name="liquorDatabase">酒類資料庫（用於查詢等級）</param>
+        public static DrinkEvaluation Evaluate(DrinkInfo drinkInfo, LiquorDatabase liquorDatabase = null)
         {
             var evaluation = new DrinkEvaluation
             {
@@ -173,6 +183,12 @@ namespace BarSimulator.NPC
                 return evaluation;
             }
 
+            // === 計算酒類平均等級和容錯率 ===
+            float averageLevel = CalculateAverageLiquorLevel(drinkInfo.ingredients, liquorDatabase);
+            int levelIndex = Mathf.Clamp(Mathf.RoundToInt(averageLevel) - 1, 0, 2); // Level 1-3 → Index 0-2
+            float toleranceMultiplier = LevelToleranceMultiplier[levelIndex];
+            int scoreBonus = LevelScoreBonus[levelIndex];
+
             // 計算酒精濃度
             evaluation.alcoholContent = CalculateAlcoholContent(drinkInfo.ingredients);
 
@@ -182,8 +198,12 @@ namespace BarSimulator.NPC
             {
                 evaluation.score += ValidCocktailBonus;
 
-                // 使用幾何距離評估配方準確度
-                int geometricScore = EvaluateGeometricDistance(drinkInfo.cocktailName, drinkInfo.ingredients);
+                // 使用幾何距離評估配方準確度（應用容錯率）
+                int geometricScore = EvaluateGeometricDistance(
+                    drinkInfo.cocktailName,
+                    drinkInfo.ingredients,
+                    toleranceMultiplier
+                );
                 evaluation.score += geometricScore;
             }
 
@@ -196,11 +216,15 @@ namespace BarSimulator.NPC
             // 評估成分平衡
             evaluation.score += EvaluateBalance(drinkInfo.ingredients);
 
-            // 限制分數範圍
-            evaluation.score = Mathf.Clamp(evaluation.score, 0, 100);
+            // 應用等級分數加成
+            evaluation.score += scoreBonus;
+
+            // 限制分數範圍（高級酒可突破100分）
+            int maxScore = 100 + scoreBonus;
+            evaluation.score = Mathf.Clamp(evaluation.score, 0, maxScore);
 
             // 產生評價訊息
-            evaluation.message = GenerateMessage(evaluation);
+            evaluation.message = GenerateMessage(evaluation, averageLevel);
 
             return evaluation;
         }
@@ -226,6 +250,41 @@ namespace BarSimulator.NPC
         #endregion
 
         #region 私有方法
+
+        /// <summary>
+        /// 計算酒類平均等級
+        /// </summary>
+        private static float CalculateAverageLiquorLevel(Ingredient[] ingredients, LiquorDatabase liquorDatabase)
+        {
+            if (ingredients == null || ingredients.Length == 0) return 1f;
+            if (liquorDatabase == null)
+            {
+                // 如果沒有資料庫，從CocktailSystem取得
+                var cocktailSystem = CocktailSystem.Instance;
+                if (cocktailSystem != null)
+                {
+                    liquorDatabase = cocktailSystem.LiquorDatabase;
+                }
+            }
+
+            if (liquorDatabase == null) return 1f; // 預設為Level 1
+
+            float totalLevel = 0f;
+            int count = 0;
+
+            foreach (var ingredient in ingredients)
+            {
+                var liquor = liquorDatabase.GetLiquor(ingredient.type);
+                if (liquor != null)
+                {
+                    totalLevel += liquor.level;
+                    count++;
+                }
+            }
+
+            if (count == 0) return 1f;
+            return totalLevel / count;
+        }
 
         /// <summary>
         /// 計算酒精濃度
@@ -352,7 +411,8 @@ namespace BarSimulator.NPC
         /// 使用幾何距離評估配方準確度
         /// 計算實際成分比例與標準配方的歐幾里得距離
         /// </summary>
-        private static int EvaluateGeometricDistance(string cocktailName, Ingredient[] ingredients)
+        /// <param name="toleranceMultiplier">容錯率乘數（高等級酒類有更高容錯）</param>
+        private static int EvaluateGeometricDistance(string cocktailName, Ingredient[] ingredients, float toleranceMultiplier = 1.0f)
         {
             // 檢查是否有對應配方
             if (!RecipeDatabase.TryGetValue(cocktailName, out RecipeData recipe))
@@ -387,22 +447,26 @@ namespace BarSimulator.NPC
             // 計算幾何距離
             float distance = CalculateEuclideanDistance(recipe.ingredients, actualRatios);
 
+            // 應用容錯率（高等級酒類容錯範圍更大）
+            float adjustedPerfectThreshold = PerfectDistanceThreshold * toleranceMultiplier;
+            float adjustedGoodThreshold = GoodDistanceThreshold * toleranceMultiplier;
+
             // 根據距離計算分數
-            if (distance <= PerfectDistanceThreshold)
+            if (distance <= adjustedPerfectThreshold)
             {
-                // 誤差在 10% 以內，滿分
+                // 誤差在容錯範圍以內，滿分
                 return GeometricDistanceBonus;
             }
-            else if (distance <= GoodDistanceThreshold)
+            else if (distance <= adjustedGoodThreshold)
             {
-                // 誤差在 30% 以內，部分加分
-                float factor = 1f - ((distance - PerfectDistanceThreshold) / (GoodDistanceThreshold - PerfectDistanceThreshold));
+                // 誤差在良好範圍以內，部分加分
+                float factor = 1f - ((distance - adjustedPerfectThreshold) / (adjustedGoodThreshold - adjustedPerfectThreshold));
                 return Mathf.RoundToInt(GeometricDistanceBonus * factor * 0.7f);
             }
             else
             {
                 // 誤差太大，遞減給分
-                float factor = Mathf.Max(0f, 1f - (distance - GoodDistanceThreshold));
+                float factor = Mathf.Max(0f, 1f - (distance - adjustedGoodThreshold));
                 return Mathf.RoundToInt(GeometricDistanceBonus * factor * 0.3f) - 5;
             }
         }
@@ -486,15 +550,33 @@ namespace BarSimulator.NPC
         /// <summary>
         /// 產生評價訊息
         /// </summary>
-        private static string GenerateMessage(DrinkEvaluation evaluation)
+        private static string GenerateMessage(DrinkEvaluation evaluation, float averageLevel = 1f)
         {
-            if (evaluation.score >= 90)
+            // 高級酒類有特殊評語
+            bool isPremiumDrink = averageLevel >= 2.5f;
+            bool isHighQualityDrink = averageLevel >= 1.5f && averageLevel < 2.5f;
+
+            if (evaluation.score >= 110)
             {
-                return "Perfect! This is exactly what I wanted!";
+                return "Masterpiece! The premium ingredients really shine through!";
+            }
+            else if (evaluation.score >= 100)
+            {
+                return isPremiumDrink
+                    ? "Outstanding! These premium spirits make all the difference!"
+                    : "Perfect! This is exactly what I wanted!";
+            }
+            else if (evaluation.score >= 90)
+            {
+                return isPremiumDrink
+                    ? "Excellent! You've made great use of these high-quality ingredients!"
+                    : "Perfect! This is exactly what I wanted!";
             }
             else if (evaluation.score >= 80)
             {
-                return "Excellent work! Very well made.";
+                return isHighQualityDrink
+                    ? "Very good! The quality ingredients are noticeable."
+                    : "Excellent work! Very well made.";
             }
             else if (evaluation.score >= 70)
             {
