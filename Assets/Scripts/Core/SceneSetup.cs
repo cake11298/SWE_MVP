@@ -3,6 +3,7 @@ using BarSimulator.Managers;
 using BarSimulator.Systems;
 using BarSimulator.Player;
 using BarSimulator.UI;
+using BarSimulator.Objects;
 
 namespace BarSimulator.Core
 {
@@ -100,6 +101,9 @@ namespace BarSimulator.Core
 
             // 設置攝影機
             SetupCamera();
+
+            // 生成場景道具
+            SpawnBarProps();
 
             isInitialized = true;
 
@@ -257,6 +261,55 @@ namespace BarSimulator.Core
                 var uiObj = new GameObject("UIBuilder");
                 uiObj.AddComponent<UIBuilder>();
             }
+
+            // ShopManager
+            if (BarSimulator.UI.ShopManager.Instance == null)
+            {
+                var shopObj = new GameObject("ShopManager");
+                shopObj.AddComponent<BarSimulator.UI.ShopManager>();
+            }
+
+            // UpgradeSystem
+            if (UpgradeSystem.Instance == null)
+            {
+                var upgradeObj = new GameObject("UpgradeSystem");
+                upgradeObj.AddComponent<UpgradeSystem>();
+            }
+
+            // TutorialSystem
+            if (TutorialSystem.Instance == null)
+            {
+                var tutorialObj = new GameObject("TutorialSystem");
+                tutorialObj.AddComponent<TutorialSystem>();
+            }
+
+            // SaveLoadSystem
+            if (SaveLoadSystem.Instance == null)
+            {
+                var saveObj = new GameObject("SaveLoadSystem");
+                saveObj.AddComponent<SaveLoadSystem>();
+            }
+
+            // SettingsManager
+            if (BarSimulator.UI.SettingsManager.Instance == null)
+            {
+                var settingsObj = new GameObject("SettingsManager");
+                settingsObj.AddComponent<BarSimulator.UI.SettingsManager>();
+            }
+
+            // SceneLoader
+            if (SceneLoader.Instance == null)
+            {
+                var loaderObj = new GameObject("SceneLoader");
+                loaderObj.AddComponent<SceneLoader>();
+            }
+
+            // PlacementPreviewSystem
+            if (PlacementPreviewSystem.Instance == null)
+            {
+                var previewObj = new GameObject("PlacementPreviewSystem");
+                previewObj.AddComponent<PlacementPreviewSystem>();
+            }
         }
 
         /// <summary>
@@ -337,6 +390,239 @@ namespace BarSimulator.Core
             {
                 Destroy(listeners[i]);
             }
+        }
+
+        /// <summary>
+        /// 生成吧台道具
+        /// </summary>
+        private void SpawnBarProps()
+        {
+            // 確保吧台已經建立
+            if (barCounter == null)
+            {
+                Debug.LogWarning("SceneSetup: Bar counter not found, cannot spawn props");
+                return;
+            }
+
+            // 計算吧台上的位置
+            Vector3 barTopPosition = barCounter.transform.position + Vector3.up * 0.6f;
+            float barWidth = barCounter.transform.localScale.x;
+            float spacing = barWidth / 8f; // 將吧台分成 8 段
+
+            // 生成 3 個酒瓶 (Vodka, Gin, Rum)
+            SpawnBottle("vodka", "伏特加", new Color(0.9f, 0.9f, 0.95f),
+                barTopPosition + Vector3.left * spacing * 2.5f);
+            SpawnBottle("gin", "琴酒", new Color(0.85f, 0.95f, 0.9f),
+                barTopPosition + Vector3.left * spacing * 1.5f);
+            SpawnBottle("rum", "蘭姆酒", new Color(0.7f, 0.5f, 0.3f),
+                barTopPosition + Vector3.left * spacing * 0.5f);
+
+            // 生成 2 個杯子
+            SpawnGlass(barTopPosition + Vector3.right * spacing * 0.5f);
+            SpawnGlass(barTopPosition + Vector3.right * spacing * 1.5f);
+
+            // 生成搖酒器
+            SpawnShaker(barTopPosition + Vector3.right * spacing * 2.5f);
+
+            // 生成攪拌棒
+            SpawnStirrer(barTopPosition + Vector3.left * spacing * 3.5f);
+
+            // 生成裝飾工作站 (在吧台一側)
+            SpawnGarnishStation(barTopPosition + Vector3.right * spacing * 3.5f + Vector3.forward * 0.3f);
+
+            // 生成冰桶 (在吧台另一側)
+            SpawnIceBucket(barTopPosition + Vector3.left * spacing * 3.5f + Vector3.forward * 0.3f);
+
+            Debug.Log("SceneSetup: Bar props spawned successfully");
+        }
+
+        /// <summary>
+        /// 生成酒瓶
+        /// </summary>
+        private void SpawnBottle(string liquorId, string displayName, Color color, Vector3 position)
+        {
+            var bottleObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            bottleObj.name = $"Bottle_{liquorId}";
+            bottleObj.transform.position = position;
+            bottleObj.transform.localScale = new Vector3(0.08f, 0.15f, 0.08f);
+
+            // 設置顏色
+            var renderer = bottleObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = color;
+            }
+
+            // 添加 Rigidbody
+            var rb = bottleObj.AddComponent<Rigidbody>();
+            rb.mass = 0.5f;
+            rb.useGravity = true;
+
+            // 添加 Bottle 組件
+            var bottle = bottleObj.AddComponent<BarSimulator.Objects.Bottle>();
+
+            // 等待 CocktailSystem 初始化後設置酒類
+            StartCoroutine(InitializeBottleAfterCocktailSystem(bottle, liquorId));
+        }
+
+        /// <summary>
+        /// 延遲初始化酒瓶（等待 CocktailSystem）
+        /// </summary>
+        private System.Collections.IEnumerator InitializeBottleAfterCocktailSystem(
+            BarSimulator.Objects.Bottle bottle, string liquorId)
+        {
+            // 等待 CocktailSystem 初始化
+            while (BarSimulator.Systems.CocktailSystem.Instance == null)
+            {
+                yield return null;
+            }
+
+            // 再等一幀確保資料庫已載入
+            yield return null;
+
+            // 設置酒類
+            bottle.SetLiquor(liquorId);
+        }
+
+        /// <summary>
+        /// 生成杯子
+        /// </summary>
+        private void SpawnGlass(Vector3 position)
+        {
+            var glassObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            glassObj.name = "Glass";
+            glassObj.transform.position = position;
+            glassObj.transform.localScale = new Vector3(0.06f, 0.1f, 0.06f);
+
+            // 設置透明材質
+            var renderer = glassObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                var material = new Material(Shader.Find("Standard"));
+                material.color = new Color(0.8f, 0.9f, 1f, 0.3f);
+                material.SetFloat("_Mode", 3); // Transparent mode
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.EnableKeyword("_ALPHABLEND_ON");
+                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                material.renderQueue = 3000;
+                renderer.material = material;
+            }
+
+            // 添加 Rigidbody
+            var rb = glassObj.AddComponent<Rigidbody>();
+            rb.mass = 0.2f;
+            rb.useGravity = true;
+
+            // 添加 Glass 組件
+            glassObj.AddComponent<BarSimulator.Objects.Glass>();
+        }
+
+        /// <summary>
+        /// 生成搖酒器
+        /// </summary>
+        private void SpawnShaker(Vector3 position)
+        {
+            var shakerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            shakerObj.name = "Shaker";
+            shakerObj.transform.position = position;
+            shakerObj.transform.localScale = new Vector3(0.1f, 0.15f, 0.1f);
+
+            // 設置顏色 (銀色)
+            var renderer = shakerObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.75f, 0.75f, 0.8f);
+                renderer.material.SetFloat("_Metallic", 0.8f);
+                renderer.material.SetFloat("_Glossiness", 0.9f);
+            }
+
+            // 添加 Rigidbody
+            var rb = shakerObj.AddComponent<Rigidbody>();
+            rb.mass = 0.3f;
+            rb.useGravity = true;
+
+            // 添加 Shaker 組件
+            shakerObj.AddComponent<BarSimulator.Objects.Shaker>();
+        }
+
+        /// <summary>
+        /// 生成攪拌棒
+        /// </summary>
+        private void SpawnStirrer(Vector3 position)
+        {
+            var stirrerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            stirrerObj.name = "Stirrer";
+            stirrerObj.transform.position = position;
+            stirrerObj.transform.localScale = new Vector3(0.02f, 0.15f, 0.02f);
+            stirrerObj.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+
+            // 設置顏色 (銀色)
+            var renderer = stirrerObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.7f, 0.7f, 0.75f);
+                renderer.material.SetFloat("_Metallic", 0.7f);
+            }
+
+            // 添加 Rigidbody
+            var rb = stirrerObj.AddComponent<Rigidbody>();
+            rb.mass = 0.05f;
+            rb.useGravity = true;
+
+            // 添加 Stirrer 組件
+            stirrerObj.AddComponent<BarSimulator.Objects.Stirrer>();
+        }
+
+        /// <summary>
+        /// 生成裝飾工作站
+        /// </summary>
+        private void SpawnGarnishStation(Vector3 position)
+        {
+            var stationObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stationObj.name = "GarnishStation";
+            stationObj.transform.position = position;
+            stationObj.transform.localScale = new Vector3(0.3f, 0.15f, 0.3f);
+
+            // 設置顏色 (木頭色)
+            var renderer = stationObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.6f, 0.4f, 0.2f);
+            }
+
+            // 不添加 Rigidbody (固定在吧台上)
+
+            // 添加 GarnishStation 組件
+            stationObj.AddComponent<BarSimulator.Objects.GarnishStation>();
+        }
+
+        /// <summary>
+        /// 生成冰桶
+        /// </summary>
+        private void SpawnIceBucket(Vector3 position)
+        {
+            var bucketObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            bucketObj.name = "IceBucket";
+            bucketObj.transform.position = position;
+            bucketObj.transform.localScale = new Vector3(0.15f, 0.12f, 0.15f);
+
+            // 設置顏色 (銀色金屬)
+            var renderer = bucketObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.8f, 0.85f, 0.9f);
+                renderer.material.SetFloat("_Metallic", 0.9f);
+                renderer.material.SetFloat("_Glossiness", 0.8f);
+            }
+
+            // 不添加 Rigidbody (固定在吧台上)
+
+            // 添加 IceContainer 組件 (用於儲存冰塊)
+            var iceContainer = bucketObj.AddComponent<BarSimulator.Objects.InteractableBase>();
+            iceContainer.SetDisplayName("冰桶");
         }
 
         #endregion

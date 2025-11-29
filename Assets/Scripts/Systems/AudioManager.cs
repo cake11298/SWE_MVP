@@ -87,6 +87,7 @@ namespace BarSimulator.Systems
             InitializeAudioSources();
             InitializeSFXPool();
             LoadSFXLibrary();
+            LoadMusicAndAmbience();
 
             // Subscribe to settings changes
             if (SettingsManager.Instance != null)
@@ -189,14 +190,77 @@ namespace BarSimulator.Systems
         /// </summary>
         private void LoadSFXLibrary()
         {
-            // Note: In actual implementation, load AudioClips from Resources folder
-            // For now, this is a placeholder structure
+            // 嘗試從 Resources/Audio/SFX 載入音效
+            // 如果檔案不存在，會返回 null，但不會報錯
+            TryLoadSFX("pour", "Audio/SFX/Pour");
+            TryLoadSFX("shake", "Audio/SFX/Shake");
+            TryLoadSFX("stir", "Audio/SFX/Stir");
+            TryLoadSFX("glass_collision", "Audio/SFX/GlassCollision");
+            TryLoadSFX("glass_break", "Audio/SFX/GlassBreak");
+            TryLoadSFX("ice", "Audio/SFX/Ice");
+            TryLoadSFX("bottle_open", "Audio/SFX/BottleOpen");
+            TryLoadSFX("place_object", "Audio/SFX/PlaceObject");
+            TryLoadSFX("pickup", "Audio/SFX/Pickup");
+            TryLoadSFX("ui_click", "Audio/SFX/UIClick");
+            TryLoadSFX("purchase", "Audio/SFX/Purchase");
+            TryLoadSFX("unlock", "Audio/SFX/Unlock");
 
-            // Example of how to load:
-            // sfxLibrary["pour"] = Resources.Load<AudioClip>("Audio/SFX/Pour");
-            // sfxLibrary["shake"] = Resources.Load<AudioClip>("Audio/SFX/Shake");
+            Debug.Log($"AudioManager: SFX Library loaded ({sfxLibrary.Count} sounds)");
+        }
 
-            Debug.Log("AudioManager: SFX Library loaded");
+        /// <summary>
+        /// 嘗試載入音效（如果不存在不報錯）
+        /// </summary>
+        private void TryLoadSFX(string key, string resourcePath)
+        {
+            AudioClip clip = Resources.Load<AudioClip>(resourcePath);
+            if (clip != null)
+            {
+                sfxLibrary[key] = clip;
+                Debug.Log($"AudioManager: Loaded SFX '{key}' from {resourcePath}");
+            }
+            else
+            {
+                Debug.LogWarning($"AudioManager: Could not load SFX '{key}' from {resourcePath}. " +
+                    $"Place audio file at Assets/Resources/{resourcePath}.wav or .mp3");
+            }
+        }
+
+        /// <summary>
+        /// 載入音樂和環境音
+        /// </summary>
+        private void LoadMusicAndAmbience()
+        {
+            // 嘗試從 Resources 載入音樂
+            if (mainMenuMusic == null)
+            {
+                mainMenuMusic = Resources.Load<AudioClip>("Audio/Music/MainMenu");
+                if (mainMenuMusic == null)
+                {
+                    Debug.LogWarning("AudioManager: MainMenu music not found at Resources/Audio/Music/MainMenu");
+                }
+            }
+
+            if (gameSceneMusic == null)
+            {
+                gameSceneMusic = Resources.Load<AudioClip>("Audio/Music/GameScene");
+                if (gameSceneMusic == null)
+                {
+                    Debug.LogWarning("AudioManager: GameScene music not found at Resources/Audio/Music/GameScene");
+                }
+            }
+
+            // 載入環境音
+            if (barAmbience == null)
+            {
+                barAmbience = Resources.Load<AudioClip>("Audio/Ambience/BarAmbience");
+                if (barAmbience == null)
+                {
+                    Debug.LogWarning("AudioManager: Bar ambience not found at Resources/Audio/Ambience/BarAmbience");
+                }
+            }
+
+            Debug.Log("AudioManager: Music and ambience loading attempted");
         }
 
         #endregion
