@@ -4,6 +4,7 @@ using BarSimulator.Systems;
 using BarSimulator.Player;
 using BarSimulator.UI;
 using BarSimulator.Objects;
+using BarSimulator.Interaction;
 
 namespace BarSimulator.Core
 {
@@ -621,8 +622,7 @@ namespace BarSimulator.Core
             // 不添加 Rigidbody (固定在吧台上)
 
             // 添加 IceContainer 組件 (用於儲存冰塊)
-            var iceContainer = bucketObj.AddComponent<BarSimulator.Objects.InteractableBase>();
-            iceContainer.SetDisplayName("冰桶");
+            bucketObj.AddComponent<IceContainer>();
         }
 
         #endregion
