@@ -29,6 +29,15 @@ namespace BarSimulator.Core
         [Tooltip("GameManager 預製物")]
         [SerializeField] private GameObject gameManagerPrefab;
 
+        [Tooltip("酒瓶預製物")]
+        [SerializeField] private GameObject bottlePrefab;
+
+        [Tooltip("酒杯預製物")]
+        [SerializeField] private GameObject glassPrefab;
+
+        [Tooltip("搖酒器預製物")]
+        [SerializeField] private GameObject shakerPrefab;
+
         [Header("場景物件")]
         [Tooltip("吧台物件")]
         [SerializeField] private GameObject barCounter;
@@ -104,7 +113,7 @@ namespace BarSimulator.Core
             SetupCamera();
 
             // 步驟 5: 初始化 UI 系統（UIBuilder 和 UIFactory）
-            InitializeUISystem();
+            // InitializeUISystem();
 
             // 步驟 6: 生成可互動物件（如果 BarSceneBuilder 未啟用）
             if (!autoCreateScene || BarSceneBuilder.Instance == null)
@@ -504,10 +513,21 @@ namespace BarSimulator.Core
         /// </summary>
         private void SpawnBottle(string liquorId, string displayName, Color color, Vector3 position)
         {
-            var bottleObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            GameObject bottleObj;
+            if (bottlePrefab != null)
+            {
+                bottleObj = Instantiate(bottlePrefab, position, Quaternion.identity);
+            }
+            else
+            {
+                bottleObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                bottleObj.transform.position = position;
+                bottleObj.transform.localScale = new Vector3(0.08f, 0.15f, 0.08f);
+                bottleObj.AddComponent<Rigidbody>();
+                bottleObj.AddComponent<BarSimulator.Objects.Bottle>();
+            }
+            
             bottleObj.name = $"Bottle_{liquorId}";
-            bottleObj.transform.position = position;
-            bottleObj.transform.localScale = new Vector3(0.08f, 0.15f, 0.08f);
 
             // 設置顏色
             var renderer = bottleObj.GetComponent<Renderer>();
@@ -516,16 +536,13 @@ namespace BarSimulator.Core
                 renderer.material.color = color;
             }
 
-            // 添加 Rigidbody
-            var rb = bottleObj.AddComponent<Rigidbody>();
-            rb.mass = 0.5f;
-            rb.useGravity = true;
-
-            // 添加 Bottle 組件
-            var bottle = bottleObj.AddComponent<BarSimulator.Objects.Bottle>();
-
-            // 等待 CocktailSystem 初始化後設置酒類
-            StartCoroutine(InitializeBottleAfterCocktailSystem(bottle, liquorId));
+            var bottle = bottleObj.GetComponent<BarSimulator.Objects.Bottle>();
+            if (bottle != null)
+            {
+                bottle.SetOriginalPosition(position);
+                // 等待 CocktailSystem 初始化後設置酒類
+                StartCoroutine(InitializeBottleAfterCocktailSystem(bottle, liquorId));
+            }
         }
 
         /// <summary>
@@ -552,35 +569,21 @@ namespace BarSimulator.Core
         /// </summary>
         private void SpawnGlass(Vector3 position)
         {
-            var glassObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            glassObj.name = "Glass";
-            glassObj.transform.position = position;
-            glassObj.transform.localScale = new Vector3(0.06f, 0.1f, 0.06f);
-
-            // 設置透明材質
-            var renderer = glassObj.GetComponent<Renderer>();
-            if (renderer != null)
+            GameObject glassObj;
+            if (glassPrefab != null)
             {
-                var material = new Material(Shader.Find("Standard"));
-                material.color = new Color(0.8f, 0.9f, 1f, 0.3f);
-                material.SetFloat("_Mode", 3); // Transparent mode
-                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                material.SetInt("_ZWrite", 0);
-                material.DisableKeyword("_ALPHATEST_ON");
-                material.EnableKeyword("_ALPHABLEND_ON");
-                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                material.renderQueue = 3000;
-                renderer.material = material;
+                glassObj = Instantiate(glassPrefab, position, Quaternion.identity);
             }
-
-            // 添加 Rigidbody
-            var rb = glassObj.AddComponent<Rigidbody>();
-            rb.mass = 0.2f;
-            rb.useGravity = true;
-
-            // 添加 Glass 組件
-            glassObj.AddComponent<BarSimulator.Objects.Glass>();
+            else
+            {
+                glassObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                glassObj.transform.position = position;
+                glassObj.transform.localScale = new Vector3(0.06f, 0.1f, 0.06f);
+                glassObj.AddComponent<Rigidbody>();
+                glassObj.AddComponent<BarSimulator.Objects.Glass>();
+            }
+            
+            glassObj.name = "Glass";
         }
 
         /// <summary>
@@ -588,27 +591,21 @@ namespace BarSimulator.Core
         /// </summary>
         private void SpawnShaker(Vector3 position)
         {
-            var shakerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            shakerObj.name = "Shaker";
-            shakerObj.transform.position = position;
-            shakerObj.transform.localScale = new Vector3(0.1f, 0.15f, 0.1f);
-
-            // 設置顏色 (銀色)
-            var renderer = shakerObj.GetComponent<Renderer>();
-            if (renderer != null)
+            GameObject shakerObj;
+            if (shakerPrefab != null)
             {
-                renderer.material.color = new Color(0.75f, 0.75f, 0.8f);
-                renderer.material.SetFloat("_Metallic", 0.8f);
-                renderer.material.SetFloat("_Glossiness", 0.9f);
+                shakerObj = Instantiate(shakerPrefab, position, Quaternion.identity);
             }
-
-            // 添加 Rigidbody
-            var rb = shakerObj.AddComponent<Rigidbody>();
-            rb.mass = 0.3f;
-            rb.useGravity = true;
-
-            // 添加 Shaker 組件
-            shakerObj.AddComponent<BarSimulator.Objects.Shaker>();
+            else
+            {
+                shakerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                shakerObj.transform.position = position;
+                shakerObj.transform.localScale = new Vector3(0.1f, 0.15f, 0.1f);
+                shakerObj.AddComponent<Rigidbody>();
+                shakerObj.AddComponent<BarSimulator.Objects.Shaker>();
+            }
+            
+            shakerObj.name = "Shaker";
         }
 
         /// <summary>

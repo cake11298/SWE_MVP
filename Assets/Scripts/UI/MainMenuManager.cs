@@ -23,9 +23,6 @@ namespace BarSimulator.UI
         [Tooltip("新遊戲按鈕")]
         [SerializeField] private Button newGameButton;
 
-        [Tooltip("繼續遊戲按鈕")]
-        [SerializeField] private Button continueButton;
-
         [Tooltip("設定按鈕")]
         [SerializeField] private Button settingsButton;
 
@@ -78,6 +75,13 @@ namespace BarSimulator.UI
 
             // Resume time (in case we came from paused game)
             Time.timeScale = 1f;
+
+            // Ensure UI is set up if references are assigned
+            if (mainMenuPanel != null)
+            {
+                SetupUI();
+                UpdateSaveInfo();
+            }
         }
 
         /// <summary>
@@ -88,7 +92,6 @@ namespace BarSimulator.UI
             mainMenuPanel = refs.mainMenuPanel;
             newGameConfirmPanel = refs.newGameConfirmPanel;
             newGameButton = refs.newGameButton;
-            continueButton = refs.continueButton;
             settingsButton = refs.settingsButton;
             quitButton = refs.quitButton;
             confirmNewGameButton = refs.confirmNewGameButton;
@@ -123,14 +126,6 @@ namespace BarSimulator.UI
             if (newGameButton != null)
             {
                 newGameButton.onClick.AddListener(OnNewGameClicked);
-            }
-
-            if (continueButton != null)
-            {
-                continueButton.onClick.AddListener(OnContinueClicked);
-                // Disable if no save file exists
-                bool hasSave = saveLoadSystem != null && saveLoadSystem.HasSaveFile();
-                continueButton.interactable = hasSave;
             }
 
             if (settingsButton != null)
@@ -208,39 +203,6 @@ namespace BarSimulator.UI
             {
                 // No save file, start new game directly
                 StartNewGame();
-            }
-        }
-
-        /// <summary>
-        /// 繼續遊戲按鈕點擊
-        /// </summary>
-        private void OnContinueClicked()
-        {
-            Debug.Log("MainMenuManager: Continue clicked");
-
-            if (saveLoadSystem == null)
-            {
-                Debug.LogError("MainMenuManager: SaveLoadSystem not found!");
-                return;
-            }
-
-            if (!saveLoadSystem.HasSaveFile())
-            {
-                Debug.LogWarning("MainMenuManager: No save file to continue");
-                return;
-            }
-
-            // Load save file
-            bool success = saveLoadSystem.LoadGame();
-            if (success)
-            {
-                // Load game scene
-                LoadGameScene();
-            }
-            else
-            {
-                Debug.LogError("MainMenuManager: Failed to load save file");
-                // TODO: Show error message to player
             }
         }
 

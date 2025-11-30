@@ -60,10 +60,10 @@ namespace BarSimulator.UI
 
         private void Start()
         {
-            if (buildOnStart)
-            {
-                BuildUI();
-            }
+            // if (buildOnStart)
+            // {
+            //     BuildUI();
+            // }
         }
 
         private void Update()
