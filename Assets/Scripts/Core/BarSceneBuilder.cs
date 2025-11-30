@@ -44,6 +44,12 @@ namespace BarSimulator.Core
         [SerializeField] private int glassCount = 6;
         [SerializeField] private int bottlesPerShelf = 8;
 
+        [Header("預製物")]
+        [SerializeField] private GameObject bottlePrefab;
+        [SerializeField] private GameObject glassPrefab;
+        [SerializeField] private GameObject shakerPrefab;
+        [SerializeField] private GameObject npcPrefab;
+
         #endregion
 
         #region 私有欄位
@@ -99,6 +105,13 @@ namespace BarSimulator.Core
         {
             Debug.Log("BarSceneBuilder: Building bar scene...");
 
+            // 建立 Environment 父物件
+            GameObject envRoot = GameObject.Find("Environment");
+            if (envRoot == null)
+            {
+                envRoot = new GameObject("Environment");
+            }
+
             // 0. 設置系統
             SetupSystems();
 
@@ -108,6 +121,15 @@ namespace BarSimulator.Core
             BuildRoof();
             BuildBarCounter();
             BuildLiquorShelf();
+
+            // 將所有結構物件設為 Environment 的子物件
+            foreach (var obj in structureObjects)
+            {
+                if (obj != null && obj.transform.parent == null)
+                {
+                    obj.transform.SetParent(envRoot.transform);
+                }
+            }
 
             // 2. 建造物件
             BuildBottles();
@@ -192,15 +214,23 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildFloor()
         {
+            // 檢查是否已存在
+            if (GameObject.Find("Environment/Floor") != null) return;
+
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Floor";
             floor.transform.position = Vector3.zero;
             floor.transform.localScale = new Vector3(roomSize.x / 10f, 1f, roomSize.z / 10f);
 
             var renderer = floor.GetComponent<Renderer>();
-            var material = new Material(Shader.Find("Standard"));
-            material.color = floorColor;
-            material.SetFloat("_Glossiness", 0.6f);
+            // 嘗試載入預製材質
+            var material = Resources.Load<Material>("Materials/FloorMaterial");
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Standard"));
+                material.color = floorColor;
+                material.SetFloat("_Glossiness", 0.6f);
+            }
             renderer.material = material;
 
             structureObjects.Add(floor);
@@ -212,9 +242,16 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildWalls()
         {
-            var wallMaterial = new Material(Shader.Find("Standard"));
-            wallMaterial.color = wallColor;
-            wallMaterial.SetFloat("_Glossiness", 0.1f);
+            // 檢查是否已存在
+            if (GameObject.Find("Environment/BackWall") != null) return;
+
+            var wallMaterial = Resources.Load<Material>("Materials/WallMaterial");
+            if (wallMaterial == null)
+            {
+                wallMaterial = new Material(Shader.Find("Standard"));
+                wallMaterial.color = wallColor;
+                wallMaterial.SetFloat("_Glossiness", 0.1f);
+            }
 
             // 牆壁配置: 位置, 旋轉, 尺寸
             var wallConfigs = new[]
@@ -249,6 +286,9 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildRoof()
         {
+            // 檢查是否已存在
+            if (GameObject.Find("Environment/Roof") != null) return;
+
             // 主屋頂
             var roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
             roof.name = "Roof";
@@ -296,15 +336,22 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildBarCounter()
         {
+            // 檢查是否已存在
+            if (GameObject.Find("Environment/BarCounter") != null) return;
+
             // 吧台主體 (木材)
             var counter = GameObject.CreatePrimitive(PrimitiveType.Cube);
             counter.name = "BarCounter";
             counter.transform.position = new Vector3(0f, 0.5f, -3f);
             counter.transform.localScale = new Vector3(12f, 1f, 2f);
 
-            var woodMaterial = new Material(Shader.Find("Standard"));
-            woodMaterial.color = woodColor;
-            woodMaterial.SetFloat("_Glossiness", 0.4f);
+            var woodMaterial = Resources.Load<Material>("Materials/WoodMaterial");
+            if (woodMaterial == null)
+            {
+                woodMaterial = new Material(Shader.Find("Standard"));
+                woodMaterial.color = woodColor;
+                woodMaterial.SetFloat("_Glossiness", 0.4f);
+            }
             counter.GetComponent<Renderer>().material = woodMaterial;
 
             // 大理石檯面
@@ -313,10 +360,14 @@ namespace BarSimulator.Core
             counterTop.transform.position = new Vector3(0f, 1.05f, -3f);
             counterTop.transform.localScale = new Vector3(12.2f, 0.1f, 2.2f);
 
-            var marbleMaterial = new Material(Shader.Find("Standard"));
-            marbleMaterial.color = marbleColor;
-            marbleMaterial.SetFloat("_Glossiness", 0.3f); // 降低反射
-            marbleMaterial.SetFloat("_Metallic", 0f);
+            var marbleMaterial = Resources.Load<Material>("Materials/MarbleMaterial");
+            if (marbleMaterial == null)
+            {
+                marbleMaterial = new Material(Shader.Find("Standard"));
+                marbleMaterial.color = marbleColor;
+                marbleMaterial.SetFloat("_Glossiness", 0.3f);
+                marbleMaterial.SetFloat("_Metallic", 0f);
+            }
             counterTop.GetComponent<Renderer>().material = marbleMaterial;
 
             structureObjects.Add(counter);
@@ -329,6 +380,9 @@ namespace BarSimulator.Core
         /// </summary>
         private void BuildLiquorShelf()
         {
+            // 檢查是否已存在
+            if (GameObject.Find("Environment/ShelfBack") != null) return;
+
             // 酒架背板
             var shelfBack = GameObject.CreatePrimitive(PrimitiveType.Cube);
             shelfBack.name = "ShelfBack";
@@ -343,9 +397,13 @@ namespace BarSimulator.Core
             structureObjects.Add(shelfBack);
 
             // 建立三層架子
-            var shelfMaterial = new Material(Shader.Find("Standard"));
-            shelfMaterial.color = woodColor;
-            shelfMaterial.SetFloat("_Glossiness", 0.5f);
+            var shelfMaterial = Resources.Load<Material>("Materials/WoodMaterial");
+            if (shelfMaterial == null)
+            {
+                shelfMaterial = new Material(Shader.Find("Standard"));
+                shelfMaterial.color = woodColor;
+                shelfMaterial.SetFloat("_Glossiness", 0.5f);
+            }
 
             for (int i = 0; i < shelfHeights.Length; i++)
             {
@@ -1191,12 +1249,12 @@ namespace BarSimulator.Core
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.12f, 0.1f, 0.08f);
 
-            // 霧效 - 煙霧氛圍
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.05f, 0.02f, 0.1f);
-            RenderSettings.fogStartDistance = 8f;
-            RenderSettings.fogEndDistance = 25f;
+            // 霧效 - 煙霧氛圍 (已禁用以解決白霧問題)
+            RenderSettings.fog = false;
+            // RenderSettings.fogMode = FogMode.Linear;
+            // RenderSettings.fogColor = new Color(0.05f, 0.02f, 0.1f);
+            // RenderSettings.fogStartDistance = 8f;
+            // RenderSettings.fogEndDistance = 25f;
 
             // 吧台聚光燈
             CreateSpotlight(new Vector3(-3f, 9f, -3f), new Color(1f, 0.8f, 0.6f), 8f);

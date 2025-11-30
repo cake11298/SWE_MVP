@@ -148,6 +148,7 @@ namespace BarSimulator.Managers
             RenderSettings.ambientLight = ambientColor;
             RenderSettings.ambientIntensity = ambientIntensity;
             RenderSettings.reflectionIntensity = 0.3f;
+            RenderSettings.fog = false; // 強制禁用霧效
 
             // 如果沒有指定主燈，自動找場景中的 Directional Light
             if (mainDirectionalLight == null)

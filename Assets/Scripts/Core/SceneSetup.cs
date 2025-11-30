@@ -456,6 +456,16 @@ namespace BarSimulator.Core
         /// </summary>
         private void SetupCamera()
         {
+            // 銷毀場景中預設的 Main Camera，避免與玩家攝影機衝突
+            var mainCameras = GameObject.FindGameObjectsWithTag("MainCamera");
+            foreach (var cam in mainCameras)
+            {
+                if (cam.transform.parent != playerObject.transform)
+                {
+                    Destroy(cam);
+                }
+            }
+
             // 確保只有一個 AudioListener
             var listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
             for (int i = 1; i < listeners.Length; i++)

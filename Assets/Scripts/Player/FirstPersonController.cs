@@ -21,6 +21,9 @@ namespace BarSimulator.Player
         [Tooltip("滑鼠敏感度")]
         [SerializeField] private float mouseSensitivity = Constants.MouseSensitivity;
 
+        [Tooltip("視角平滑度 (0 = 無平滑, 值越大越平滑)")]
+        [SerializeField] private float lookSmoothing = 10f;
+
         [Tooltip("垂直視角最小值 (度)")]
         [SerializeField] private float minPitch = Constants.MinPitch;
 
@@ -47,6 +50,10 @@ namespace BarSimulator.Player
         private Vector2 lookInput;
         private float pitch;
         private float yaw;
+        
+        // 平滑處理變數
+        private Vector2 currentLookInput;
+        private Vector2 lookInputVelocity;
 
         private bool isInputEnabled = true;
 
@@ -206,7 +213,19 @@ namespace BarSimulator.Player
         {
             if (lookAction == null) return;
 
-            lookInput = lookAction.ReadValue<Vector2>();
+            Vector2 targetLookInput = lookAction.ReadValue<Vector2>();
+
+            // 應用平滑
+            if (lookSmoothing > 0f)
+            {
+                currentLookInput = Vector2.SmoothDamp(currentLookInput, targetLookInput, ref lookInputVelocity, 1f / lookSmoothing);
+            }
+            else
+            {
+                currentLookInput = targetLookInput;
+            }
+
+            lookInput = currentLookInput;
 
             // 水平旋轉（左右）- 旋轉玩家本體
             yaw += lookInput.x * mouseSensitivity * Time.deltaTime;
