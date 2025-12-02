@@ -327,9 +327,9 @@ namespace BarSimulator.Interaction
         {
             if (clip == null) return;
 
-            if (AudioManager.Instance != null)
+            if (Managers.AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlaySFX(clip);
+                Managers.AudioManager.Instance.PlaySFX(clip);
             }
             else
             {
@@ -355,18 +355,17 @@ namespace BarSimulator.Interaction
             if (show)
             {
                 // 顯示提示文字
-                if (InteractionSystem.Instance != null)
+                // 注意：InteractionSystem 沒有 ShowInteractionHint 方法
+                // 可以改用 UIManager 或其他方式顯示提示
+                if (UIManager.Instance != null)
                 {
-                    InteractionSystem.Instance.ShowInteractionHint(returnPrompt);
+                    UIManager.Instance.ShowMessage(returnPrompt, 0.5f);
                 }
             }
             else
             {
                 // 隱藏提示
-                if (InteractionSystem.Instance != null)
-                {
-                    InteractionSystem.Instance.HideInteractionHint();
-                }
+                // UIManager 的訊息會自動消失，不需要手動隱藏
             }
         }
 
