@@ -110,10 +110,13 @@ namespace BarSimulator.Core
             // 6. 設置環境
             SetupEnvironment();
 
-            // 7. 設置游標（鎖定在遊戲中）
+            // 7. 修復場景材質（解決紫色材質問題）
+            FixSceneMaterials();
+
+            // 8. 設置游標（鎖定在遊戲中）
             SetupCursor();
 
-            // 8. 初始化遊戲狀態
+            // 9. 初始化遊戲狀態
             InitializeGameState();
 
             isInitialized = true;
@@ -385,6 +388,30 @@ namespace BarSimulator.Core
             RenderSettings.ambientLight = new Color(0.3f, 0.25f, 0.2f);
 
             Debug.Log("GameSceneInitializer: 環境設置完成");
+        }
+
+        /// <summary>
+        /// 修復場景材質
+        /// </summary>
+        private void FixSceneMaterials()
+        {
+            Debug.Log("GameSceneInitializer: 修復場景材質...");
+
+            // 檢查是否已經有 SceneMaterialFixer
+            var materialFixer = FindAnyObjectByType<SceneMaterialFixer>();
+
+            if (materialFixer == null)
+            {
+                // 創建材質修復器
+                var fixerObj = new GameObject("SceneMaterialFixer");
+                materialFixer = fixerObj.AddComponent<SceneMaterialFixer>();
+            }
+
+            // 執行材質修復
+            materialFixer.FixAllMaterials();
+            materialFixer.OptimizeLighting();
+
+            Debug.Log("GameSceneInitializer: 場景材質修復完成");
         }
 
         /// <summary>

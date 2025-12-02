@@ -650,18 +650,61 @@ namespace BarSimulator.Systems
                 var type = heldObject.InteractableType;
                 string typeName = GetTypeNameEnglish(type);
 
-                return type switch
+                // 檢查是否可以給附近的 NPC 喝酒
+                string npcHint = GetNPCServingHint();
+
+                string baseHint = type switch
                 {
                     InteractableType.Bottle => $"{heldObject.DisplayName} | Hold LMB to pour | Q=Drop R=Return",
                     InteractableType.Glass => $"{typeName} | Press RMB to drink | Q=Drop R=Return",
                     InteractableType.Shaker => $"{typeName} | Hold LMB to shake | Q=Drop R=Return",
                     _ => $"{heldObject.DisplayName} | Q=Drop R=Return"
                 };
+
+                // 如果附近有 NPC 可以送酒，添加 F 鍵提示
+                if (!string.IsNullOrEmpty(npcHint))
+                {
+                    return $"{npcHint} | {baseHint}";
+                }
+
+                return baseHint;
             }
             else if (targetedObject != null)
             {
                 string action = targetedObject.CanPickup ? "pick up" : "interact with";
                 return $"Press E to {action} {targetedObject.DisplayName}";
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 獲取給 NPC 送酒的提示
+        /// </summary>
+        private string GetNPCServingHint()
+        {
+            if (!isHolding || heldObject == null) return string.Empty;
+
+            // 檢查是否持有容器
+            var container = heldObject as BarSimulator.Objects.Container;
+            if (container == null || container.IsEmpty) return string.Empty;
+
+            // 檢查附近是否有需要服務的 NPC
+            var npcManager = BarSimulator.Managers.NPCManager.Instance;
+            if (npcManager == null) return string.Empty;
+
+            Vector3 playerPos = mainCamera != null ? mainCamera.transform.position : transform.position;
+            float serveDistance = 3f;
+
+            foreach (var npc in npcManager.GetActiveNPCs())
+            {
+                if (npc == null || !npc.HasPendingOrder) continue;
+
+                float dist = Vector3.Distance(playerPos, npc.transform.position);
+                if (dist < serveDistance)
+                {
+                    return $"Press F to serve {npc.NPCName}";
+                }
             }
 
             return string.Empty;
