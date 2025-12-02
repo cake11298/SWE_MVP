@@ -372,9 +372,12 @@ namespace BarSimulator.Core
             Debug.Log("GameSceneInitializer: 設置環境...");
 
             // 播放環境音樂
-            if (ambientMusic != null && Managers.AudioManager.Instance != null)
+            // 注意：AudioManager.PlayMusic 使用預設的音樂軌道索引，而不是直接播放 AudioClip
+            // 如果需要播放自訂音樂，請修改 AudioManager 或使用不同的方法
+            if (Managers.AudioManager.Instance != null)
             {
-                Managers.AudioManager.Instance.PlayMusic(ambientMusic);
+                // 播放第一首音樂軌道（索引 0）
+                Managers.AudioManager.Instance.PlayMusic(0);
             }
 
             // 設置環境光照
