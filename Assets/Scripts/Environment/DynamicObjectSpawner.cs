@@ -158,9 +158,9 @@ namespace BarSimulator.Environment
 
                 for (int i = 0; i < bottlesPerShelf; i++)
                 {
-                    if (bottleIndex >= liquorDatabase.liquors.Count)
+                    if (bottleIndex >= liquorDatabase.liquors.Length)
                     {
-                        Debug.LogWarning($"DynamicObjectSpawner: 酒類數量不足，需要 {bottlesPerShelf * shelfLevels}，只有 {liquorDatabase.liquors.Count}");
+                        Debug.LogWarning($"DynamicObjectSpawner: 酒類數量不足，需要 {bottlesPerShelf * shelfLevels}，只有 {liquorDatabase.liquors.Length}");
                         break;
                     }
 
@@ -171,7 +171,7 @@ namespace BarSimulator.Environment
                     // 生成酒瓶
                     LiquorData liquor = liquorDatabase.liquors[bottleIndex];
                     GameObject bottleObj = CreateBottle(spawnPos, liquor);
-                    bottleObj.name = $"Bottle_{liquor.name}";
+                    bottleObj.name = $"Bottle_{liquor.id}";
 
                     Bottle bottle = bottleObj.GetComponent<Bottle>();
                     if (bottle != null)
@@ -182,7 +182,7 @@ namespace BarSimulator.Environment
                     bottleIndex++;
                 }
 
-                if (bottleIndex >= liquorDatabase.liquors.Count) break;
+                if (bottleIndex >= liquorDatabase.liquors.Length) break;
             }
 
             Debug.Log($"DynamicObjectSpawner: 生成了 {spawnedBottles.Count} 個酒瓶");
