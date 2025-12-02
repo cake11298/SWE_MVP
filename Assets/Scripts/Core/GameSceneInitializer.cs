@@ -136,10 +136,10 @@ namespace BarSimulator.Core
             }
 
             // AudioManager
-            if (AudioManager.Instance == null)
+            if (Managers.AudioManager.Instance == null)
             {
                 var audioObj = new GameObject("AudioManager");
-                audioObj.AddComponent<AudioManager>();
+                audioObj.AddComponent<Managers.AudioManager>();
                 Debug.Log("GameSceneInitializer: 創建 AudioManager");
             }
 
@@ -326,12 +326,13 @@ namespace BarSimulator.Core
             }
 
             // 添加玩家控制器腳本（如果存在）
-            var playerController = playerObj.GetComponent<PlayerController>();
-            if (playerController == null)
-            {
-                // 可以在這裡添加玩家控制器組件
-                Debug.Log("GameSceneInitializer: 玩家控制器組件未找到，請手動添加");
-            }
+            // 注意：PlayerController 組件需要根據你的實際實現來添加
+            // var playerController = playerObj.GetComponent<PlayerController>();
+            // if (playerController == null)
+            // {
+            //     playerObj.AddComponent<PlayerController>();
+            // }
+            Debug.Log("GameSceneInitializer: 基礎玩家物件已創建，請根據需要添加玩家控制器");
 
             return playerObj;
         }
@@ -371,9 +372,9 @@ namespace BarSimulator.Core
             Debug.Log("GameSceneInitializer: 設置環境...");
 
             // 播放環境音樂
-            if (ambientMusic != null && AudioManager.Instance != null)
+            if (ambientMusic != null && Managers.AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayMusic(ambientMusic);
+                Managers.AudioManager.Instance.PlayMusic(ambientMusic);
             }
 
             // 設置環境光照

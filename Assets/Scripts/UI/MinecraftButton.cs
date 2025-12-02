@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using BarSimulator.Managers;
 
 namespace BarSimulator.UI
 {
