@@ -76,32 +76,48 @@ namespace BarSimulator.UI
             // Resume time (in case we came from paused game)
             Time.timeScale = 1f;
 
-            // Ensure UI is set up if references are assigned
-            if (mainMenuPanel != null)
-            {
-                SetupUI();
-                UpdateSaveInfo();
-            }
+            // Validate UI references
+            ValidateUIReferences();
+
+            // Setup UI
+            SetupUI();
+            UpdateSaveInfo();
         }
 
         /// <summary>
-        /// 初始化 UI 引用（從外部注入）
+        /// 驗證 UI 引用是否正確設置
         /// </summary>
-        public void InitializeReferences(MainMenuUIReferences refs)
+        private void ValidateUIReferences()
         {
-            mainMenuPanel = refs.mainMenuPanel;
-            newGameConfirmPanel = refs.newGameConfirmPanel;
-            newGameButton = refs.newGameButton;
-            settingsButton = refs.settingsButton;
-            quitButton = refs.quitButton;
-            confirmNewGameButton = refs.confirmNewGameButton;
-            cancelNewGameButton = refs.cancelNewGameButton;
-            saveInfoText = refs.saveInfoText;
-            versionText = refs.versionText;
+            bool allValid = true;
 
-            SetupUI();
-            UpdateSaveInfo();
-            Debug.Log("MainMenuManager: UI references initialized");
+            if (mainMenuPanel == null)
+            {
+                Debug.LogError("MainMenuManager: mainMenuPanel 未設置！");
+                allValid = false;
+            }
+
+            if (newGameButton == null)
+            {
+                Debug.LogError("MainMenuManager: newGameButton 未設置！");
+                allValid = false;
+            }
+
+            if (settingsButton == null)
+            {
+                Debug.LogWarning("MainMenuManager: settingsButton 未設置");
+            }
+
+            if (quitButton == null)
+            {
+                Debug.LogError("MainMenuManager: quitButton 未設置！");
+                allValid = false;
+            }
+
+            if (!allValid)
+            {
+                Debug.LogError("MainMenuManager: UI 引用不完整！請在 Inspector 中設置所有必要的 UI 元素。");
+            }
         }
 
         #endregion
