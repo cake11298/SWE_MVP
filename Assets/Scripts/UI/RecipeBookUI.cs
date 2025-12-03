@@ -63,8 +63,7 @@ namespace BarSimulator.UI
         [SerializeField] private Button lockedButton;
 
         [Header("Data")]
-        [Tooltip("配方資料庫")]
-        [SerializeField] private RecipeDatabase recipeDatabase;
+        // NOTE: recipeDatabase removed - use static RecipeDatabase class instead
 
         [Header("Input")]
         [Tooltip("Input Actions Asset")]
@@ -199,11 +198,7 @@ namespace BarSimulator.UI
                 lockedButton.onClick.AddListener(() => SetFilter(RecipeFilter.Locked));
             }
 
-            // 載入配方資料庫
-            if (recipeDatabase == null)
-            {
-                recipeDatabase = Resources.Load<RecipeDatabase>("RecipeDatabase");
-            }
+            // NOTE: RecipeDatabase is now static - no initialization needed
         }
 
         #endregion

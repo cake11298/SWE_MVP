@@ -26,8 +26,7 @@ namespace BarSimulator.Systems
         [Tooltip("酒類資料庫")]
         [SerializeField] private LiquorDatabase liquorDatabase;
 
-        [Tooltip("配方資料庫")]
-        [SerializeField] private RecipeDatabase recipeDatabase;
+        // NOTE: recipeDatabase removed - use static RecipeDatabase class instead
 
         [Header("倒酒設定")]
         [Tooltip("倒酒速度 (ml/s)")]
@@ -79,12 +78,7 @@ namespace BarSimulator.Systems
                 liquorDatabase.InitializeDefaults();
             }
 
-            // RecipeDatabase 也直接建立
-            if (recipeDatabase == null)
-            {
-                Debug.Log("CocktailSystem: 建立執行期 RecipeDatabase");
-                recipeDatabase = ScriptableObject.CreateInstance<RecipeDatabase>();
-            }
+            // NOTE: RecipeDatabase is now static - no initialization needed
         }
 
         private void Start()
@@ -496,10 +490,7 @@ namespace BarSimulator.Systems
         /// </summary>
         public LiquorDatabase LiquorDatabase => liquorDatabase;
 
-        /// <summary>
-        /// 配方資料庫
-        /// </summary>
-        public RecipeDatabase RecipeDatabase => recipeDatabase;
+        // NOTE: RecipeDatabase property removed - use static BarSimulator.Data.RecipeDatabase instead
 
         /// <summary>
         /// 是否正在倒酒

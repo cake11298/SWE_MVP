@@ -29,8 +29,7 @@ namespace BarSimulator.UI
         [SerializeField] private GameObject recipeCardPrefab;
 
         [Header("Data")]
-        [Tooltip("Recipe database")]
-        [SerializeField] private RecipeDatabase recipeDatabase;
+        // NOTE: recipeDatabase removed - use static RecipeDatabase class instead
 
         [Header("Settings")]
         [Tooltip("Fade speed")]
@@ -57,12 +56,7 @@ namespace BarSimulator.UI
 
         private void Start()
         {
-            // Load recipes
-            if (recipeDatabase == null)
-            {
-                recipeDatabase = Resources.Load<RecipeDatabase>("RecipeDatabase");
-            }
-
+            // NOTE: RecipeDatabase is now static - no initialization needed
             LoadRecipes();
         }
 

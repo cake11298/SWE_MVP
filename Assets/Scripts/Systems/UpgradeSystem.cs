@@ -21,8 +21,7 @@ namespace BarSimulator.Systems
         [Tooltip("酒類資料庫")]
         [SerializeField] private LiquorDatabase liquorDatabase;
 
-        [Tooltip("配方資料庫")]
-        [SerializeField] private RecipeDatabase recipeDatabase;
+        // NOTE: recipeDatabase removed - use static RecipeDatabase class instead
 
         [Header("Starting Values")]
         [Tooltip("初始金錢數量")]
@@ -59,10 +58,7 @@ namespace BarSimulator.Systems
                 liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDatabase");
             }
 
-            if (recipeDatabase == null)
-            {
-                recipeDatabase = Resources.Load<RecipeDatabase>("RecipeDatabase");
-            }
+            // NOTE: RecipeDatabase is now static - no initialization needed
 
             // Initialize money
             currentMoney = startingMoney;
@@ -308,10 +304,7 @@ namespace BarSimulator.Systems
         /// </summary>
         public LiquorDatabase LiquorDatabase => liquorDatabase;
 
-        /// <summary>
-        /// 配方資料庫
-        /// </summary>
-        public RecipeDatabase RecipeDatabase => recipeDatabase;
+        // NOTE: RecipeDatabase property removed - use static BarSimulator.Data.RecipeDatabase instead
 
         #endregion
     }
