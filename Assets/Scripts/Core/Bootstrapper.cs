@@ -1,4 +1,6 @@
 using UnityEngine;
+using BarSimulator.Systems;
+using BarSimulator.States;
 
 namespace BarSimulator.Core
 {
@@ -12,6 +14,10 @@ namespace BarSimulator.Core
         [Header("Core Systems")]
         [SerializeField] private GameStateManager gameStateManager;
 
+        [Header("Game Systems")]
+        [SerializeField] private CustomerSystem customerSystem;
+        [SerializeField] private MinigameSystem minigameSystem;
+
         [Header("Debug")]
         [SerializeField] private bool verboseLogging = true;
 
@@ -22,22 +28,96 @@ namespace BarSimulator.Core
                 Debug.Log("[Bootstrapper] Initializing core systems...");
             }
 
-            // Phase 1: Infrastructure is ready
+            // Phase 1: Infrastructure
             // EventBus is static, no initialization needed
+            if (verboseLogging)
+            {
+                Debug.Log("[Bootstrapper] ✓ EventBus ready");
+            }
 
-            // Phase 2: Data layer (will be populated in Phase 2)
-            // RecipeDatabase and GameData are static, no initialization needed
+            // Phase 2: Data layer
+            // RecipeDatabase and GameData are static, auto-initialize on first access
+            var recipeCount = BarSimulator.Data.RecipeDatabase.AllRecipes.Count;
+            if (verboseLogging)
+            {
+                Debug.Log($"[Bootstrapper] ✓ RecipeDatabase ready ({recipeCount} recipes)");
+                Debug.Log("[Bootstrapper] ✓ GameData ready");
+            }
 
-            // Phase 3: Game systems (will be initialized in Phase 3)
-            // TODO: Initialize CustomerSystem
-            // TODO: Initialize MinigameSystem
+            // Phase 3: Game systems - Create if not assigned
+            InitializeSystems();
 
-            // Phase 4: Start FSM (will be implemented in Phase 4)
-            // TODO: Set initial state (e.g., State_CustomerEntry)
+            // Phase 4: Start FSM
+            InitializeStateMachine();
 
             if (verboseLogging)
             {
-                Debug.Log("[Bootstrapper] Core systems initialized successfully.");
+                Debug.Log("[Bootstrapper] ✅ All systems initialized successfully!");
+            }
+        }
+
+        private void InitializeSystems()
+        {
+            // Create CustomerSystem if not assigned
+            if (customerSystem == null)
+            {
+                GameObject customerSystemObj = new GameObject("CustomerSystem");
+                customerSystemObj.transform.SetParent(transform);
+                customerSystem = customerSystemObj.AddComponent<CustomerSystem>();
+
+                if (verboseLogging)
+                {
+                    Debug.Log("[Bootstrapper] ✓ CustomerSystem created");
+                }
+            }
+
+            // Create MinigameSystem if not assigned
+            if (minigameSystem == null)
+            {
+                GameObject minigameSystemObj = new GameObject("MinigameSystem");
+                minigameSystemObj.transform.SetParent(transform);
+                minigameSystem = minigameSystemObj.AddComponent<MinigameSystem>();
+
+                if (verboseLogging)
+                {
+                    Debug.Log("[Bootstrapper] ✓ MinigameSystem created");
+                }
+            }
+        }
+
+        private void InitializeStateMachine()
+        {
+            // Create GameStateManager if not assigned
+            if (gameStateManager == null)
+            {
+                GameObject stateManagerObj = new GameObject("GameStateManager");
+                stateManagerObj.transform.SetParent(transform);
+                gameStateManager = stateManagerObj.AddComponent<GameStateManager>();
+
+                if (verboseLogging)
+                {
+                    Debug.Log("[Bootstrapper] ✓ GameStateManager created");
+                }
+            }
+
+            // Register all states with their dependencies
+            gameStateManager.RegisterState(new State_Idle(gameStateManager));
+            gameStateManager.RegisterState(new State_CustomerEntry(gameStateManager, customerSystem));
+            gameStateManager.RegisterState(new State_Crafting(gameStateManager));
+            gameStateManager.RegisterState(new State_Shaking_QTE(gameStateManager, minigameSystem));
+            gameStateManager.RegisterState(new State_Serving(gameStateManager));
+
+            if (verboseLogging)
+            {
+                Debug.Log("[Bootstrapper] ✓ All states registered");
+            }
+
+            // Start with CustomerEntry state (first customer arrives)
+            gameStateManager.TransitionTo<State_CustomerEntry>();
+
+            if (verboseLogging)
+            {
+                Debug.Log("[Bootstrapper] ✓ FSM started in CustomerEntry state");
             }
         }
 
@@ -45,6 +125,11 @@ namespace BarSimulator.Core
         {
             // Cleanup: Clear EventBus subscriptions when scene unloads
             EventBus.ClearAll();
+
+            if (verboseLogging)
+            {
+                Debug.Log("[Bootstrapper] Cleanup complete");
+            }
         }
     }
 }
