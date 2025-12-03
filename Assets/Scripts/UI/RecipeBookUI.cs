@@ -335,7 +335,7 @@ namespace BarSimulator.UI
             var lockIcon = item.transform.Find("LockIcon")?.gameObject;
             if (lockIcon != null)
             {
-                lockIcon.SetActive(recipe.isLocked);
+                lockIcon.SetActive(recipe.IsLocked);
             }
 
             // 設置按鈕事件
