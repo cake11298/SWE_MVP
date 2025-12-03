@@ -16,7 +16,7 @@ namespace BarSimulator.Systems
         // Customer Data
         // ===================================================================
 
-        private class CustomerData
+        public class CustomerData
         {
             public int ID;
             public DrinkRecipe OrderedRecipe;
