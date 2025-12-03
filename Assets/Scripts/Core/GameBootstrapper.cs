@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -399,7 +400,9 @@ namespace BarSimulator.Core
 
             // 添加 Interactable 組件
             var interactable = bottle.AddComponent<Bottle>();
-            interactable.DisplayName = $"Bottle {index + 1}";
+
+            // 使用反射設定 displayName（因為 DisplayName 屬性是只讀的）
+            SetInteractableDisplayName(interactable, $"Bottle {index + 1}");
 
             // 設定層級
             bottle.layer = LayerMask.NameToLayer("Interactable");
@@ -428,7 +431,9 @@ namespace BarSimulator.Core
 
             // 添加 Interactable 組件
             var interactable = glass.AddComponent<Glass>();
-            interactable.DisplayName = $"Glass {index + 1}";
+
+            // 使用反射設定 displayName（因為 DisplayName 屬性是只讀的）
+            SetInteractableDisplayName(interactable, $"Glass {index + 1}");
 
             // 設定層級
             glass.layer = LayerMask.NameToLayer("Interactable");
@@ -663,6 +668,39 @@ namespace BarSimulator.Core
             if (showDebugLogs)
             {
                 Debug.Log($"[Bootstrapper] {message}");
+            }
+        }
+
+        /// <summary>
+        /// 使用反射設定 InteractableBase 的 displayName 欄位
+        /// 解決 DisplayName 屬性是只讀的問題
+        /// </summary>
+        /// <param name="interactable">IInteractable 實例</param>
+        /// <param name="name">要設定的名稱</param>
+        private void SetInteractableDisplayName(IInteractable interactable, string name)
+        {
+            if (interactable == null)
+            {
+                Debug.LogWarning("[Bootstrapper] Cannot set display name on null interactable");
+                return;
+            }
+
+            // 取得 InteractableBase 類型
+            var type = typeof(InteractableBase);
+
+            // 取得 displayName 欄位（protected）
+            FieldInfo displayNameField = type.GetField("displayName",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (displayNameField != null)
+            {
+                // 使用反射設定欄位值
+                displayNameField.SetValue(interactable, name);
+                Log($"  → Set display name: {name}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Bootstrapper] Could not find 'displayName' field in InteractableBase");
             }
         }
 
