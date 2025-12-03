@@ -128,7 +128,7 @@ namespace BarSimulator.UI
         /// </summary>
         private void LoadRecipes()
         {
-            if (recipeDatabase == null || recipeContainer == null) return;
+            if (recipeContainer == null) return;
 
             // Clear existing cards
             foreach (Transform child in recipeContainer)
@@ -137,9 +137,10 @@ namespace BarSimulator.UI
             }
 
             // Create recipe cards
-            if (recipeDatabase.recipes == null) return;
+            var recipes = RecipeDatabase.AllRecipes;
+            if (recipes == null) return;
 
-            foreach (var recipe in recipeDatabase.recipes)
+            foreach (var recipe in recipes)
             {
                 CreateRecipeCard(recipe);
             }

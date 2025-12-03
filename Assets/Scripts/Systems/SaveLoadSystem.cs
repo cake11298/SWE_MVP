@@ -127,11 +127,11 @@ namespace BarSimulator.Systems
             }
 
             // Recipe data
-            var recipeDatabase = UpgradeSystem.Instance?.RecipeDatabase;
-            if (recipeDatabase != null && recipeDatabase.recipes != null)
+            var recipes = RecipeDatabase.AllRecipes;
+            if (recipes != null)
             {
                 data.recipeData = new List<RecipeSaveData>();
-                foreach (var recipe in recipeDatabase.recipes)
+                foreach (var recipe in recipes)
                 {
                     data.recipeData.Add(new RecipeSaveData
                     {
@@ -232,12 +232,11 @@ namespace BarSimulator.Systems
             }
 
             // Apply recipe data
-            var recipeDatabase = UpgradeSystem.Instance?.RecipeDatabase;
-            if (recipeDatabase != null && data.recipeData != null)
+            if (data.recipeData != null)
             {
                 foreach (var recipeSave in data.recipeData)
                 {
-                    var recipe = recipeDatabase.GetRecipe(recipeSave.name);
+                    var recipe = RecipeDatabase.GetRecipe(recipeSave.name);
                     if (recipe != null)
                     {
                         recipe.isLocked = recipeSave.isLocked;

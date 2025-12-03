@@ -13,6 +13,9 @@ namespace BarSimulator.States
         private float idleTimer;
         private GameStateManager stateManager;
 
+        // Parameterless constructor for generic constraint
+        public State_Idle() { }
+
         public State_Idle(GameStateManager manager)
         {
             stateManager = manager;

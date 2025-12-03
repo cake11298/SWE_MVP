@@ -1,5 +1,6 @@
 using UnityEngine;
 using BarSimulator.Systems;
+using BarSimulator.Managers;
 
 namespace BarSimulator.UI
 {

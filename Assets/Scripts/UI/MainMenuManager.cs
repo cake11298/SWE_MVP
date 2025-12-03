@@ -358,13 +358,13 @@ namespace BarSimulator.UI
                 }
 
                 // Lock all advanced recipes
-                var recipeDB = UpgradeSystem.Instance.RecipeDatabase;
-                if (recipeDB != null && recipeDB.recipes != null)
+                var recipes = RecipeDatabase.AllRecipes;
+                if (recipes != null)
                 {
-                    foreach (var recipe in recipeDB.recipes)
+                    foreach (var recipe in recipes)
                     {
                         // First 3 recipes are unlocked by default
-                        recipe.isLocked = System.Array.IndexOf(recipeDB.recipes, recipe) >= 3;
+                        recipe.isLocked = System.Array.IndexOf(recipes, recipe) >= 3;
                     }
                 }
             }

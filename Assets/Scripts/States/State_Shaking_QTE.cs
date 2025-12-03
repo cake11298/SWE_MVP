@@ -17,6 +17,9 @@ namespace BarSimulator.States
         private MinigameSystem minigameSystem;
         private bool minigameStarted;
 
+        // Parameterless constructor for generic constraint
+        public State_Shaking_QTE() { }
+
         public State_Shaking_QTE(GameStateManager manager, MinigameSystem minigame)
         {
             stateManager = manager;
@@ -81,10 +84,7 @@ namespace BarSimulator.States
             }
 
             // Initialize with parameters from GameData
-            minigameSystem.Initialize(
-                duration: 15f, // 15 seconds to complete the QTE
-                difficulty: 2   // Medium difficulty
-            );
+            minigameSystem.Initialize(15f, 2); // 15 seconds, medium difficulty
 
             // Start the minigame
             minigameSystem.StartMinigame();
