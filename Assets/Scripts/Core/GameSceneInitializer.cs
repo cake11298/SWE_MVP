@@ -325,7 +325,7 @@ namespace BarSimulator.Core
                 mainCamera = camObj.AddComponent<Camera>();
                 camObj.tag = "MainCamera";
 
-                var audioListener = camObj.AddComponent<AudioListener>();
+                // AudioListener will be added in SetupCamera() to avoid duplicates
             }
 
             // 添加玩家控制器腳本（如果存在）
@@ -352,15 +352,33 @@ namespace BarSimulator.Core
 
             if (mainCamera != null)
             {
-                // 移除多餘的 AudioListener
+                // 移除多餘的 AudioListener - 只保留主攝像機上的一個
                 var listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
                 if (listeners.Length > 1)
                 {
-                    for (int i = 1; i < listeners.Length; i++)
+                    AudioListener mainCameraListener = mainCamera.GetComponent<AudioListener>();
+
+                    // 如果主攝像機沒有 AudioListener，添加一個
+                    if (mainCameraListener == null)
                     {
-                        Destroy(listeners[i]);
+                        mainCameraListener = mainCamera.gameObject.AddComponent<AudioListener>();
                     }
-                    Debug.Log("GameSceneInitializer: 移除多餘的 AudioListener");
+
+                    // 移除所有其他的 AudioListener
+                    foreach (var listener in listeners)
+                    {
+                        if (listener != mainCameraListener)
+                        {
+                            Debug.Log($"GameSceneInitializer: 移除多餘的 AudioListener from {listener.gameObject.name}");
+                            DestroyImmediate(listener);
+                        }
+                    }
+                }
+                else if (listeners.Length == 0)
+                {
+                    // 如果沒有 AudioListener，在主攝像機上添加一個
+                    mainCamera.gameObject.AddComponent<AudioListener>();
+                    Debug.Log("GameSceneInitializer: 添加 AudioListener 到主攝像機");
                 }
 
                 Debug.Log("GameSceneInitializer: 攝影機設置完成");
