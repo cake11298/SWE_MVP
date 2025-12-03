@@ -9,7 +9,8 @@ namespace BarSimulator.NPC
 {
     /// <summary>
     /// NPC 互動處理器 - 管理玩家與 NPC 之間的互動
-    /// 參考: NPCManager.js 互動邏輯
+    /// 參考: NPCManager.js 互動邏輯 <br/>
+    /// <b>ALERT : 在遊戲中未實際附加在Player上</b>
     /// </summary>
     public class NPCInteraction : MonoBehaviour
     {

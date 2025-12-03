@@ -1,19 +1,13 @@
-# Dependencies
-node_modules/
+*
 
-# Build output
-dist/
+!Assets/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+!Assets/Resources/
+!Assets/Resources/**
 
-# OS
-.DS_Store
-Thumbs.db
+!Assets/Scripts
+!Assets/Scripts/**
 
-# Logs
-*.log
-npm-debug.log*
+*.meta
+
+!.gitignore

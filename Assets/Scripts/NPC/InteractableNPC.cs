@@ -71,7 +71,7 @@ namespace BarSimulator.NPC
                 npcManager.InteractWithNPC(npcController);
                 return;
             }
-
+            //===========================================
             // 備用：如果沒有 NPCManager，使用基本對話
             // 取得下一句對話
             currentDialogue = npcController.GetNextDialogue();
