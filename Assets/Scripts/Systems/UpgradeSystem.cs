@@ -255,7 +255,7 @@ namespace BarSimulator.Systems
         /// <returns>解鎖是否成功</returns>
         public bool UnlockRecipe(string recipeName)
         {
-            var recipe = RecipeDatabase.GetRecipe(recipeName);
+            var recipe = RecipeDatabase.GetRecipeByName(recipeName);
             if (recipe == null)
             {
                 Debug.LogError($"UpgradeSystem: Recipe '{recipeName}' not found!");
@@ -263,24 +263,24 @@ namespace BarSimulator.Systems
             }
 
             // Check if already unlocked
-            if (!recipe.isLocked)
+            if (!recipe.IsLocked)
             {
-                Debug.LogWarning($"UpgradeSystem: '{recipe.name}' is already unlocked");
+                Debug.LogWarning($"UpgradeSystem: '{recipe.Name}' is already unlocked");
                 return false;
             }
 
             // Check affordability
-            if (!CanAfford(recipe.unlockPrice))
+            if (!CanAfford(recipe.UnlockPrice))
             {
-                Debug.LogWarning($"UpgradeSystem: Cannot afford recipe unlock. Need ${recipe.unlockPrice}, Have ${currentMoney}");
+                Debug.LogWarning($"UpgradeSystem: Cannot afford recipe unlock. Need ${recipe.UnlockPrice}, Have ${currentMoney}");
                 return false;
             }
 
             // Perform unlock
-            recipe.isLocked = false;
-            DeductMoney(recipe.unlockPrice);
+            recipe.IsLocked = false;
+            DeductMoney(recipe.UnlockPrice);
             OnRecipeUnlocked?.Invoke(recipeName);
-            Debug.Log($"UpgradeSystem: Successfully unlocked recipe '{recipe.name}'");
+            Debug.Log($"UpgradeSystem: Successfully unlocked recipe '{recipe.Name}'");
             return true;
         }
 

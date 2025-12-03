@@ -149,7 +149,7 @@ namespace BarSimulator.UI
         /// <summary>
         /// Create a recipe card UI element
         /// </summary>
-        private void CreateRecipeCard(RecipeData recipe)
+        private void CreateRecipeCard(DrinkRecipe recipe)
         {
             if (recipe == null) return;
 
@@ -172,24 +172,30 @@ namespace BarSimulator.UI
 
             if (nameText != null)
             {
-                nameText.text = recipe.name;
+                nameText.text = recipe.Name;
             }
 
             if (ingredientsText != null)
             {
                 string ingredientsList = "";
-                foreach (var ing in recipe.ingredients)
+                foreach (var ing in recipe.Ingredients)
                 {
                     if (ingredientsList.Length > 0)
                         ingredientsList += "\n";
-                    ingredientsList += $"- {ing.amount} {ing.name}";
+                    ingredientsList += $"- {ing}";
                 }
                 ingredientsText.text = ingredientsList;
             }
 
             if (methodText != null)
             {
-                methodText.text = recipe.method;
+                // Generate method text from recipe properties
+                string method = recipe.RequiresShaking
+                    ? $"Shake ingredients for {recipe.ShakeTime}s, then strain into {recipe.PreferredGlassType}."
+                    : $"Build in {recipe.PreferredGlassType} and stir.";
+                if (!string.IsNullOrEmpty(recipe.Garnish))
+                    method += $" Garnish with {recipe.Garnish}.";
+                methodText.text = method;
             }
         }
 

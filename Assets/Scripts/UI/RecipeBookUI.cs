@@ -74,7 +74,7 @@ namespace BarSimulator.UI
         #region 私有欄位
 
         private bool isOpen = false;
-        private RecipeData selectedRecipe;
+        private DrinkRecipe selectedRecipe;
         private RecipeFilter currentFilter = RecipeFilter.All;
 
         private InputAction toggleAction;
@@ -298,14 +298,14 @@ namespace BarSimulator.UI
         /// <summary>
         /// 判斷配方是否應該顯示
         /// </summary>
-        private bool ShouldShowRecipe(RecipeData recipe)
+        private bool ShouldShowRecipe(DrinkRecipe recipe)
         {
             switch (currentFilter)
             {
                 case RecipeFilter.Unlocked:
-                    return !recipe.isLocked;
+                    return !recipe.IsLocked;
                 case RecipeFilter.Locked:
-                    return recipe.isLocked;
+                    return recipe.IsLocked;
                 case RecipeFilter.All:
                 default:
                     return true;
@@ -315,20 +315,20 @@ namespace BarSimulator.UI
         /// <summary>
         /// 設置配方項目
         /// </summary>
-        private void SetupRecipeItem(GameObject item, RecipeData recipe)
+        private void SetupRecipeItem(GameObject item, DrinkRecipe recipe)
         {
             // 設置名稱
             var nameText = item.transform.Find("NameText")?.GetComponent<TextMeshProUGUI>();
             if (nameText != null)
             {
-                nameText.text = recipe.isLocked ? "???" : recipe.name;
+                nameText.text = recipe.IsLocked ? "???" : recipe.Name;
             }
 
             // 設置難度星級
             var difficultyText = item.transform.Find("DifficultyText")?.GetComponent<TextMeshProUGUI>();
             if (difficultyText != null)
             {
-                difficultyText.text = recipe.isLocked ? "" : GetDifficultyStars(recipe.difficulty);
+                difficultyText.text = recipe.IsLocked ? "" : GetDifficultyStars(recipe.DifficultyLevel);
             }
 
             // 設置鎖定圖示
@@ -366,7 +366,7 @@ namespace BarSimulator.UI
         /// <summary>
         /// 顯示配方詳細資訊
         /// </summary>
-        public void ShowRecipeDetails(RecipeData recipe)
+        public void ShowRecipeDetails(DrinkRecipe recipe)
         {
             if (recipe == null || recipeDetailPanel == null) return;
 
@@ -374,7 +374,7 @@ namespace BarSimulator.UI
             recipeDetailPanel.SetActive(true);
 
             // 鎖定配方只顯示名稱
-            if (recipe.isLocked)
+            if (recipe.IsLocked)
             {
                 if (recipeNameText != null)
                 {
@@ -413,16 +413,16 @@ namespace BarSimulator.UI
             // 名稱
             if (recipeNameText != null)
             {
-                recipeNameText.text = recipe.name;
+                recipeNameText.text = recipe.Name;
             }
 
             // 成分列表
-            if (ingredientsText != null && recipe.ingredients != null)
+            if (ingredientsText != null && recipe.Ingredients != null)
             {
                 string ingredientsList = "Ingredients:\n";
-                foreach (var ingredient in recipe.ingredients)
+                foreach (var ingredient in recipe.Ingredients)
                 {
-                    ingredientsList += $"- {ingredient.amount} {ingredient.name}\n";
+                    ingredientsList += $"- {ingredient}\n";
                 }
                 ingredientsText.text = ingredientsList;
             }
@@ -430,13 +430,18 @@ namespace BarSimulator.UI
             // 調製方法
             if (methodText != null)
             {
-                methodText.text = $"Method:\n{recipe.method}";
+                string method = recipe.RequiresShaking
+                    ? $"Shake ingredients for {recipe.ShakeTime}s, then strain into {recipe.PreferredGlassType}."
+                    : $"Build in {recipe.PreferredGlassType} and stir.";
+                if (!string.IsNullOrEmpty(recipe.Garnish))
+                    method += $" Garnish with {recipe.Garnish}.";
+                methodText.text = $"Method:\n{method}";
             }
 
             // 描述
-            if (descriptionText != null && !string.IsNullOrEmpty(recipe.description))
+            if (descriptionText != null && !string.IsNullOrEmpty(recipe.Description))
             {
-                descriptionText.text = recipe.description;
+                descriptionText.text = recipe.Description;
             }
 
             // 難度星級
@@ -451,7 +456,7 @@ namespace BarSimulator.UI
                 // TODO: 創建星級圖示
             }
 
-            Debug.Log($"RecipeBookUI: Showing details for {recipe.name}");
+            Debug.Log($"RecipeBookUI: Showing details for {recipe.Name}");
         }
 
         #endregion

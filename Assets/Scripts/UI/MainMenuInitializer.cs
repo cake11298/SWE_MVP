@@ -122,9 +122,10 @@ namespace BarSimulator.UI
         /// </summary>
         private void SetupMusic()
         {
-            if (menuMusic != null && AudioManager.Instance != null)
+            // Play the first music track (or specific track if needed)
+            if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayMusic(menuMusic);
+                AudioManager.Instance.PlayMusic(0); // Play first track
             }
         }
 
