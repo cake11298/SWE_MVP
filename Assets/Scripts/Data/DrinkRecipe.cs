@@ -45,6 +45,21 @@ namespace BarSimulator.Data
         public string Garnish { get; set; }
 
         /// <summary>
+        /// Whether this recipe is locked (requires purchase to unlock).
+        /// </summary>
+        public bool IsLocked { get; set; }
+
+        /// <summary>
+        /// Price to unlock this recipe (0 if unlocked by default).
+        /// </summary>
+        public int UnlockPrice { get; set; }
+
+        /// <summary>
+        /// Recipe description for UI display.
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// Constructor for easy recipe creation.
         /// </summary>
         public DrinkRecipe(
@@ -54,7 +69,10 @@ namespace BarSimulator.Data
             bool requiresShaking = false,
             int difficultyLevel = 1,
             string preferredGlassType = "Cocktail Glass",
-            string garnish = null)
+            string garnish = null,
+            bool isLocked = false,
+            int unlockPrice = 0,
+            string description = "")
         {
             Name = name;
             Ingredients = ingredients ?? new List<string>();
@@ -63,6 +81,9 @@ namespace BarSimulator.Data
             DifficultyLevel = difficultyLevel;
             PreferredGlassType = preferredGlassType;
             Garnish = garnish;
+            IsLocked = isLocked;
+            UnlockPrice = unlockPrice;
+            Description = description;
         }
 
         /// <summary>

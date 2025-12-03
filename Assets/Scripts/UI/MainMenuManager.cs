@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using BarSimulator.Systems;
+using BarSimulator.Data;
 
 namespace BarSimulator.UI
 {
@@ -364,7 +365,7 @@ namespace BarSimulator.UI
                     foreach (var recipe in recipes)
                     {
                         // First 3 recipes are unlocked by default
-                        recipe.isLocked = System.Array.IndexOf(recipes, recipe) >= 3;
+                        recipe.IsLocked = recipes.IndexOf(recipe) >= 3;
                     }
                 }
             }

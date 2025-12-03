@@ -565,7 +565,7 @@ namespace BarSimulator.UI
             // Create recipe items (only show locked recipes that can be purchased)
             foreach (var recipe in recipes)
             {
-                if (!recipe.isLocked || recipe.unlockPrice <= 0) continue;
+                if (!recipe.IsLocked || recipe.UnlockPrice <= 0) continue;
 
                 GameObject item = Instantiate(recipeItemPrefab, recipeListContainer);
                 recipeItems.Add(item);
@@ -577,7 +577,7 @@ namespace BarSimulator.UI
         /// <summary>
         /// 設置配方項目UI
         /// </summary>
-        private void SetupRecipeItem(GameObject item, RecipeData recipe)
+        private void SetupRecipeItem(GameObject item, DrinkRecipe recipe)
         {
             // Name
             var nameText = item.transform.Find("NameText")?.GetComponent<TextMeshProUGUI>();
@@ -591,7 +591,7 @@ namespace BarSimulator.UI
             if (difficultyText != null)
             {
                 string stars = "";
-                for (int i = 0; i < recipe.difficulty; i++)
+                for (int i = 0; i < recipe.DifficultyLevel; i++)
                 {
                     stars += "★";
                 }
@@ -602,7 +602,7 @@ namespace BarSimulator.UI
             var priceText = item.transform.Find("PriceText")?.GetComponent<TextMeshProUGUI>();
             if (priceText != null)
             {
-                priceText.text = $"${recipe.unlockPrice}";
+                priceText.text = $"${recipe.UnlockPrice}";
             }
 
             // Button
@@ -616,10 +616,10 @@ namespace BarSimulator.UI
                 }
 
                 button.onClick.RemoveAllListeners();
-                button.onClick.AddListener(() => PurchaseUnlockRecipe(recipe.name));
+                button.onClick.AddListener(() => PurchaseUnlockRecipe(recipe.Name));
 
                 // Check affordability
-                button.interactable = upgradeSystem.CanAfford(recipe.unlockPrice);
+                button.interactable = upgradeSystem.CanAfford(recipe.UnlockPrice);
             }
 
             // Description

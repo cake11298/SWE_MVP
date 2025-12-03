@@ -135,8 +135,8 @@ namespace BarSimulator.Systems
                 {
                     data.recipeData.Add(new RecipeSaveData
                     {
-                        name = recipe.name,
-                        isLocked = recipe.isLocked
+                        name = recipe.Name,
+                        isLocked = recipe.IsLocked
                     });
                 }
             }
@@ -236,10 +236,10 @@ namespace BarSimulator.Systems
             {
                 foreach (var recipeSave in data.recipeData)
                 {
-                    var recipe = RecipeDatabase.GetRecipe(recipeSave.name);
+                    var recipe = RecipeDatabase.GetRecipeByName(recipeSave.name);
                     if (recipe != null)
                     {
-                        recipe.isLocked = recipeSave.isLocked;
+                        recipe.IsLocked = recipeSave.isLocked;
                     }
                 }
             }
