@@ -277,11 +277,12 @@ namespace BarSimulator.UI
             }
             recipeItems.Clear();
 
-            if (recipeDatabase == null || recipeDatabase.recipes == null) return;
+            var recipes = RecipeDatabase.AllRecipes;
+            if (recipes == null) return;
             if (recipeListContainer == null || recipeItemPrefab == null) return;
 
             // 建立配方項目
-            foreach (var recipe in recipeDatabase.recipes)
+            foreach (var recipe in recipes)
             {
                 // 根據篩選條件判斷是否顯示
                 if (!ShouldShowRecipe(recipe)) continue;

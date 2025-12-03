@@ -255,13 +255,7 @@ namespace BarSimulator.Systems
         /// <returns>解鎖是否成功</returns>
         public bool UnlockRecipe(string recipeName)
         {
-            if (recipeDatabase == null)
-            {
-                Debug.LogError("UpgradeSystem: RecipeDatabase not found!");
-                return false;
-            }
-
-            var recipe = recipeDatabase.GetRecipe(recipeName);
+            var recipe = RecipeDatabase.GetRecipe(recipeName);
             if (recipe == null)
             {
                 Debug.LogError($"UpgradeSystem: Recipe '{recipeName}' not found!");

@@ -555,11 +555,10 @@ namespace BarSimulator.UI
             }
             recipeItems.Clear();
 
-            if (upgradeSystem == null || upgradeSystem.RecipeDatabase == null) return;
+            if (upgradeSystem == null) return;
             if (recipeListContainer == null || recipeItemPrefab == null) return;
 
-            var database = upgradeSystem.RecipeDatabase;
-            var recipes = database.recipes;
+            var recipes = RecipeDatabase.AllRecipes;
 
             if (recipes == null) return;
 

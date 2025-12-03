@@ -16,6 +16,9 @@ namespace BarSimulator.States
         private CustomerSystem customerSystem;
         private bool customerSpawned;
 
+        // Parameterless constructor for generic constraint
+        public State_CustomerEntry() { }
+
         public State_CustomerEntry(GameStateManager manager, CustomerSystem custSystem)
         {
             stateManager = manager;

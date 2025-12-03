@@ -14,6 +14,9 @@ namespace BarSimulator.States
         private GameStateManager stateManager;
         private bool drinkServed;
 
+        // Parameterless constructor for generic constraint
+        public State_Serving() { }
+
         public State_Serving(GameStateManager manager)
         {
             stateManager = manager;
