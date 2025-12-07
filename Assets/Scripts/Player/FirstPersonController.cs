@@ -106,7 +106,20 @@ namespace BarSimulator.Player
         {
             // 初始化視角
             yaw = transform.eulerAngles.y;
-            pitch = 0f;
+
+            // 從攝影機當前角度初始化 pitch，避免突然跳轉
+            if (cameraTransform != null)
+            {
+                pitch = cameraTransform.localEulerAngles.x;
+                // 處理 Unity 的角度表示 (0-360)，轉換為 -180 到 180
+                if (pitch > 180f) pitch -= 360f;
+                // 確保 pitch 在有效範圍內
+                pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+            }
+            else
+            {
+                pitch = 0f;
+            }
 
             // 鎖定滑鼠游標
             LockCursor();
@@ -237,6 +250,8 @@ namespace BarSimulator.Player
 
             if (cameraTransform != null)
             {
+                // 確保攝影機只在 pitch（X 軸）上旋轉，Y 和 Z 軸保持為 0
+                // 這樣可以防止攝影機有任何側向傾斜或額外旋轉
                 cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             }
         }
