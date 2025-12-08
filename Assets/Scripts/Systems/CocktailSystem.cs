@@ -353,132 +353,35 @@ namespace BarSimulator.Systems
 
         /// <summary>
         /// 識別雞尾酒
-        /// 參考: CocktailSystem.js identifyCocktail() Line 867-979
+        /// 使用 CocktailRecognition 系統
         /// </summary>
         public string IdentifyCocktail(Ingredient[] ingredients)
         {
             if (ingredients == null || ingredients.Length == 0)
                 return "Empty Glass";
 
-            var types = new List<string>();
-            var amounts = new Dictionary<string, float>();
-
+            // 轉換成分格式
+            var ingredientDict = new Dictionary<string, float>();
             foreach (var ing in ingredients)
             {
-                if (!types.Contains(ing.type))
-                    types.Add(ing.type);
-                amounts[ing.type] = ing.amount;
+                if (ingredientDict.ContainsKey(ing.type))
+                    ingredientDict[ing.type] += ing.amount;
+                else
+                    ingredientDict.Add(ing.type, ing.amount);
             }
 
-            // === Classic Cocktail Identification ===
-
-            // Martini: Gin + Dry Vermouth (2:1 to 3:1)
-            if (types.Contains("gin") && types.Contains("vermouth_dry"))
+            // 使用識別系統
+            if (CocktailRecognition.Instance != null)
             {
-                float ratio = amounts["gin"] / amounts["vermouth_dry"];
-                if (ratio >= 2f && ratio <= 3f && !HasOtherSpirits(types, "gin"))
-                {
-                    return "Martini";
-                }
+                // 假設這裡無法得知是否搖過，預設為 false 或需要從 Container 傳入
+                // 為了更準確，應該修改 IdentifyCocktail 接收更多資訊
+                // 但為了保持兼容性，我們先假設未搖過或不影響名稱顯示（只影響評分）
+                var result = CocktailRecognition.Instance.Recognize(ingredientDict, false);
+                return result.name;
             }
 
-            // Vodka Martini
-            if (types.Contains("vodka") && types.Contains("vermouth_dry"))
-            {
-                float ratio = amounts["vodka"] / amounts["vermouth_dry"];
-                if (ratio >= 2f && ratio <= 3f && !HasOtherSpirits(types, "vodka"))
-                {
-                    return "Vodka Martini";
-                }
-            }
-
-            // Negroni: Gin + Campari + Sweet Vermouth (1:1:1)
-            if (types.Contains("gin") && types.Contains("campari") && types.Contains("vermouth_sweet"))
-            {
-                float avg = (amounts["gin"] + amounts["campari"] + amounts["vermouth_sweet"]) / 3f;
-                bool isBalanced = IsWithinRatio(amounts["gin"], avg, 0.3f) &&
-                                  IsWithinRatio(amounts["campari"], avg, 0.3f) &&
-                                  IsWithinRatio(amounts["vermouth_sweet"], avg, 0.3f);
-                if (isBalanced)
-                {
-                    return "Negroni";
-                }
-            }
-
-            // Margarita: Tequila + Triple Sec + Lime Juice
-            if (types.Contains("tequila") && types.Contains("triple_sec") && types.Contains("lime_juice"))
-            {
-                return "Margarita";
-            }
-
-            // Daiquiri: Rum + Lime Juice + Simple Syrup
-            if (types.Contains("rum") && types.Contains("lime_juice") && types.Contains("simple_syrup"))
-            {
-                return "Daiquiri";
-            }
-
-            // Pina Colada: Rum + Pineapple Juice + Coconut Cream
-            if (types.Contains("rum") && types.Contains("pineapple_juice") && types.Contains("coconut_cream"))
-            {
-                return "Pina Colada";
-            }
-
-            // Cosmopolitan: Vodka + Triple Sec + Cranberry + Lime
-            if (types.Contains("vodka") && types.Contains("triple_sec") &&
-                types.Contains("cranberry_juice") && types.Contains("lime_juice"))
-            {
-                return "Cosmopolitan";
-            }
-
-            // Mojito: Rum + Lime Juice + Simple Syrup
-            if (types.Contains("rum") && types.Contains("lime_juice") && types.Contains("simple_syrup"))
-            {
-                return "Mojito";
-            }
-
-            // Whiskey Sour
-            if (types.Contains("whiskey") && types.Contains("lemon_juice") && types.Contains("simple_syrup"))
-            {
-                return "Whiskey Sour";
-            }
-
-            // === Simple Classification ===
-            if (types.Count == 1)
-            {
-                var liquor = liquorDatabase?.GetLiquor(types[0]);
-                return liquor != null ? $"{liquor.displayName} Neat" : "Single Spirit";
-            }
-            else if (types.Count == 2)
-            {
-                return "Two-Ingredient Mix";
-            }
-            else
-            {
-                return "Custom Cocktail";
-            }
-        }
-
-        /// <summary>
-        /// 檢查是否有其他基酒
-        /// </summary>
-        private bool HasOtherSpirits(List<string> types, string exclude)
-        {
-            string[] spirits = { "vodka", "gin", "rum", "whiskey", "tequila", "brandy", "campari" };
-            foreach (var spirit in spirits)
-            {
-                if (spirit != exclude && types.Contains(spirit))
-                    return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// 檢查數值是否在比例範圍內
-        /// </summary>
-        private bool IsWithinRatio(float value, float target, float tolerance)
-        {
-            if (target == 0) return false;
-            return Mathf.Abs(value - target) / target < tolerance;
+            // Fallback if system missing
+            return "Unknown Drink";
         }
 
         #endregion

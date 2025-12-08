@@ -170,6 +170,11 @@ namespace BarSimulator.Objects
         /// </summary>
         public bool IsDrinking => isDrinking;
 
+        public override void OnUseDown()
+        {
+            StartDrinking();
+        }
+
         #endregion
     }
 

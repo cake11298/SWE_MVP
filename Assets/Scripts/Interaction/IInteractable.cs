@@ -78,10 +78,19 @@ namespace BarSimulator.Interaction
         /// <param name="returnToOriginal">是否放回原位</param>
         void OnDrop(bool returnToOriginal);
 
-        /// <summary>
         /// 當被互動時呼叫（如：吉他彈奏）
         /// </summary>
         void OnInteract();
+
+        /// <summary>
+        /// 當按下使用鍵時呼叫（如：開始倒酒）
+        /// </summary>
+        void OnUseDown();
+
+        /// <summary>
+        /// 當放開使用鍵時呼叫（如：停止倒酒）
+        /// </summary>
+        void OnUseUp();
     }
 
     /// <summary>
@@ -139,6 +148,16 @@ namespace BarSimulator.Interaction
         public virtual void OnInteract()
         {
             // 可覆寫：特殊互動
+        }
+
+        public virtual void OnUseDown()
+        {
+            // 可覆寫：開始使用
+        }
+
+        public virtual void OnUseUp()
+        {
+            // 可覆寫：停止使用
         }
 
         #endregion

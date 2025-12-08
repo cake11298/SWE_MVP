@@ -116,30 +116,52 @@ namespace BarSimulator.Player
 
         private void HandleInteractionInput(RaycastHit hit, bool hitSomething)
         {
-            // Pickup with E key or left mouse button
-            bool pickupPressed = Input.GetKeyDown(pickupKey) || (useMouseClick && Input.GetMouseButtonDown(0));
+            // Pickup with E key
+            bool pickupPressed = Input.GetKeyDown(pickupKey);
+            // Drop with Q key
+            bool dropPressed = Input.GetKeyDown(dropKey);
+            
+            // Mouse interactions
+            bool leftClickDown = useMouseClick && Input.GetMouseButtonDown(0);
+            bool leftClickUp = useMouseClick && Input.GetMouseButtonUp(0);
+            bool rightClickDown = useMouseClick && Input.GetMouseButtonDown(1);
 
-            // Drop with Q key or right mouse button
-            bool dropPressed = Input.GetKeyDown(dropKey) || (useMouseClick && Input.GetMouseButtonDown(1));
-
-            if (pickupPressed)
+            // Pickup Logic (E or Left Click on object)
+            if ((pickupPressed || leftClickDown) && heldObject == null && hitSomething)
             {
-                if (heldObject == null && hitSomething)
-                {
-                    // Try to pickup the object
-                    TryPickup(hit.collider.gameObject);
-                }
-                else if (heldObject != null && hitSomething)
-                {
-                    // Try to place on the hit surface
-                    TryPlace(hit.point, hit.normal);
-                }
+                TryPickup(hit.collider.gameObject);
+                return; // Don't process Use input in the same frame as pickup
             }
 
-            if (dropPressed && heldObject != null)
+            // Place Logic (E or Right Click? No, let's keep Place separate or context sensitive)
+            // Current logic: Pickup button also places if holding.
+            
+            if (pickupPressed && heldObject != null && hitSomething)
             {
-                // Drop the held object
+                TryPlace(hit.point, hit.normal);
+            }
+
+            // Drop Logic (Q or Right Click)
+            if ((dropPressed || rightClickDown) && heldObject != null)
+            {
                 Drop();
+            }
+
+            // Use Logic (Left Click Hold)
+            if (heldObject != null)
+            {
+                var interactable = heldObject.GetComponent<BarSimulator.Interaction.IInteractable>();
+                if (interactable != null)
+                {
+                    if (leftClickDown)
+                    {
+                        interactable.OnUseDown();
+                    }
+                    if (leftClickUp)
+                    {
+                        interactable.OnUseUp();
+                    }
+                }
             }
         }
 
