@@ -11,6 +11,8 @@ namespace BarSimulator.Interaction
         Bottle,
         /// <summary>杯子</summary>
         Glass,
+        /// <summary>容器</summary>
+        Container,
         /// <summary>搖酒器</summary>
         Shaker,
         /// <summary>量酒器</summary>
@@ -19,6 +21,12 @@ namespace BarSimulator.Interaction
         Guitar,
         /// <summary>NPC</summary>
         NPC,
+        /// <summary>工具</summary>
+        Tool,
+        /// <summary>食材</summary>
+        Ingredient,
+        /// <summary>工作站</summary>
+        Station,
         /// <summary>其他</summary>
         Other
     }
@@ -70,10 +78,19 @@ namespace BarSimulator.Interaction
         /// <param name="returnToOriginal">是否放回原位</param>
         void OnDrop(bool returnToOriginal);
 
-        /// <summary>
         /// 當被互動時呼叫（如：吉他彈奏）
         /// </summary>
         void OnInteract();
+
+        /// <summary>
+        /// 當按下使用鍵時呼叫（如：開始倒酒）
+        /// </summary>
+        void OnUseDown();
+
+        /// <summary>
+        /// 當放開使用鍵時呼叫（如：停止倒酒）
+        /// </summary>
+        void OnUseUp();
     }
 
     /// <summary>
@@ -131,6 +148,16 @@ namespace BarSimulator.Interaction
         public virtual void OnInteract()
         {
             // 可覆寫：特殊互動
+        }
+
+        public virtual void OnUseDown()
+        {
+            // 可覆寫：開始使用
+        }
+
+        public virtual void OnUseUp()
+        {
+            // 可覆寫：停止使用
         }
 
         #endregion

@@ -29,8 +29,7 @@ namespace BarSimulator.UI
         [SerializeField] private GameObject recipeCardPrefab;
 
         [Header("Data")]
-        [Tooltip("Recipe database")]
-        [SerializeField] private RecipeDatabase recipeDatabase;
+        // NOTE: recipeDatabase removed - use static RecipeDatabase class instead
 
         [Header("Settings")]
         [Tooltip("Fade speed")]
@@ -57,12 +56,7 @@ namespace BarSimulator.UI
 
         private void Start()
         {
-            // Load recipes
-            if (recipeDatabase == null)
-            {
-                recipeDatabase = Resources.Load<RecipeDatabase>("RecipeDatabase");
-            }
-
+            // NOTE: RecipeDatabase is now static - no initialization needed
             LoadRecipes();
         }
 
@@ -134,7 +128,7 @@ namespace BarSimulator.UI
         /// </summary>
         private void LoadRecipes()
         {
-            if (recipeDatabase == null || recipeContainer == null) return;
+            if (recipeContainer == null) return;
 
             // Clear existing cards
             foreach (Transform child in recipeContainer)
@@ -143,9 +137,10 @@ namespace BarSimulator.UI
             }
 
             // Create recipe cards
-            if (recipeDatabase.recipes == null) return;
+            var recipes = RecipeDatabase.AllRecipes;
+            if (recipes == null) return;
 
-            foreach (var recipe in recipeDatabase.recipes)
+            foreach (var recipe in recipes)
             {
                 CreateRecipeCard(recipe);
             }
@@ -154,7 +149,7 @@ namespace BarSimulator.UI
         /// <summary>
         /// Create a recipe card UI element
         /// </summary>
-        private void CreateRecipeCard(RecipeData recipe)
+        private void CreateRecipeCard(DrinkRecipe recipe)
         {
             if (recipe == null) return;
 
@@ -177,24 +172,30 @@ namespace BarSimulator.UI
 
             if (nameText != null)
             {
-                nameText.text = recipe.name;
+                nameText.text = recipe.Name;
             }
 
             if (ingredientsText != null)
             {
                 string ingredientsList = "";
-                foreach (var ing in recipe.ingredients)
+                foreach (var ing in recipe.Ingredients)
                 {
                     if (ingredientsList.Length > 0)
                         ingredientsList += "\n";
-                    ingredientsList += $"- {ing.amount} {ing.name}";
+                    ingredientsList += $"- {ing}";
                 }
                 ingredientsText.text = ingredientsList;
             }
 
             if (methodText != null)
             {
-                methodText.text = recipe.method;
+                // Generate method text from recipe properties
+                string method = recipe.RequiresShaking
+                    ? $"Shake ingredients for {recipe.ShakeTime}s, then strain into {recipe.PreferredGlassType}."
+                    : $"Build in {recipe.PreferredGlassType} and stir.";
+                if (!string.IsNullOrEmpty(recipe.Garnish))
+                    method += $" Garnish with {recipe.Garnish}.";
+                methodText.text = method;
             }
         }
 

@@ -26,6 +26,15 @@ namespace BarSimulator.Objects
         [Tooltip("傾斜速度")]
         [SerializeField] private float tiltSpeed = 3f;
 
+        [Tooltip("倒酒速度 (ml/s)")]
+        [SerializeField] private float pourRate = 20f;
+
+        [Tooltip("倒酒檢測距離")]
+        [SerializeField] private float pourCheckDistance = 1.0f;
+
+        [Tooltip("倒酒點 (如果為空則自動尋找 PourPoint 子物件)")]
+        [SerializeField] private Transform pourPoint;
+
         #endregion
 
         #region 私有欄位
@@ -46,6 +55,20 @@ namespace BarSimulator.Objects
             interactableType = InteractableType.Bottle;
             // Save the original rotation for later restoration
             savedOriginalRotation = transform.rotation;
+
+            if (pourPoint == null)
+            {
+                var child = transform.Find("PourPoint");
+                if (child != null) pourPoint = child;
+                else
+                {
+                    // Create a default pour point at the top
+                    GameObject pp = new GameObject("PourPoint");
+                    pp.transform.SetParent(transform);
+                    pp.transform.localPosition = new Vector3(0, 0.3f, 0); // Approximate top
+                    pourPoint = pp.transform;
+                }
+            }
         }
 
         private void Start()
@@ -58,6 +81,11 @@ namespace BarSimulator.Objects
         {
             // 更新傾斜動畫
             UpdateTiltAnimation();
+
+            if (isPouring)
+            {
+                PerformPouring();
+            }
         }
 
         #endregion
@@ -169,9 +197,40 @@ namespace BarSimulator.Objects
             );
         }
 
+        private void PerformPouring()
+        {
+            if (pourPoint == null || liquorData == null) return;
+
+            // Raycast down from pour point
+            RaycastHit hit;
+            if (Physics.Raycast(pourPoint.position, Vector3.down, out hit, pourCheckDistance))
+            {
+                Container container = hit.collider.GetComponent<Container>();
+                if (container != null)
+                {
+                    float amount = pourRate * Time.deltaTime;
+                    container.AddLiquor(liquorData, amount);
+                    container.SetPouringState(true);
+                }
+            }
+            
+            // Debug visualization
+            Debug.DrawRay(pourPoint.position, Vector3.down * pourCheckDistance, Color.cyan);
+        }
+
         #endregion
 
         #region IInteractable 覆寫
+
+        public override void OnUseDown()
+        {
+            StartPouring();
+        }
+
+        public override void OnUseUp()
+        {
+            StopPouring();
+        }
 
         public override void OnPickup()
         {

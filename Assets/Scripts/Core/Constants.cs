@@ -13,7 +13,16 @@ namespace BarSimulator.Core
         public const float MoveSpeed = 5f;
 
         /// <summary>滑鼠敏感度</summary>
-        public const float MouseSensitivity = 150f;
+        public const float MouseSensitivity = 2.5f;
+
+        /// <summary>滑鼠敏感度 - 慢</summary>
+        public const float MouseSensitivitySlow = 1.5f;
+
+        /// <summary>滑鼠敏感度 - 中</summary>
+        public const float MouseSensitivityMedium = 2.5f;
+
+        /// <summary>滑鼠敏感度 - 快</summary>
+        public const float MouseSensitivityFast = 4.0f;
 
         /// <summary>垂直視角最小值 (度)</summary>
         public const float MinPitch = -90f;
@@ -42,6 +51,9 @@ namespace BarSimulator.Core
 
         /// <summary>Shaker 最大容量 (ml)</summary>
         public const float ShakerMaxVolume = 500f;
+
+        /// <summary>Mixing Glass 最大容量 (ml)</summary>
+        public const float MixingGlassMaxVolume = 500f;
 
         // === 物理參數 ===
 

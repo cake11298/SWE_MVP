@@ -21,6 +21,9 @@ namespace BarSimulator.Player
         [Tooltip("滑鼠敏感度")]
         [SerializeField] private float mouseSensitivity = Constants.MouseSensitivity;
 
+        [Tooltip("視角平滑度 (0 = 無平滑, 值越大越平滑)")]
+        [SerializeField] private float lookSmoothing = 10f;
+
         [Tooltip("垂直視角最小值 (度)")]
         [SerializeField] private float minPitch = Constants.MinPitch;
 
@@ -47,6 +50,10 @@ namespace BarSimulator.Player
         private Vector2 lookInput;
         private float pitch;
         private float yaw;
+        
+        // 平滑處理變數
+        private Vector2 currentLookInput;
+        private Vector2 lookInputVelocity;
 
         private bool isInputEnabled = true;
 
@@ -99,7 +106,20 @@ namespace BarSimulator.Player
         {
             // 初始化視角
             yaw = transform.eulerAngles.y;
-            pitch = 0f;
+
+            // 從攝影機當前角度初始化 pitch，避免突然跳轉
+            if (cameraTransform != null)
+            {
+                pitch = cameraTransform.localEulerAngles.x;
+                // 處理 Unity 的角度表示 (0-360)，轉換為 -180 到 180
+                if (pitch > 180f) pitch -= 360f;
+                // 確保 pitch 在有效範圍內
+                pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+            }
+            else
+            {
+                pitch = 0f;
+            }
 
             // 鎖定滑鼠游標
             LockCursor();
@@ -206,18 +226,41 @@ namespace BarSimulator.Player
         {
             if (lookAction == null) return;
 
-            lookInput = lookAction.ReadValue<Vector2>();
+            Vector2 targetLookInput = lookAction.ReadValue<Vector2>();
 
+            // 應用平滑
+            if (lookSmoothing > 0f)
+            {
+                currentLookInput = Vector2.SmoothDamp(currentLookInput, targetLookInput, ref lookInputVelocity, 1f / lookSmoothing);
+            }
+            else
+            {
+                currentLookInput = targetLookInput;
+            }
+
+            lookInput = currentLookInput;
+
+            // 調整靈敏度係數 (0.1f 用於平衡像素輸入)
+            // 移除 Time.deltaTime 因為 Input System 的 Delta 已經是幀相關的位移量
+            float sensitivityMultiplier = 0.1f;
+            
             // 水平旋轉（左右）- 旋轉玩家本體
-            yaw += lookInput.x * mouseSensitivity * Time.deltaTime;
+            yaw += lookInput.x * mouseSensitivity * sensitivityMultiplier;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
             // 垂直旋轉（上下）- 只旋轉攝影機
-            pitch -= lookInput.y * mouseSensitivity * Time.deltaTime;
+            pitch -= lookInput.y * mouseSensitivity * sensitivityMultiplier;
+            
+            // 增加死區，避免在極限角度卡住
+            if (pitch < minPitch + 0.1f) pitch = minPitch;
+            if (pitch > maxPitch - 0.1f) pitch = maxPitch;
+            
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
             if (cameraTransform != null)
             {
+                // 確保攝影機只在 pitch（X 軸）上旋轉，Y 和 Z 軸保持為 0
+                // 這樣可以防止攝影機有任何側向傾斜或額外旋轉
                 cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             }
         }

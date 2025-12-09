@@ -140,7 +140,7 @@ namespace BarSimulator.Objects
         /// <summary>
         /// 取得飲品資訊
         /// </summary>
-        public DrinkInfo GetDrinkInfo()
+        public override DrinkInfo GetDrinkInfo()
         {
             if (contents.IsEmpty) return null;
 
@@ -169,6 +169,11 @@ namespace BarSimulator.Objects
         /// 是否正在喝酒
         /// </summary>
         public bool IsDrinking => isDrinking;
+
+        public override void OnUseDown()
+        {
+            StartDrinking();
+        }
 
         #endregion
     }

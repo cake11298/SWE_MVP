@@ -211,13 +211,16 @@ namespace BarSimulator.Systems
                 }
             }
 
-            // Q 鍵：原地放下
-            if (useFallbackInput && Input.GetKeyDown(KeyCode.Q))
+            // Q 鍵：原地放下（使用智能吸附）
+            bool dropPressed = false;
+            if (useFallbackInput)
             {
-                if (isHolding)
-                {
-                    DropObject(false); // Drop in place
-                }
+                dropPressed = Input.GetKeyDown(KeyCode.Q);
+            }
+
+            if (dropPressed && isHolding)
+            {
+                DropObjectWithSmartPlacement(); // Drop with smart placement/snap
             }
 
             // F 鍵：送酒給 NPC
@@ -444,6 +447,8 @@ namespace BarSimulator.Systems
                     heldRigidbody.isKinematic = true;
                     heldRigidbody.useGravity = false;
                 }
+
+                Debug.Log($"InteractionSystem: 放回原位 {heldObject.DisplayName}");
             }
             else
             {
@@ -453,13 +458,82 @@ namespace BarSimulator.Systems
                     heldRigidbody.isKinematic = originalKinematic;
                     heldRigidbody.useGravity = originalGravity;
                 }
+
+                Debug.Log($"InteractionSystem: 原地放下 {heldObject.DisplayName}");
             }
 
             // 通知物件
             heldObject.OnDrop(returnToOriginal);
             OnObjectDropped?.Invoke(heldObject);
 
-            Debug.Log($"InteractionSystem: 放下 {heldObject.DisplayName}");
+            // 清除狀態
+            heldObject = null;
+            heldTransform = null;
+            heldRigidbody = null;
+            isHolding = false;
+        }
+
+        /// <summary>
+        /// 使用智能放置系統放下物件（Q鍵）
+        /// 會自動吸附到最近的吸附點，或放置在看到的表面上
+        /// </summary>
+        public void DropObjectWithSmartPlacement()
+        {
+            if (!isHolding || heldObject == null || heldTransform == null) return;
+
+            var mono = heldObject as MonoBehaviour;
+            var placementSystem = PlacementPreviewSystem.Instance;
+
+            // 恢復碰撞器
+            if (mono != null)
+            {
+                var collider = mono.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    collider.enabled = true;
+                }
+            }
+
+            // 使用放置預覽系統計算最佳放置位置
+            Vector3 placementPosition;
+            if (placementSystem != null)
+            {
+                placementPosition = placementSystem.CalculatePlacementPosition();
+
+                // 檢查是否有有效的放置位置
+                if (!placementSystem.IsValidPlacement(placementPosition))
+                {
+                    Debug.LogWarning("InteractionSystem: 無效的放置位置，使用當前位置");
+                    placementPosition = heldTransform.position;
+                }
+                else
+                {
+                    Debug.Log($"InteractionSystem: 使用智能放置於 {placementPosition}");
+                }
+            }
+            else
+            {
+                // 如果沒有放置系統，使用當前位置
+                placementPosition = heldTransform.position;
+            }
+
+            // 設置新位置
+            heldTransform.position = placementPosition;
+
+            // 恢復物理
+            if (heldRigidbody != null)
+            {
+                heldRigidbody.isKinematic = originalKinematic;
+                heldRigidbody.useGravity = originalGravity;
+
+                // 清除速度
+                heldRigidbody.velocity = Vector3.zero;
+                heldRigidbody.angularVelocity = Vector3.zero;
+            }
+
+            // 通知物件（不是放回原位）
+            heldObject.OnDrop(false);
+            OnObjectDropped?.Invoke(heldObject);
 
             // 清除狀態
             heldObject = null;
@@ -576,18 +650,61 @@ namespace BarSimulator.Systems
                 var type = heldObject.InteractableType;
                 string typeName = GetTypeNameEnglish(type);
 
-                return type switch
+                // 檢查是否可以給附近的 NPC 喝酒
+                string npcHint = GetNPCServingHint();
+
+                string baseHint = type switch
                 {
                     InteractableType.Bottle => $"{heldObject.DisplayName} | Hold LMB to pour | Q=Drop R=Return",
                     InteractableType.Glass => $"{typeName} | Press RMB to drink | Q=Drop R=Return",
                     InteractableType.Shaker => $"{typeName} | Hold LMB to shake | Q=Drop R=Return",
                     _ => $"{heldObject.DisplayName} | Q=Drop R=Return"
                 };
+
+                // 如果附近有 NPC 可以送酒，添加 F 鍵提示
+                if (!string.IsNullOrEmpty(npcHint))
+                {
+                    return $"{npcHint} | {baseHint}";
+                }
+
+                return baseHint;
             }
             else if (targetedObject != null)
             {
                 string action = targetedObject.CanPickup ? "pick up" : "interact with";
                 return $"Press E to {action} {targetedObject.DisplayName}";
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 獲取給 NPC 送酒的提示
+        /// </summary>
+        private string GetNPCServingHint()
+        {
+            if (!isHolding || heldObject == null) return string.Empty;
+
+            // 檢查是否持有容器
+            var container = heldObject as BarSimulator.Objects.Container;
+            if (container == null || container.IsEmpty) return string.Empty;
+
+            // 檢查附近是否有需要服務的 NPC
+            var npcManager = BarSimulator.Managers.NPCManager.Instance;
+            if (npcManager == null) return string.Empty;
+
+            Vector3 playerPos = mainCamera != null ? mainCamera.transform.position : transform.position;
+            float serveDistance = 3f;
+
+            foreach (var npc in npcManager.GetActiveNPCs())
+            {
+                if (npc == null || !npc.HasPendingOrder) continue;
+
+                float dist = Vector3.Distance(playerPos, npc.transform.position);
+                if (dist < serveDistance)
+                {
+                    return $"Press F to serve {npc.NPCName}";
+                }
             }
 
             return string.Empty;

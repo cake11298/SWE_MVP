@@ -5,6 +5,7 @@ namespace BarSimulator.Systems
 {
     /// <summary>
     /// Material manager for creating and managing PBR materials
+    /// 自動偵測 Render Pipeline 並使用程序化紋理生成器
     /// </summary>
     public class MaterialManager : MonoBehaviour
     {
@@ -28,6 +29,13 @@ namespace BarSimulator.Systems
             Plastic
         }
 
+        public enum RenderPipelineType
+        {
+            BuiltIn,
+            URP,
+            HDRP
+        }
+
         #endregion
 
         #region Serialized Fields
@@ -36,14 +44,17 @@ namespace BarSimulator.Systems
         [SerializeField] private Shader standardShader;
         [SerializeField] private Shader glassShader;
 
-        [Header("PBR Material Properties")]
-        [SerializeField] private bool useUnityStandard = true;
+        [Header("Procedural Texture Settings")]
+        [SerializeField] private int textureResolution = 512;
+        [SerializeField] private bool generateNormalMaps = true;
 
         #endregion
 
         #region Private Fields
 
         private Dictionary<string, Material> materialCache = new Dictionary<string, Material>();
+        private Dictionary<string, Texture2D> textureCache = new Dictionary<string, Texture2D>();
+        private RenderPipelineType currentPipeline;
 
         #endregion
 
@@ -58,16 +69,83 @@ namespace BarSimulator.Systems
             }
             instance = this;
 
-            // Get default shaders
-            if (standardShader == null)
+            // 自動偵測 Render Pipeline
+            DetectRenderPipeline();
+
+            // 根據 Pipeline 獲取對應的 Shader
+            LoadShaders();
+
+            Debug.Log($"MaterialManager initialized with {currentPipeline} pipeline");
+        }
+
+        #endregion
+
+        #region Render Pipeline Detection
+
+        /// <summary>
+        /// 自動偵測當前使用的 Render Pipeline
+        /// </summary>
+        private void DetectRenderPipeline()
+        {
+            // 嘗試偵測 URP
+            var urpAsset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+            if (urpAsset != null)
             {
-                standardShader = Shader.Find("Universal Render Pipeline/Lit");
-                if (standardShader == null)
+                string pipelineName = urpAsset.GetType().Name;
+                if (pipelineName.Contains("Universal") || pipelineName.Contains("URP"))
                 {
-                    standardShader = Shader.Find("Standard");
+                    currentPipeline = RenderPipelineType.URP;
+                    Debug.Log("Detected URP (Universal Render Pipeline)");
+                    return;
+                }
+                else if (pipelineName.Contains("HD") || pipelineName.Contains("HighDefinition"))
+                {
+                    currentPipeline = RenderPipelineType.HDRP;
+                    Debug.Log("Detected HDRP (High Definition Render Pipeline)");
+                    return;
                 }
             }
 
+            // 預設使用 Built-in Pipeline
+            currentPipeline = RenderPipelineType.BuiltIn;
+            Debug.Log("Using Built-in Render Pipeline");
+        }
+
+        /// <summary>
+        /// 根據偵測到的 Pipeline 載入對應的 Shader
+        /// </summary>
+        private void LoadShaders()
+        {
+            if (standardShader == null)
+            {
+                switch (currentPipeline)
+                {
+                    case RenderPipelineType.URP:
+                        standardShader = Shader.Find("Universal Render Pipeline/Lit");
+                        if (standardShader == null)
+                        {
+                            Debug.LogWarning("URP Lit shader not found, falling back to Standard");
+                            standardShader = Shader.Find("Standard");
+                        }
+                        break;
+
+                    case RenderPipelineType.HDRP:
+                        standardShader = Shader.Find("HDRP/Lit");
+                        if (standardShader == null)
+                        {
+                            Debug.LogWarning("HDRP Lit shader not found, falling back to Standard");
+                            standardShader = Shader.Find("Standard");
+                        }
+                        break;
+
+                    case RenderPipelineType.BuiltIn:
+                    default:
+                        standardShader = Shader.Find("Standard");
+                        break;
+                }
+            }
+
+            // 玻璃 Shader（嘗試找自訂 Shader，否則使用標準 Shader）
             if (glassShader == null)
             {
                 glassShader = Shader.Find("BarSimulator/GlassAdvanced");
@@ -75,6 +153,18 @@ namespace BarSimulator.Systems
                 {
                     glassShader = Shader.Find("BarSimulator/Glass");
                 }
+                // 如果自訂 Shader 都找不到，使用標準透明 Shader
+                if (glassShader == null)
+                {
+                    glassShader = standardShader;
+                    Debug.LogWarning("Custom glass shader not found, using standard shader for glass");
+                }
+            }
+
+            // 最終檢查：確保至少有一個可用的 Shader
+            if (standardShader == null)
+            {
+                Debug.LogError("CRITICAL: No shader found! All materials will be pink/magenta!");
             }
         }
 
@@ -83,7 +173,7 @@ namespace BarSimulator.Systems
         #region Material Creation
 
         /// <summary>
-        /// Create a PBR wood material
+        /// Create a PBR wood material with procedural texture
         /// </summary>
         public Material CreateWoodMaterial(string name, Color baseColor, float roughness = 0.7f)
         {
@@ -96,21 +186,38 @@ namespace BarSimulator.Systems
             Material mat = new Material(standardShader);
             mat.name = name;
 
-            // Base properties
-            SetMaterialColor(mat, baseColor);
+            // 生成程序化木紋紋理
+            Texture2D woodTexture = GetOrCreateTexture(
+                $"WoodTexture_{name}",
+                () => ProceduralTextureGenerator.GenerateWoodTexture(
+                    textureResolution,
+                    textureResolution,
+                    baseColor,
+                    baseColor * 1.5f, // 較亮的木紋顏色
+                    0.05f,
+                    0.4f
+                )
+            );
+
+            // 設定材質屬性
+            SetMaterialTexture(mat, "_MainTex", woodTexture);
+            SetMaterialTexture(mat, "_BaseMap", woodTexture); // URP
+            SetMaterialColor(mat, Color.white); // 讓紋理顏色完全顯示
             SetMaterialSmoothness(mat, 1f - roughness);
             SetMaterialMetallic(mat, 0f);
 
             // Wood-specific settings
-            mat.SetFloat("_BumpScale", 0.5f);
-            mat.SetFloat("_OcclusionStrength", 0.8f);
+            if (mat.HasProperty("_BumpScale"))
+                mat.SetFloat("_BumpScale", 0.5f);
+            if (mat.HasProperty("_OcclusionStrength"))
+                mat.SetFloat("_OcclusionStrength", 0.8f);
 
             materialCache[key] = mat;
             return mat;
         }
 
         /// <summary>
-        /// Create a PBR metal material
+        /// Create a PBR metal material with procedural texture
         /// </summary>
         public Material CreateMetalMaterial(string name, Color baseColor, float roughness = 0.3f, bool isChrome = false)
         {
@@ -123,13 +230,27 @@ namespace BarSimulator.Systems
             Material mat = new Material(standardShader);
             mat.name = name;
 
-            // Base properties
-            SetMaterialColor(mat, baseColor);
+            // 生成程序化金屬紋理
+            Texture2D metalTexture = GetOrCreateTexture(
+                $"MetalTexture_{name}",
+                () => ProceduralTextureGenerator.GenerateMetalTexture(
+                    textureResolution,
+                    textureResolution,
+                    baseColor,
+                    roughness,
+                    true // 啟用拉絲效果
+                )
+            );
+
+            // 設定材質屬性
+            SetMaterialTexture(mat, "_MainTex", metalTexture);
+            SetMaterialTexture(mat, "_BaseMap", metalTexture); // URP
+            SetMaterialColor(mat, Color.white); // 讓紋理顏色完全顯示
             SetMaterialSmoothness(mat, 1f - roughness);
             SetMaterialMetallic(mat, isChrome ? 1f : 0.9f);
 
             // Metal-specific
-            if (isChrome)
+            if (isChrome && mat.HasProperty("_EnvironmentReflections"))
             {
                 mat.SetFloat("_EnvironmentReflections", 1f);
             }
@@ -139,7 +260,7 @@ namespace BarSimulator.Systems
         }
 
         /// <summary>
-        /// Create a glass material
+        /// Create a glass material with procedural texture
         /// </summary>
         public Material CreateGlassMaterial(string name, Color tint, float transparency = 0.1f)
         {
@@ -153,15 +274,45 @@ namespace BarSimulator.Systems
             Material mat = new Material(shader);
             mat.name = name;
 
+            // 生成程序化玻璃紋理
+            Texture2D glassTexture = GetOrCreateTexture(
+                $"GlassTexture_{name}",
+                () => ProceduralTextureGenerator.GenerateGlassTexture(
+                    textureResolution,
+                    textureResolution,
+                    tint,
+                    0.95f // 高清晰度
+                )
+            );
+
+            // 設定材質紋理
+            SetMaterialTexture(mat, "_MainTex", glassTexture);
+            SetMaterialTexture(mat, "_BaseMap", glassTexture); // URP
+
             // Glass properties
             Color glassColor = tint;
             glassColor.a = transparency;
             SetMaterialColor(mat, glassColor);
 
-            if (shader == standardShader)
+            // 根據 Pipeline 設定透明度
+            if (currentPipeline == RenderPipelineType.URP)
             {
-                // Standard shader glass setup
-                mat.SetFloat("_Mode", 3); // Transparent mode
+                // URP 透明設定
+                if (mat.HasProperty("_Surface"))
+                {
+                    mat.SetFloat("_Surface", 1); // Transparent
+                }
+                if (mat.HasProperty("_Blend"))
+                {
+                    mat.SetFloat("_Blend", 0); // Alpha blend
+                }
+                mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            }
+            else if (shader == standardShader || currentPipeline == RenderPipelineType.BuiltIn)
+            {
+                // Built-in Standard shader glass setup
+                if (mat.HasProperty("_Mode"))
+                    mat.SetFloat("_Mode", 3); // Transparent mode
                 mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
                 mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
                 mat.SetInt("_ZWrite", 0);
@@ -255,18 +406,52 @@ namespace BarSimulator.Systems
 
         #region Material Helpers
 
+        /// <summary>
+        /// 獲取或創建紋理（使用快取）
+        /// </summary>
+        private Texture2D GetOrCreateTexture(string key, System.Func<Texture2D> generator)
+        {
+            if (textureCache.TryGetValue(key, out Texture2D cached))
+            {
+                return cached;
+            }
+
+            Texture2D texture = generator();
+            textureCache[key] = texture;
+            return texture;
+        }
+
+        /// <summary>
+        /// 設定材質紋理（跨 Pipeline 相容）
+        /// </summary>
+        private void SetMaterialTexture(Material mat, string propertyName, Texture2D texture)
+        {
+            if (mat.HasProperty(propertyName))
+            {
+                mat.SetTexture(propertyName, texture);
+            }
+        }
+
+        /// <summary>
+        /// 設定材質顏色（跨 Pipeline 相容）
+        /// </summary>
         private void SetMaterialColor(Material mat, Color color)
         {
+            // URP 使用 _BaseColor
             if (mat.HasProperty("_BaseColor"))
             {
                 mat.SetColor("_BaseColor", color);
             }
+            // Built-in 使用 _Color
             else if (mat.HasProperty("_Color"))
             {
                 mat.SetColor("_Color", color);
             }
         }
 
+        /// <summary>
+        /// 設定材質光滑度（跨 Pipeline 相容）
+        /// </summary>
         private void SetMaterialSmoothness(Material mat, float smoothness)
         {
             if (mat.HasProperty("_Smoothness"))
@@ -279,6 +464,9 @@ namespace BarSimulator.Systems
             }
         }
 
+        /// <summary>
+        /// 設定材質金屬度（跨 Pipeline 相容）
+        /// </summary>
         private void SetMaterialMetallic(Material mat, float metallic)
         {
             if (mat.HasProperty("_Metallic"))
@@ -438,6 +626,7 @@ namespace BarSimulator.Systems
         /// </summary>
         public void ClearCache()
         {
+            // 清理材質
             foreach (var kvp in materialCache)
             {
                 if (kvp.Value != null)
@@ -446,6 +635,16 @@ namespace BarSimulator.Systems
                 }
             }
             materialCache.Clear();
+
+            // 清理紋理
+            foreach (var kvp in textureCache)
+            {
+                if (kvp.Value != null)
+                {
+                    DestroyImmediate(kvp.Value);
+                }
+            }
+            textureCache.Clear();
         }
 
         private void OnDestroy()
