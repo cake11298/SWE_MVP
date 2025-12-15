@@ -13,8 +13,9 @@ namespace BarSimulator.Player
     {
         [Header("Interaction Settings")]
         [SerializeField] private float interactionDistance = 3f;
-        [SerializeField] private LayerMask interactableLayer;
+        [SerializeField] private LayerMask interactableLayer = -1; // Default to all layers
         [SerializeField] private Transform handPosition;
+        [SerializeField] private float raycastRadius = 0.1f; // Sphere cast radius for better detection
 
         [Header("Input Settings")]
         [SerializeField] private KeyCode pickupKey = KeyCode.E;
@@ -33,6 +34,7 @@ namespace BarSimulator.Player
         [Header("References")]
         private Camera playerCamera;
         private GameObject highlightedObject;
+        private InteractionHighlight highlightSystem;
 
         private void Awake()
         {
@@ -59,16 +61,15 @@ namespace BarSimulator.Player
                 handPosition = handObj.transform;
             }
 
-            // Setup layer mask if not set
+            // Setup layer mask if not set - use all layers by default
             if (interactableLayer == 0)
             {
-                interactableLayer = LayerMask.GetMask("Interactable");
-                if (interactableLayer == 0)
-                {
-                    Debug.LogWarning("[PlayerInteraction] Interactable layer not found. Using Default layer.");
-                    interactableLayer = LayerMask.GetMask("Default");
-                }
+                interactableLayer = -1; // All layers
+                Debug.LogWarning("[PlayerInteraction] Layer mask not set. Using all layers.");
             }
+
+            // Setup highlight system
+            highlightSystem = gameObject.AddComponent<InteractionHighlight>();
         }
 
         private void Update()
@@ -78,13 +79,27 @@ namespace BarSimulator.Player
             bool hitSomething = PerformRaycast(out hit);
 
             // Update highlighted object
+            GameObject newHighlight = null;
             if (hitSomething && heldObject == null)
             {
-                highlightedObject = hit.collider.gameObject;
+                newHighlight = hit.collider.gameObject;
             }
-            else
+
+            // Update highlight visual
+            if (newHighlight != highlightedObject)
             {
-                highlightedObject = null;
+                highlightedObject = newHighlight;
+                if (highlightSystem != null)
+                {
+                    if (highlightedObject != null)
+                    {
+                        highlightSystem.HighlightObject(highlightedObject);
+                    }
+                    else
+                    {
+                        highlightSystem.ClearHighlight();
+                    }
+                }
             }
 
             // Handle input
@@ -101,7 +116,24 @@ namespace BarSimulator.Player
         {
             Ray ray = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
 
-            bool didHit = Physics.Raycast(ray, out hit, interactionDistance, interactableLayer);
+            // Use SphereCast for better detection
+            bool didHit = Physics.SphereCast(ray, raycastRadius, out hit, interactionDistance, interactableLayer);
+            
+            // If sphere cast didn't hit, try regular raycast as backup
+            if (!didHit)
+            {
+                didHit = Physics.Raycast(ray, out hit, interactionDistance, interactableLayer);
+            }
+            
+            // Only consider objects with Rigidbody or InteractableItem
+            if (didHit)
+            {
+                GameObject hitObj = hit.collider.gameObject;
+                if (!IsInteractable(hitObj))
+                {
+                    didHit = false;
+                }
+            }
 
             // Debug visualization
             if (showDebugRay)
@@ -186,12 +218,34 @@ namespace BarSimulator.Player
             heldObject = target;
             heldRigidbody = rb;
 
-            // Disable physics
+            // Disable physics while holding
             heldRigidbody.isKinematic = true;
             heldRigidbody.useGravity = false;
+            heldRigidbody.velocity = Vector3.zero;
+            heldRigidbody.angularVelocity = Vector3.zero;
 
             // Parent to hand position
             heldObject.transform.SetParent(handPosition);
+
+            // Clear highlight
+            if (highlightSystem != null)
+            {
+                highlightSystem.ClearHighlight();
+            }
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnPickup();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnPickedUp();
+            }
 
             Debug.Log($"[PlayerInteraction] Picked up: {heldObject.name}");
 
@@ -217,6 +271,20 @@ namespace BarSimulator.Player
             heldRigidbody.isKinematic = false;
             heldRigidbody.useGravity = true;
 
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnDropped();
+            }
+
             Debug.Log($"[PlayerInteraction] Placed: {heldObject.name} at {position}");
 
             // Clear references
@@ -238,6 +306,20 @@ namespace BarSimulator.Player
 
             // Add slight forward velocity
             heldRigidbody.velocity = playerCamera.transform.forward * 2f;
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnDropped();
+            }
 
             Debug.Log($"[PlayerInteraction] Dropped: {heldObject.name}");
 
@@ -268,9 +350,15 @@ namespace BarSimulator.Player
 
         private bool IsInteractable(GameObject obj)
         {
-            // Check if object is on the Interactable layer
-            int objLayer = obj.layer;
-            return (interactableLayer & (1 << objLayer)) != 0;
+            // Check if object has Rigidbody (required for pickup)
+            if (obj.GetComponent<Rigidbody>() == null)
+                return false;
+            
+            // Check if object has InteractableItem or StaticProp component
+            bool hasInteractableComponent = obj.GetComponent<InteractableItem>() != null || 
+                                           obj.GetComponent<StaticProp>() != null;
+            
+            return hasInteractableComponent;
         }
 
         // ===================================================================

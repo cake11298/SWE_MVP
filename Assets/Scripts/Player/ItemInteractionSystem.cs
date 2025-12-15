@@ -212,6 +212,13 @@ namespace BarSimulator.Player
             // 清除高亮
             ClearHighlight();
 
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnPickup();
+            }
+
             // 通知物品被拾取
             item.OnPickedUp();
 
@@ -234,6 +241,13 @@ namespace BarSimulator.Player
             if (heldCollider != null)
             {
                 heldCollider.enabled = true;
+            }
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
             }
 
             // 通知物品被放下

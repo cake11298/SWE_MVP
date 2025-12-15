@@ -211,13 +211,16 @@ namespace BarSimulator.Player
             Rigidbody rb = heldObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
+                // 先停止運動再設置 kinematic
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
                 rb.isKinematic = true;
                 rb.useGravity = false;
             }
 
-            // 禁用碰撞
-            Collider col = heldObject.GetComponent<Collider>();
-            if (col != null)
+            // 禁用所有碰撞器（包括父物件和子物件）
+            Collider[] allColliders = heldObject.GetComponentsInChildren<Collider>();
+            foreach (Collider col in allColliders)
             {
                 col.enabled = false;
             }
@@ -225,10 +228,17 @@ namespace BarSimulator.Player
             // 清除高亮
             ClearHighlight();
 
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnPickup();
+            }
+
             // 通知物品被拾取
             item.OnPickedUp();
 
-            Debug.Log($"拾取了: {heldObject.name}");
+            Debug.Log($"拾取了: {heldObject.name}，位置: {heldObject.transform.position}");
         }
 
         private void ReturnToOriginalPosition()
@@ -249,13 +259,26 @@ namespace BarSimulator.Player
             {
                 rb.isKinematic = false;
                 rb.useGravity = true;
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
             }
 
-            // 恢复碰撞
-            Collider col = heldObject.GetComponent<Collider>();
-            if (col != null)
+            // 恢復所有碰撞器（包括父物件和子物件）
+            Collider[] allColliders = heldObject.GetComponentsInChildren<Collider>(true);
+            foreach (Collider col in allColliders)
             {
-                col.enabled = true;
+                // 只恢復父物件的主碰撞器，子物件的碰撞器保持禁用
+                if (col.gameObject == heldObject)
+                {
+                    col.enabled = true;
+                }
+            }
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
             }
 
             // 通知物品被放下
@@ -264,7 +287,7 @@ namespace BarSimulator.Player
                 heldItem.OnDropped();
             }
 
-            Debug.Log($"放回原位: {heldObject.name}");
+            Debug.Log($"放回原位: {heldObject.name}，位置: {heldObject.transform.position}");
 
             heldObject = null;
             heldItem = null;
@@ -285,13 +308,26 @@ namespace BarSimulator.Player
             {
                 rb.isKinematic = false;
                 rb.useGravity = true;
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
             }
 
-            // 恢复碰撞
-            Collider col = heldObject.GetComponent<Collider>();
-            if (col != null)
+            // 恢復所有碰撞器（包括父物件和子物件）
+            Collider[] allColliders = heldObject.GetComponentsInChildren<Collider>(true);
+            foreach (Collider col in allColliders)
             {
-                col.enabled = true;
+                // 只恢復父物件的主碰撞器
+                if (col.gameObject == heldObject)
+                {
+                    col.enabled = true;
+                }
+            }
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
             }
 
             // 通知物品被放下
@@ -300,7 +336,7 @@ namespace BarSimulator.Player
                 heldItem.OnDropped();
             }
 
-            Debug.Log($"原地放下: {heldObject.name}");
+            Debug.Log($"原地放下: {heldObject.name}，位置: {heldObject.transform.position}");
 
             heldObject = null;
             heldItem = null;
@@ -310,19 +346,9 @@ namespace BarSimulator.Player
         {
             if (heldObject != null && handPosition != null)
             {
-                // 平滑移动到手持位置
-                heldObject.transform.position = Vector3.Lerp(
-                    heldObject.transform.position,
-                    handPosition.position,
-                    Time.deltaTime * 15f
-                );
-
-                // 保持物品朝向
-                heldObject.transform.rotation = Quaternion.Lerp(
-                    heldObject.transform.rotation,
-                    handPosition.rotation,
-                    Time.deltaTime * 10f
-                );
+                // 直接設置位置（更可靠）
+                heldObject.transform.position = handPosition.position;
+                heldObject.transform.rotation = handPosition.rotation;
             }
         }
 
