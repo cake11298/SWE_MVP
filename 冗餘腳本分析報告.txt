@@ -1,0 +1,323 @@
+====================================================================================================
+                                   冗餘腳本完整分析報告
+====================================================================================================
+
+┌─ 場景使用情況分析 ─────────────────────────────────────────────────────────────────────────────┐
+│
+│  1. Assets/TheBar/TheBar.unity (純環境場景)
+│     ├─ 自定義腳本數: 0
+│     └─ 結論: ✓ 確認是純環境場景，只使用 Unity URP 內建組件
+│
+│  2. Assets/SceneS/TheBar.unity (主要遊戲場景)
+│     ├─ 自定義腳本數: 3
+│     ├─ SimplePlayerController.cs
+│     ├─ InteractableItem.cs
+│     └─ ImprovedInteractionSystem.cs
+│
+│  3. Assets/SceneS/GameScene.unity
+│     ├─ 自定義腳本數: 13
+│     └─ (包含各種 Manager 和 System)
+│
+│  4. Assets/SceneS/MainMenu.unity
+│     ├─ 自定義腳本數: 4
+│     └─ (主菜單相關腳本)
+│
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ 統計總覽 ──────────────────────────────────────────────────────────────────────────────────────┐
+│
+│  總腳本數: 114
+│    ├─ 運行時腳本: 87
+│    │   ├─ 場景直接使用: 18 個
+│    │   ├─ 被其他腳本引用: 18 個
+│    │   └─ 未使用（冗餘）: 51 個
+│    └─ 編輯器工具腳本: 27 個
+│
+└───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+====================================================================================================
+                                        刪除建議清單
+====================================================================================================
+
+█████ 優先級 1: 可以安全刪除的未使用腳本 █████
+
+這些運行時腳本沒有被任何場景使用，也沒有被其他腳本引用。
+如果只保留純環境場景，這些可以全部刪除。
+
+┌─ Core/ ──────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ Bootstrapper.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/Bootstrapper.cs
+│ ├─ ✗ EventBus.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/EventBus.cs
+│ ├─ ✗ GameBootstrapper.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/GameBootstrapper.cs
+│ ├─ ✗ GameEvents.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/GameEvents.cs
+│ ├─ ✗ GameSceneInitializer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/GameSceneInitializer.cs
+│ ├─ ✗ GameStateManager.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/GameStateManager.cs
+│ ├─ ✗ IGameState.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/IGameState.cs
+│ ├─ ✗ SceneIntegrator.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/SceneIntegrator.cs
+│ └─ ✗ SceneMaterialFixer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Core/SceneMaterialFixer.cs
+│
+┌─ Data/ ──────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ ContainerContents.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Data/ContainerContents.cs
+│ ├─ ✗ DrinkRecipe.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Data/DrinkRecipe.cs
+│ ├─ ✗ GameData.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Data/GameData.cs
+│ └─ ✗ RecipeData.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Data/RecipeData.cs
+│
+┌─ Environment/ ───────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ DynamicObjectSpawner.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Environment/DynamicObjectSpawner.cs
+│ └─ ✗ StaticBarStructure.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Environment/StaticBarStructure.cs
+│
+┌─ Interaction/ ───────────────────────────────────────────────────────────────────────────────────
+│ └─ ✗ BottleReturnZone.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Interaction/BottleReturnZone.cs
+│
+┌─ Managers/ ──────────────────────────────────────────────────────────────────────────────────────
+│ └─ ✗ AudioManager.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Managers/AudioManager.cs
+│
+┌─ NPC/ ───────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ InteractableNPC.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/NPC/InteractableNPC.cs
+│ └─ ✗ NPCInteraction.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/NPC/NPCInteraction.cs
+│
+┌─ Objects/ ───────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ Garnish.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/Garnish.cs
+│ ├─ ✗ GarnishStation.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/GarnishStation.cs
+│ ├─ ✗ IceContainer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/IceContainer.cs
+│ ├─ ✗ IceCube.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/IceCube.cs
+│ ├─ ✗ InteractableObject.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/InteractableObject.cs
+│ ├─ ✗ MixingGlass.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/MixingGlass.cs
+│ └─ ✗ Stirrer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Objects/Stirrer.cs
+│
+┌─ Player/ ────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ ItemInteractionSystem.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Player/ItemInteractionSystem.cs
+│ └─ ✗ PlayerInteraction.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Player/PlayerInteraction.cs
+│
+┌─ Root/ ──────────────────────────────────────────────────────────────────────────────────────────
+│ └─ ✗ BottleController.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/BottleController.cs
+│
+┌─ States/ ────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ State_Crafting.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/States/State_Crafting.cs
+│ ├─ ✗ State_CustomerEntry.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/States/State_CustomerEntry.cs
+│ ├─ ✗ State_Idle.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/States/State_Idle.cs
+│ ├─ ✗ State_Serving.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/States/State_Serving.cs
+│ └─ ✗ State_Shaking_QTE.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/States/State_Shaking_QTE.cs
+│
+┌─ Systems/ ───────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ CustomerSystem.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/CustomerSystem.cs
+│ ├─ ✗ EnvironmentSetup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/EnvironmentSetup.cs
+│ ├─ ✗ IMinigame.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/IMinigame.cs
+│ ├─ ✗ MaterialManager.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/MaterialManager.cs
+│ ├─ ✗ MinigameSystem.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/MinigameSystem.cs
+│ ├─ ✗ PostProcessingSetup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/PostProcessingSetup.cs
+│ └─ ✗ ProceduralTextureGenerator.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Systems/ProceduralTextureGenerator.cs
+│
+┌─ Tests/ ─────────────────────────────────────────────────────────────────────────────────────────
+│ └─ ✗ NPCInteractionTester.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Tests/NPCInteractionTester.cs
+│
+┌─ UI/ ────────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ✗ GameUIController.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/GameUIController.cs
+│ ├─ ✗ GameplayHUD.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/GameplayHUD.cs
+│ ├─ ✗ MainMenuInitializer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/MainMenuInitializer.cs
+│ ├─ ✗ MinecraftButton.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/MinecraftButton.cs
+│ ├─ ✗ PatienceBarUI.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/PatienceBarUI.cs
+│ ├─ ✗ RecipeBookUI.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/RecipeBookUI.cs
+│ ├─ ✗ ShopManager.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/ShopManager.cs
+│ ├─ ✗ UIBuilder.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/UIBuilder.cs
+│ └─ ✗ UIFactory.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/UI/UIFactory.cs
+│
+小計: 51 個未使用腳本
+
+
+█████ 優先級 2: 編輯器工具腳本 █████
+
+這些是開發階段使用的編輯器工具，不會包含在最終遊戲構建中。
+如果開發已完成，不再需要這些工具，可以考慮刪除。
+
+┌─ Editor/ ────────────────────────────────────────────────────────────────────────────────────────
+│ ├─ ? AutoGameplaySetup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/AutoGameplaySetup.cs
+│ ├─ ? BarSceneBuilder.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/BarSceneBuilder.cs
+│ ├─ ? BuildSceneRunner.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/BuildSceneRunner.cs
+│ ├─ ? CreatePlayerHelper.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/CreatePlayerHelper.cs
+│ ├─ ? FinalVisualFixer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/FinalVisualFixer.cs
+│ ├─ ? FixStaticInteractables.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/FixStaticInteractables.cs
+│ ├─ ? FloorAndSkyboxFixer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/FloorAndSkyboxFixer.cs
+│ ├─ ? GameSetupHelper.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/GameSetupHelper.cs
+│ ├─ ? GameplaySetup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/GameplaySetup.cs
+│ ├─ ? PlayerSetup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/PlayerSetup.cs
+│ ├─ ? PlayerSetupRunner.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/PlayerSetupRunner.cs
+│ ├─ ? PrefabBarBuilder.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/PrefabBarBuilder.cs
+│ ├─ ? RestoreScene.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/RestoreScene.cs
+│ ├─ ? SceneCleanup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SceneCleanup.cs
+│ ├─ ? SetSceneView.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SetSceneView.cs
+│ ├─ ? SetupBarInteraction.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SetupBarInteraction.cs
+│ ├─ ? SetupBottle.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SetupBottle.cs
+│ ├─ ? SetupSpecificItems.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SetupSpecificItems.cs
+│ ├─ ? ShaderLister.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/ShaderLister.cs
+│ ├─ ? SkySphereFix.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SkySphereFix.cs
+│ ├─ ? SkyboxNuker.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SkyboxNuker.cs
+│ ├─ ? SkyboxTroubleshooter.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/SkyboxTroubleshooter.cs
+│ ├─ ? URPMaterialFixer.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/URPMaterialFixer.cs
+│ ├─ ? URPMaterialUpgrader.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/URPMaterialUpgrader.cs
+│ ├─ ? UpdatePlayerSystem.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/UpdatePlayerSystem.cs
+│ ├─ ? UpgradeMaterialsRunner.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/UpgradeMaterialsRunner.cs
+│ └─ ? VisualCleanup.cs
+│    路徑: /home/user/SWE_MVP/Assets/Scripts/Editor/VisualCleanup.cs
+│
+小計: 27 個編輯器腳本
+建議: 根據是否還需要這些開發工具來決定是否刪除。
+
+
+█████ 必須保留: 正在使用的腳本 █████
+
+場景直接使用: 18 個
+被其他腳本引用: 18 個
+總計必須保留: 36 個
+
+這些腳本支撐其他場景的運行，如果要保留那些場景，必須保留這些腳本。
+
+
+====================================================================================================
+                                        操作建議
+====================================================================================================
+
+【場景 1: 只保留純環境場景】
+如果目標是只保留 Assets/TheBar/TheBar.unity 這個純環境場景：
+
+  ✓ 可以刪除:
+    • 所有 51 個未使用的運行時腳本（優先級 1）
+    • 所有 27 個編輯器工具腳本（優先級 2）
+    • 場景直接使用的 18 個腳本（如果也刪除其他場景）
+    • 被引用的 18 個腳本（如果也刪除其他場景）
+    • 其他場景文件: GameScene.unity, MainMenu.unity, Assets/SceneS/TheBar.unity
+    
+  結果: 項目將變成純環境場景，沒有任何遊戲邏輯
+
+
+【場景 2: 保留現有遊戲玩法】
+如果想保留其他場景的遊戲玩法功能：
+
+  ✓ 可以刪除:
+    • 所有 51 個未使用的運行時腳本（優先級 1）
+    • 可選: 27 個編輯器工具腳本（如果不需要繼續開發）
+    
+  ⚠ 必須保留:
+    • 18 個場景直接使用的腳本
+    • 18 個被引用的腳本
+    • 所有場景文件
+    
+  結果: 清理冗餘代碼，但保留所有功能
+
+
+【場景 3: 謹慎操作】
+如果不確定未來需求：
+
+  1. 先使用 Git 創建備份分支
+  2. 從最明顯未使用的腳本開始刪除（如 Tests/, States/ 文件夾）
+  3. 每次刪除後測試場景是否正常加載
+  4. 逐步清理
+
+
+【建議的刪除順序】
+如果選擇場景 1（只保留純環境場景）：
+
+  第 1 步: 刪除測試和狀態腳本
+    • Tests/ 文件夾 (1 個腳本)
+    • States/ 文件夾 (5 個腳本)
+    
+  第 2 步: 刪除遊戲玩法相關
+    • Objects/ 文件夾中未使用的 (7 個腳本)
+    • NPC/ 文件夾中未使用的 (2 個腳本)
+    • Systems/ 文件夾中未使用的 (7 個腳本)
+    
+  第 3 步: 刪除核心系統
+    • Core/ 文件夾中未使用的 (9 個腳本)
+    • Data/ 文件夾中未使用的 (4 個腳本)
+    
+  第 4 步: 刪除 UI 和其他
+    • UI/ 文件夾中未使用的 (9 個腳本)
+    • 其他未使用的腳本
+    
+  第 5 步: 刪除編輯器工具
+    • Editor/ 文件夾 (27 個腳本)
+    
+  第 6 步: 刪除其他場景及其依賴
+    • 刪除 GameScene.unity, MainMenu.unity, Assets/SceneS/TheBar.unity
+    • 刪除所有場景使用的腳本（現在它們也變成冗餘的了）
+
+
+====================================================================================================
+報告完成
+====================================================================================================
