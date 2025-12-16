@@ -1,6 +1,7 @@
 using UnityEngine;
 using BarSimulator.Interaction;
 using BarSimulator.Objects;
+using BarSimulator.UI;
 
 namespace BarSimulator.NPC
 {
@@ -64,6 +65,10 @@ namespace BarSimulator.NPC
 
             if (npcController == null) return;
 
+            // Show interaction feedback
+            string npcName = npcController.NPCName;
+            UIPromptManager.Show($"正在與 {npcName} 對話...");
+
             // 使用 NPCManager 來處理互動（會觸發點單系統）
             var npcManager = Managers.NPCManager.Instance;
             if (npcManager != null)
@@ -91,12 +96,19 @@ namespace BarSimulator.NPC
         {
             base.OnTargeted();
             // 可以添加高亮效果
+            
+            // Show interaction prompt
+            string npcName = npcController != null ? npcController.NPCName : displayName;
+            UIPromptManager.Show($"按 E 與 {npcName} 互動");
         }
 
         public override void OnUntargeted()
         {
             base.OnUntargeted();
             // 取消高亮效果
+            
+            // Hide interaction prompt
+            UIPromptManager.Hide();
         }
 
         #endregion
@@ -108,12 +120,8 @@ namespace BarSimulator.NPC
         /// </summary>
         private void ShowDialogueUI()
         {
-            // 尋找 UIBuilder 顯示對話
-            var uiBuilder = UI.UIBuilder.Instance;
-            if (uiBuilder != null)
-            {
-                uiBuilder.ShowMessage($"{npcController.NPCName}: {currentDialogue}");
-            }
+            // UIBuilder removed - using Debug.Log instead
+            Debug.Log($"{npcController.NPCName}: {currentDialogue}");
         }
 
         #endregion
@@ -144,6 +152,10 @@ namespace BarSimulator.NPC
             dialogueTimer = DialogueDuration;
 
             Debug.Log($"{npcController.NPCName} received drink: {drinkInfo.cocktailName} - {reaction}");
+
+            // Show feedback prompt
+            string npcName = npcController.NPCName;
+            UIPromptManager.Show($"給了 {npcName} {drinkInfo.cocktailName}");
 
             ShowDialogueUI();
 

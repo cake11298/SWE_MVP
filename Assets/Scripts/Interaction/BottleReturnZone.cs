@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using BarSimulator.Objects;
 using BarSimulator.Managers;
 using BarSimulator.Systems;
-using BarSimulator.UI;
 
 namespace BarSimulator.Interaction
 {

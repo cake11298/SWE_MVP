@@ -264,6 +264,7 @@ namespace BarSimulator.Data
                 LiquorData.Create("vermouth_sweet", "甜香艾酒", "Sweet Vermouth", 0x8b4513, 18f, LiquorCategory.FortifiedWine),
                 LiquorData.Create("campari", "金巴利", "Campari", 0xdc143c, 25f, LiquorCategory.Liqueur),
                 LiquorData.Create("triple_sec", "橙皮酒", "Triple Sec", 0xffa500, 40f, LiquorCategory.Liqueur),
+                LiquorData.Create("cointreau", "君度橙酒", "Cointreau", 0xffa500, 40f, LiquorCategory.Liqueur),
                 LiquorData.Create("liqueur", "利口酒", "Liqueur", 0xff6b9d, 20f, LiquorCategory.Liqueur)
             };
         }

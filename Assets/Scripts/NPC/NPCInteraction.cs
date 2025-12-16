@@ -221,16 +221,8 @@ namespace BarSimulator.NPC
         /// </summary>
         private void ShowMessage(string message)
         {
-            // 使用 DialogueBox 顯示訊息
-            var dialogueBox = UI.DialogueBox.Instance;
-            if (dialogueBox != null)
-            {
-                dialogueBox.ShowDialogue("System", message);
-            }
-            else
-            {
-                Debug.Log($"NPCInteraction: {message}");
-            }
+            // DialogueBox removed - using Debug.Log instead
+            Debug.Log($"NPCInteraction: {message}");
         }
 
         #endregion

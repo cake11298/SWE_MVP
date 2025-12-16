@@ -1,5 +1,6 @@
 using UnityEngine;
 using BarSimulator.Core;
+using BarSimulator.UI;
 
 namespace BarSimulator.Player
 {
@@ -13,8 +14,9 @@ namespace BarSimulator.Player
     {
         [Header("Interaction Settings")]
         [SerializeField] private float interactionDistance = 3f;
-        [SerializeField] private LayerMask interactableLayer;
+        [SerializeField] private LayerMask interactableLayer = -1; // Default to all layers
         [SerializeField] private Transform handPosition;
+        [SerializeField] private float raycastRadius = 0.1f; // Sphere cast radius for better detection
 
         [Header("Input Settings")]
         [SerializeField] private KeyCode pickupKey = KeyCode.E;
@@ -30,9 +32,19 @@ namespace BarSimulator.Player
         [SerializeField] private Color rayHitColor = Color.green;
         [SerializeField] private Color rayMissColor = Color.red;
 
+        [Header("Pouring System")]
+        [SerializeField] private float pouringDistance = 2f;
+        [SerializeField] private UI.LiquidInfoUI liquidInfoUI;
+
         [Header("References")]
         private Camera playerCamera;
         private GameObject highlightedObject;
+        private InteractionHighlight highlightSystem;
+
+        // Pouring state
+        private bool isPouring = false;
+        private Objects.LiquidContainer heldLiquidContainer;
+        private Objects.GlassContainer targetGlass;
 
         private void Awake()
         {
@@ -59,15 +71,20 @@ namespace BarSimulator.Player
                 handPosition = handObj.transform;
             }
 
-            // Setup layer mask if not set
+            // Setup layer mask if not set - use all layers by default
             if (interactableLayer == 0)
             {
-                interactableLayer = LayerMask.GetMask("Interactable");
-                if (interactableLayer == 0)
-                {
-                    Debug.LogWarning("[PlayerInteraction] Interactable layer not found. Using Default layer.");
-                    interactableLayer = LayerMask.GetMask("Default");
-                }
+                interactableLayer = -1; // All layers
+                Debug.LogWarning("[PlayerInteraction] Layer mask not set. Using all layers.");
+            }
+
+            // Setup highlight system
+            highlightSystem = gameObject.AddComponent<InteractionHighlight>();
+
+            // Find LiquidInfoUI if not assigned
+            if (liquidInfoUI == null)
+            {
+                liquidInfoUI = FindObjectOfType<UI.LiquidInfoUI>();
             }
         }
 
@@ -78,13 +95,33 @@ namespace BarSimulator.Player
             bool hitSomething = PerformRaycast(out hit);
 
             // Update highlighted object
+            GameObject newHighlight = null;
             if (hitSomething && heldObject == null)
             {
-                highlightedObject = hit.collider.gameObject;
+                newHighlight = hit.collider.gameObject;
             }
-            else
+
+            // Update highlight visual
+            if (newHighlight != highlightedObject)
             {
-                highlightedObject = null;
+                highlightedObject = newHighlight;
+                if (highlightSystem != null)
+                {
+                    if (highlightedObject != null)
+                    {
+                        highlightSystem.HighlightObject(highlightedObject);
+                        
+                        // Show interaction prompt
+                        ShowInteractionPrompt(highlightedObject);
+                    }
+                    else
+                    {
+                        highlightSystem.ClearHighlight();
+                        
+                        // Hide interaction prompt
+                        UIPromptManager.Hide();
+                    }
+                }
             }
 
             // Handle input
@@ -95,13 +132,33 @@ namespace BarSimulator.Player
             {
                 UpdateHeldObject();
             }
+
+            // Handle pouring logic
+            HandlePouring(hit, hitSomething);
         }
 
         private bool PerformRaycast(out RaycastHit hit)
         {
             Ray ray = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
 
-            bool didHit = Physics.Raycast(ray, out hit, interactionDistance, interactableLayer);
+            // Use SphereCast for better detection
+            bool didHit = Physics.SphereCast(ray, raycastRadius, out hit, interactionDistance, interactableLayer);
+            
+            // If sphere cast didn't hit, try regular raycast as backup
+            if (!didHit)
+            {
+                didHit = Physics.Raycast(ray, out hit, interactionDistance, interactableLayer);
+            }
+            
+            // Only consider objects with Rigidbody or InteractableItem
+            if (didHit)
+            {
+                GameObject hitObj = hit.collider.gameObject;
+                if (!IsInteractable(hitObj))
+                {
+                    didHit = false;
+                }
+            }
 
             // Debug visualization
             if (showDebugRay)
@@ -126,8 +183,8 @@ namespace BarSimulator.Player
             bool leftClickUp = useMouseClick && Input.GetMouseButtonUp(0);
             bool rightClickDown = useMouseClick && Input.GetMouseButtonDown(1);
 
-            // Pickup Logic (E or Left Click on object)
-            if ((pickupPressed || leftClickDown) && heldObject == null && hitSomething)
+            // Pickup Logic (E or Left Click on object) - but not if we're pouring
+            if ((pickupPressed || leftClickDown) && heldObject == null && hitSomething && !isPouring)
             {
                 TryPickup(hit.collider.gameObject);
                 return; // Don't process Use input in the same frame as pickup
@@ -165,6 +222,107 @@ namespace BarSimulator.Player
             }
         }
 
+        private void HandlePouring(RaycastHit hit, bool hitSomething)
+        {
+            // Check if we're looking at a glass (regardless of holding anything)
+            Objects.GlassContainer glassInView = null;
+            string targetName = "";
+            
+            if (hitSomething && hit.distance <= pouringDistance)
+            {
+                glassInView = hit.collider.GetComponent<Objects.GlassContainer>();
+                if (glassInView != null)
+                {
+                    targetName = hit.collider.gameObject.name;
+                }
+            }
+
+            // Check if we're holding a liquid container
+            bool holdingLiquidContainer = heldObject != null && heldLiquidContainer != null;
+
+            // Show UI when looking at a glass OR when holding a glass with liquid
+            if (glassInView != null && liquidInfoUI != null)
+            {
+                // If holding a bottle and looking at glass, show "Pouring into X"
+                if (holdingLiquidContainer)
+                {
+                    liquidInfoUI.SetTargetGlass(glassInView, targetName);
+                }
+                else
+                {
+                    liquidInfoUI.SetTargetGlass(glassInView);
+                }
+            }
+            else if (liquidInfoUI != null && !isPouring)
+            {
+                // Check if we're holding a glass with liquid
+                if (heldObject != null)
+                {
+                    var heldGlass = heldObject.GetComponent<Objects.GlassContainer>();
+                    if (heldGlass != null && heldGlass.currentTotalVolume > 0)
+                    {
+                        liquidInfoUI.SetTargetGlass(heldGlass);
+                    }
+                    else
+                    {
+                        liquidInfoUI.ClearTarget();
+                    }
+                }
+                else
+                {
+                    liquidInfoUI.ClearTarget();
+                }
+            }
+
+            // Handle pouring logic
+            if (holdingLiquidContainer)
+            {
+                // Handle pouring input (Left Mouse Button held)
+                bool leftClickHeld = Input.GetMouseButton(0);
+
+                if (leftClickHeld && glassInView != null && !glassInView.IsFull() && heldLiquidContainer.CanPour())
+                {
+                    // Start pouring
+                    if (!isPouring)
+                    {
+                        isPouring = true;
+                        targetGlass = glassInView;
+                        heldLiquidContainer.StartPouring();
+                        Debug.Log($"[PlayerInteraction] Started pouring {heldLiquidContainer.liquidName} into {targetGlass.name}");
+                    }
+
+                    // Pour liquid
+                    float pourAmount = heldLiquidContainer.pourRate * Time.deltaTime;
+                    float actualPoured = heldLiquidContainer.Pour(pourAmount);
+                    float actualAdded = targetGlass.AddLiquid(heldLiquidContainer.liquidName, actualPoured);
+
+                    // Update UI immediately with pouring target name
+                    if (liquidInfoUI != null)
+                    {
+                        liquidInfoUI.SetTargetGlass(targetGlass, targetName);
+                    }
+                }
+                else
+                {
+                    // Stop pouring
+                    if (isPouring)
+                    {
+                        isPouring = false;
+                        heldLiquidContainer.StopPouring();
+                        Debug.Log($"[PlayerInteraction] Stopped pouring");
+                        
+                        // Keep UI visible if still looking at glass
+                        if (glassInView != null && liquidInfoUI != null)
+                        {
+                            liquidInfoUI.SetTargetGlass(glassInView);
+                        }
+                        
+                        targetGlass = null;
+                    }
+                }
+            }
+        }
+
         private void TryPickup(GameObject target)
         {
             // Check if object is interactable
@@ -186,14 +344,43 @@ namespace BarSimulator.Player
             heldObject = target;
             heldRigidbody = rb;
 
-            // Disable physics
+            // Disable physics while holding
             heldRigidbody.isKinematic = true;
             heldRigidbody.useGravity = false;
+            heldRigidbody.velocity = Vector3.zero;
+            heldRigidbody.angularVelocity = Vector3.zero;
 
             // Parent to hand position
             heldObject.transform.SetParent(handPosition);
 
+            // Clear highlight
+            if (highlightSystem != null)
+            {
+                highlightSystem.ClearHighlight();
+            }
+
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnPickup();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnPickedUp();
+            }
+
+            // Check if this is a liquid container
+            heldLiquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
+
             Debug.Log($"[PlayerInteraction] Picked up: {heldObject.name}");
+            
+            // Show pickup prompt
+            string itemName = GetFriendlyName(target);
+            UIPromptManager.Show($"拾取了 {itemName}");
 
             // Publish event (optional, for EventBus integration)
             if (EventBus.GetSubscriberCount<InteractionInputEvent>() > 0)
@@ -217,11 +404,39 @@ namespace BarSimulator.Player
             heldRigidbody.isKinematic = false;
             heldRigidbody.useGravity = true;
 
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnDropped();
+            }
+
             Debug.Log($"[PlayerInteraction] Placed: {heldObject.name} at {position}");
+
+            // Stop pouring if active
+            if (isPouring && heldLiquidContainer != null)
+            {
+                heldLiquidContainer.StopPouring();
+                isPouring = false;
+            }
 
             // Clear references
             heldObject = null;
             heldRigidbody = null;
+            heldLiquidContainer = null;
+            
+            // Clear UI
+            if (liquidInfoUI != null)
+            {
+                liquidInfoUI.ClearTarget();
+            }
         }
 
         private void Drop()
@@ -239,11 +454,39 @@ namespace BarSimulator.Player
             // Add slight forward velocity
             heldRigidbody.velocity = playerCamera.transform.forward * 2f;
 
+            // Notify StaticProp component if exists
+            var staticProp = heldObject.GetComponent<StaticProp>();
+            if (staticProp != null)
+            {
+                staticProp.OnDrop();
+            }
+
+            // Notify InteractableItem component if exists
+            var interactableItem = heldObject.GetComponent<InteractableItem>();
+            if (interactableItem != null)
+            {
+                interactableItem.OnDropped();
+            }
+
             Debug.Log($"[PlayerInteraction] Dropped: {heldObject.name}");
+
+            // Stop pouring if active
+            if (isPouring && heldLiquidContainer != null)
+            {
+                heldLiquidContainer.StopPouring();
+                isPouring = false;
+            }
 
             // Clear references
             heldObject = null;
             heldRigidbody = null;
+            heldLiquidContainer = null;
+            
+            // Clear UI
+            if (liquidInfoUI != null)
+            {
+                liquidInfoUI.ClearTarget();
+            }
         }
 
         private void UpdateHeldObject()
@@ -268,9 +511,63 @@ namespace BarSimulator.Player
 
         private bool IsInteractable(GameObject obj)
         {
-            // Check if object is on the Interactable layer
-            int objLayer = obj.layer;
-            return (interactableLayer & (1 << objLayer)) != 0;
+            // Check if object has Rigidbody (required for pickup)
+            if (obj.GetComponent<Rigidbody>() == null)
+                return false;
+            
+            // Check if object has InteractableItem or StaticProp component
+            bool hasInteractableComponent = obj.GetComponent<InteractableItem>() != null || 
+                                           obj.GetComponent<StaticProp>() != null;
+            
+            return hasInteractableComponent;
+        }
+
+        /// <summary>
+        /// Show interaction prompt for the targeted object
+        /// </summary>
+        private void ShowInteractionPrompt(GameObject obj)
+        {
+            if (obj == null) return;
+
+            string itemName = GetFriendlyName(obj);
+            UIPromptManager.Show($"按 E 拾取 {itemName}");
+        }
+
+        /// <summary>
+        /// Get friendly display name for an object
+        /// </summary>
+        private string GetFriendlyName(GameObject obj)
+        {
+            // Check for InteractableItem component
+            var interactableItem = obj.GetComponent<InteractableItem>();
+            if (interactableItem != null && !string.IsNullOrEmpty(interactableItem.itemName))
+            {
+                return interactableItem.itemName;
+            }
+
+            // Check for IInteractable interface
+            var interactable = obj.GetComponent<BarSimulator.Interaction.IInteractable>();
+            if (interactable != null && !string.IsNullOrEmpty(interactable.DisplayName))
+            {
+                return interactable.DisplayName;
+            }
+
+            // Check for LiquidContainer
+            var liquidContainer = obj.GetComponent<Objects.LiquidContainer>();
+            if (liquidContainer != null && !string.IsNullOrEmpty(liquidContainer.liquidName))
+            {
+                return liquidContainer.liquidName;
+            }
+
+            // Check for GlassContainer
+            var glassContainer = obj.GetComponent<Objects.GlassContainer>();
+            if (glassContainer != null)
+            {
+                return "玻璃杯";
+            }
+
+            // Fallback to object name
+            return obj.name;
         }
 
         // ===================================================================

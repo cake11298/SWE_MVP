@@ -371,6 +371,17 @@ namespace BarSimulator.Core
             }
         }
 
+        /// <summary>
+        /// 添加金幣 (用於簡單的服務系統)
+        /// </summary>
+        /// <param name="amount">金幣數量</param>
+        public void AddCoins(int amount)
+        {
+            score.totalCoins += amount;
+            OnCoinsUpdated?.Invoke(amount, score.totalCoins);
+            Debug.Log($"GameManager: 獲得 {amount} 金幣！總金幣: {score.totalCoins}");
+        }
+
         private void TriggerWin()
         {
             EndGame(true);
