@@ -15827,6 +15827,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1030977066, guid: abc00000000003349597397482873565, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1356217416}
+    - targetCorrespondingSourceObject: {fileID: 1030977066, guid: abc00000000003349597397482873565, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1356217422}
     - targetCorrespondingSourceObject: {fileID: 1030977069, guid: abc00000000003349597397482873565, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1175748686}
@@ -87691,6 +87694,26 @@ MonoBehaviour:
   currentLiquidAmount: 0
   maxGlassCapacity: 300
   liquidVisual: {fileID: 0}
+--- !u!114 &1356217422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1356217411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e5c717a1f17ce34fa0c47ee585fa8b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  liquidName: Vodka
+  isInfinite: 1
+  currentVolume: 750
+  maxVolume: 750
+  pourRate: 3.5
+  pourRotationAxis: {x: 1, y: 0, z: 0}
+  pourAngle: 60
+  rotationSpeed: 5
 --- !u!1 &1359080875 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1030977081, guid: abc00000000003349597397482873565, type: 3}
@@ -88313,15 +88336,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: abc00000000012831976653928126552, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.0978634
+      value: -4.526
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: abc00000000012831976653928126552, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.3485024
+      value: 1.438
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: abc00000000012831976653928126552, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7.4145
+      value: -7.504
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: abc00000000012831976653928126552, type: 3}
       propertyPath: m_LocalRotation.w
@@ -94279,6 +94302,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100000, guid: abc00000000002021777881793564538, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1713853722}
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: abc00000000002021777881793564538, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1713853731}
     - targetCorrespondingSourceObject: {fileID: 100002, guid: abc00000000002021777881793564538, type: 3}
       insertIndex: -1
       addedObject: {fileID: 228168899}
@@ -94406,6 +94432,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.10200105, y: 0.343527, z: 0.10200104}
   m_Center: {x: -0.000000026077032, y: 0.17240672, z: 0.00000016205013}
+--- !u!114 &1713853731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713853717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e5c717a1f17ce34fa0c47ee585fa8b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  liquidName: Rum
+  isInfinite: 1
+  currentVolume: 750
+  maxVolume: 750
+  pourRate: 3.5
+  pourRotationAxis: {x: 1, y: 0, z: 0}
+  pourAngle: 60
+  rotationSpeed: 5
 --- !u!1 &1714714744 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1030978052, guid: abc00000000017897626725404189256, type: 3}
