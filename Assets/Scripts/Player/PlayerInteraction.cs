@@ -31,10 +31,19 @@ namespace BarSimulator.Player
         [SerializeField] private Color rayHitColor = Color.green;
         [SerializeField] private Color rayMissColor = Color.red;
 
+        [Header("Pouring System")]
+        [SerializeField] private float pouringDistance = 2f;
+        [SerializeField] private UI.LiquidInfoUI liquidInfoUI;
+
         [Header("References")]
         private Camera playerCamera;
         private GameObject highlightedObject;
         private InteractionHighlight highlightSystem;
+
+        // Pouring state
+        private bool isPouring = false;
+        private Objects.LiquidContainer heldLiquidContainer;
+        private Objects.GlassContainer targetGlass;
 
         private void Awake()
         {
@@ -70,6 +79,12 @@ namespace BarSimulator.Player
 
             // Setup highlight system
             highlightSystem = gameObject.AddComponent<InteractionHighlight>();
+
+            // Find LiquidInfoUI if not assigned
+            if (liquidInfoUI == null)
+            {
+                liquidInfoUI = FindObjectOfType<UI.LiquidInfoUI>();
+            }
         }
 
         private void Update()
@@ -110,6 +125,9 @@ namespace BarSimulator.Player
             {
                 UpdateHeldObject();
             }
+
+            // Handle pouring logic
+            HandlePouring(hit, hitSomething);
         }
 
         private bool PerformRaycast(out RaycastHit hit)
@@ -158,8 +176,8 @@ namespace BarSimulator.Player
             bool leftClickUp = useMouseClick && Input.GetMouseButtonUp(0);
             bool rightClickDown = useMouseClick && Input.GetMouseButtonDown(1);
 
-            // Pickup Logic (E or Left Click on object)
-            if ((pickupPressed || leftClickDown) && heldObject == null && hitSomething)
+            // Pickup Logic (E or Left Click on object) - but not if we're pouring
+            if ((pickupPressed || leftClickDown) && heldObject == null && hitSomething && !isPouring)
             {
                 TryPickup(hit.collider.gameObject);
                 return; // Don't process Use input in the same frame as pickup
@@ -192,6 +210,75 @@ namespace BarSimulator.Player
                     if (leftClickUp)
                     {
                         interactable.OnUseUp();
+                    }
+                }
+            }
+        }
+
+        private void HandlePouring(RaycastHit hit, bool hitSomething)
+        {
+            // Check if we're looking at a glass (regardless of holding anything)
+            Objects.GlassContainer glassInView = null;
+            if (hitSomething && hit.distance <= pouringDistance)
+            {
+                glassInView = hit.collider.GetComponent<Objects.GlassContainer>();
+            }
+
+            // Always show UI when looking at a glass
+            if (glassInView != null && liquidInfoUI != null)
+            {
+                liquidInfoUI.SetTargetGlass(glassInView);
+            }
+            else if (liquidInfoUI != null && !isPouring)
+            {
+                // Only clear UI if not currently pouring
+                liquidInfoUI.ClearTarget();
+            }
+
+            // Check if we're holding a liquid container
+            if (heldObject != null && heldLiquidContainer != null)
+            {
+                // Handle pouring input (Left Mouse Button held)
+                bool leftClickHeld = Input.GetMouseButton(0);
+
+                if (leftClickHeld && glassInView != null && !glassInView.IsFull() && heldLiquidContainer.CanPour())
+                {
+                    // Start pouring
+                    if (!isPouring)
+                    {
+                        isPouring = true;
+                        targetGlass = glassInView;
+                        heldLiquidContainer.StartPouring();
+                        Debug.Log($"[PlayerInteraction] Started pouring {heldLiquidContainer.liquidName} into {targetGlass.name}");
+                    }
+
+                    // Pour liquid
+                    float pourAmount = heldLiquidContainer.pourRate * Time.deltaTime;
+                    float actualPoured = heldLiquidContainer.Pour(pourAmount);
+                    float actualAdded = targetGlass.AddLiquid(heldLiquidContainer.liquidName, actualPoured);
+
+                    // Update UI immediately
+                    if (liquidInfoUI != null)
+                    {
+                        liquidInfoUI.SetTargetGlass(targetGlass);
+                    }
+                }
+                else
+                {
+                    // Stop pouring
+                    if (isPouring)
+                    {
+                        isPouring = false;
+                        heldLiquidContainer.StopPouring();
+                        Debug.Log($"[PlayerInteraction] Stopped pouring");
+                        
+                        // Keep UI visible if still looking at glass
+                        if (glassInView != null && liquidInfoUI != null)
+                        {
+                            liquidInfoUI.SetTargetGlass(glassInView);
+                        }
+                        
+                        targetGlass = null;
                     }
                 }
             }
@@ -247,6 +334,9 @@ namespace BarSimulator.Player
                 interactableItem.OnPickedUp();
             }
 
+            // Check if this is a liquid container
+            heldLiquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
+
             Debug.Log($"[PlayerInteraction] Picked up: {heldObject.name}");
 
             // Publish event (optional, for EventBus integration)
@@ -287,9 +377,23 @@ namespace BarSimulator.Player
 
             Debug.Log($"[PlayerInteraction] Placed: {heldObject.name} at {position}");
 
+            // Stop pouring if active
+            if (isPouring && heldLiquidContainer != null)
+            {
+                heldLiquidContainer.StopPouring();
+                isPouring = false;
+            }
+
             // Clear references
             heldObject = null;
             heldRigidbody = null;
+            heldLiquidContainer = null;
+            
+            // Clear UI
+            if (liquidInfoUI != null)
+            {
+                liquidInfoUI.ClearTarget();
+            }
         }
 
         private void Drop()
@@ -323,9 +427,23 @@ namespace BarSimulator.Player
 
             Debug.Log($"[PlayerInteraction] Dropped: {heldObject.name}");
 
+            // Stop pouring if active
+            if (isPouring && heldLiquidContainer != null)
+            {
+                heldLiquidContainer.StopPouring();
+                isPouring = false;
+            }
+
             // Clear references
             heldObject = null;
             heldRigidbody = null;
+            heldLiquidContainer = null;
+            
+            // Clear UI
+            if (liquidInfoUI != null)
+            {
+                liquidInfoUI.ClearTarget();
+            }
         }
 
         private void UpdateHeldObject()
