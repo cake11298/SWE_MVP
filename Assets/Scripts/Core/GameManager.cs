@@ -224,6 +224,13 @@ namespace BarSimulator.Core
                 {
                     ToggleRecipePanel();
                 }
+
+                // Press P to force game end (for testing/quick exit)
+                if (Input.GetKeyDown(KeyCode.P))
+                {
+                    Debug.Log("GameManager: P pressed - forcing game end");
+                    TriggerGameEnd();
+                }
             }
 
             // 如果不是遊玩狀態，不更新遊戲邏輯
@@ -329,6 +336,18 @@ namespace BarSimulator.Core
             StartGame();
         }
 
+        /// <summary>
+        /// Trigger game end (called when time runs out)
+        /// </summary>
+        public void TriggerGameEnd()
+        {
+            if (currentGameState != GameState.GameOver)
+            {
+                Debug.Log("GameManager: Time's up! Game ending...");
+                EndGame(false);
+            }
+        }
+
         #endregion
 
         #region 分數系統
@@ -346,6 +365,12 @@ namespace BarSimulator.Core
             // 計算金幣獎勵
             int coinsEarned = GameScore.CalculateCoins(rating);
             score.totalCoins += coinsEarned;
+
+            // Add coins to persistent data
+            if (BarSimulator.Data.PersistentGameData.Instance != null)
+            {
+                BarSimulator.Data.PersistentGameData.Instance.AddCoins(coinsEarned);
+            }
 
             // 檢查是否滿意 (>= 門檻分數)
             if (rating >= score.satisfactionThreshold)
@@ -378,6 +403,13 @@ namespace BarSimulator.Core
         public void AddCoins(int amount)
         {
             score.totalCoins += amount;
+
+            // Add coins to persistent data
+            if (BarSimulator.Data.PersistentGameData.Instance != null)
+            {
+                BarSimulator.Data.PersistentGameData.Instance.AddCoins(amount);
+            }
+
             OnCoinsUpdated?.Invoke(amount, score.totalCoins);
             Debug.Log($"GameManager: 獲得 {amount} 金幣！總金幣: {score.totalCoins}");
         }
