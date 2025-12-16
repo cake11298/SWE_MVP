@@ -227,12 +227,8 @@ namespace BarSimulator.Managers
 
             OnNPCDialogue?.Invoke(npc, dialogue);
 
-            // 顯示對話框
-            var dialogueBox = UI.DialogueBox.Instance;
-            if (dialogueBox != null)
-            {
-                dialogueBox.ShowDialogue(npc.NPCName, dialogue);
-            }
+            // 顯示對話框 (DialogueBox removed - using Debug.Log instead)
+            Debug.Log($"{npc.NPCName}: {dialogue}");
         }
 
         /// <summary>
@@ -272,14 +268,9 @@ namespace BarSimulator.Managers
             // 觸發事件
             OnNPCDrink?.Invoke(npc, drinkInfo);
 
-            // 顯示評價對話
-            var dialogueBox = UI.DialogueBox.Instance;
-            if (dialogueBox != null)
-            {
-                string response = GetDrinkResponse(npc, evaluation);
-                dialogueBox.ShowDialogue(npc.NPCName, response);
-            }
-
+            // 顯示評價對話 (DialogueBox removed - using Debug.Log instead)
+            string response = GetDrinkResponse(npc, evaluation);
+            Debug.Log($"{npc.NPCName}: {response}");
             Debug.Log($"NPCManager: {npc.NPCName} drank {drinkInfo.cocktailName}, Score: {evaluation.score}");
         }
 

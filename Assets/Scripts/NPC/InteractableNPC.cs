@@ -108,12 +108,8 @@ namespace BarSimulator.NPC
         /// </summary>
         private void ShowDialogueUI()
         {
-            // 尋找 UIBuilder 顯示對話
-            var uiBuilder = UI.UIBuilder.Instance;
-            if (uiBuilder != null)
-            {
-                uiBuilder.ShowMessage($"{npcController.NPCName}: {currentDialogue}");
-            }
+            // UIBuilder removed - using Debug.Log instead
+            Debug.Log($"{npcController.NPCName}: {currentDialogue}");
         }
 
         #endregion

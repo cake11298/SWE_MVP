@@ -6,7 +6,6 @@ using BarSimulator.Objects;
 using BarSimulator.Managers;
 using BarSimulator.NPC;
 using BarSimulator.Player;
-using BarSimulator.UI;
 
 namespace BarSimulator.Editor
 {
@@ -388,20 +387,8 @@ namespace BarSimulator.Editor
                 canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             }
 
-            // Add GameUIController if not exists
-            if (Object.FindFirstObjectByType<GameUIController>() == null)
-            {
-                canvas.gameObject.AddComponent<GameUIController>();
-                Debug.Log("Added GameUIController to Canvas");
-            }
-
-            // Add GameplayHUD for real-time feedback (pouring, glass contents)
-            if (Object.FindFirstObjectByType<GameplayHUD>() == null)
-            {
-                var hudObj = new GameObject("GameplayHUD");
-                hudObj.AddComponent<GameplayHUD>();
-                Debug.Log("Created GameplayHUD for pouring and glass info display");
-            }
+            // Old UI components removed - GameUIController and GameplayHUD no longer exist
+            Debug.Log("Canvas created - ready for new simple UI system");
         }
     }
 }

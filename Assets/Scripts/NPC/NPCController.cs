@@ -1,7 +1,6 @@
 using UnityEngine;
 using BarSimulator.Data;
 using BarSimulator.Objects;
-using BarSimulator.UI;
 
 namespace BarSimulator.NPC
 {
@@ -279,13 +278,9 @@ namespace BarSimulator.NPC
                 var evaluation = DrinkEvaluator.Evaluate(drinkInfo);
                 ReactToDrink(evaluation);
 
-                // 顯示評價
-                var dialogueBox = UI.DialogueBox.Instance;
-                if (dialogueBox != null)
-                {
-                    string response = GetDrinkResponse(evaluation);
-                    dialogueBox.ShowDialogue(NPCName, response);
-                }
+                // 顯示評價 (DialogueBox removed - using Debug.Log instead)
+                string response = GetDrinkResponse(evaluation);
+                Debug.Log($"{NPCName}: {response}");
 
                 Debug.Log($"{NPCName} received drink: {drinkInfo.cocktailName}, Score: {evaluation.score}");
             }
