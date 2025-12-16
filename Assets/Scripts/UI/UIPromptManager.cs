@@ -18,7 +18,8 @@ namespace BarSimulator.UI
         
         [Header("Settings")]
         [SerializeField] private float displayDuration = 3f;
-        [SerializeField] private Color textColor = Color.black;
+        [SerializeField] private Color textColor = Color.white;
+        [SerializeField] private bool enableRichText = true;
         
         private Coroutine hideCoroutine;
         
@@ -56,11 +57,43 @@ namespace BarSimulator.UI
             if (promptTextTMP != null)
             {
                 promptTextTMP.color = textColor;
+                promptTextTMP.richText = enableRichText;
+                
+                // Enable outline for better visibility
+                promptTextTMP.outlineWidth = 0.3f;
+                promptTextTMP.outlineColor = Color.black;
+                
+                // Set font size
+                promptTextTMP.fontSize = 24;
+                
                 promptTextTMP.gameObject.SetActive(false);
             }
             else if (promptText != null)
             {
                 promptText.color = textColor;
+                promptText.supportRichText = enableRichText;
+                
+                // Set font size
+                promptText.fontSize = 24;
+                
+                // Add Outline component for better visibility
+                var outline = promptText.GetComponent<UnityEngine.UI.Outline>();
+                if (outline == null)
+                {
+                    outline = promptText.gameObject.AddComponent<UnityEngine.UI.Outline>();
+                }
+                outline.effectColor = Color.black;
+                outline.effectDistance = new Vector2(2, -2);
+                
+                // Add Shadow for even better visibility
+                var shadow = promptText.GetComponent<UnityEngine.UI.Shadow>();
+                if (shadow == null)
+                {
+                    shadow = promptText.gameObject.AddComponent<UnityEngine.UI.Shadow>();
+                }
+                shadow.effectColor = new Color(0, 0, 0, 0.5f);
+                shadow.effectDistance = new Vector2(1, -1);
+                
                 promptText.gameObject.SetActive(false);
             }
             else

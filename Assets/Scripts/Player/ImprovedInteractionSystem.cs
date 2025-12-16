@@ -79,6 +79,9 @@ namespace BarSimulator.Player
 
             // 更新UI显示
             UpdateLiquidUI();
+            
+            // 检测NPC服务提示
+            CheckNPCServing();
         }
 
         private void DetectInteractableObjects()
@@ -117,14 +120,24 @@ namespace BarSimulator.Player
 
         private void DetectGlassForPouring()
         {
-            // 从手持位置发射射线检测玻璃杯
+            // 从手持位置发射射线检测玻璃杯或Shaker
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             RaycastHit hit;
 
             if (Physics.Raycast(ray, out hit, pourDistance))
             {
                 InteractableItem item = hit.collider.GetComponent<InteractableItem>();
+                
+                // 检测玻璃杯
                 if (item != null && item.itemType == ItemType.Glass)
+                {
+                    HighlightObject(hit.collider.gameObject);
+                    return;
+                }
+                
+                // 检测Shaker（可以接收酒水）
+                var shakerContainer = hit.collider.GetComponent<Objects.ShakerContainer>();
+                if (shakerContainer != null)
                 {
                     HighlightObject(hit.collider.gameObject);
                     return;
@@ -380,23 +393,58 @@ namespace BarSimulator.Player
             if (currentHighlightedObject == null)
                 return;
 
-            InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
-            if (targetItem != null && targetItem.itemType == ItemType.Glass)
+            // 检查是否手持酒瓶
+            if (heldItem != null && heldItem.itemType == ItemType.Bottle)
             {
-                // 获取酒的类型
-                string liquidName = heldItem.liquidType.ToString();
-                
-                Debug.Log($"正在倒酒，倒的是: {liquidName}");
-
-                // 倒酒到杯子
-                targetItem.OnReceiveLiquid(heldItem.liquidType, Time.deltaTime * 30f);
-
-                // 同时倒入GlassContainer（如果存在）
-                var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
-                if (glassContainer != null)
+                // 倒入玻璃杯
+                InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                if (targetItem != null && targetItem.itemType == ItemType.Glass)
                 {
+                    // 获取酒的类型
+                    string liquidName = heldItem.liquidType.ToString();
+                    
+                    Debug.Log($"正在倒酒，倒的是: {liquidName}");
+
+                    // 倒酒到杯子
+                    targetItem.OnReceiveLiquid(heldItem.liquidType, Time.deltaTime * 30f);
+
+                    // 同时倒入GlassContainer（如果存在）
+                    var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                    if (glassContainer != null)
+                    {
+                        float pourAmount = Time.deltaTime * 30f; // 30ml/s
+                        glassContainer.AddLiquid(liquidName, pourAmount);
+                    }
+                    return;
+                }
+                
+                // 倒入Shaker
+                var shakerContainer = currentHighlightedObject.GetComponent<Objects.ShakerContainer>();
+                if (shakerContainer != null && !shakerContainer.IsFull())
+                {
+                    string liquidName = heldItem.liquidType.ToString();
                     float pourAmount = Time.deltaTime * 30f; // 30ml/s
-                    glassContainer.AddLiquid(liquidName, pourAmount);
+                    shakerContainer.AddLiquid(liquidName, pourAmount);
+                    Debug.Log($"正在倒酒到Shaker: {liquidName}");
+                    return;
+                }
+            }
+            
+            // 检查是否手持Shaker（可以倒出）
+            var heldShaker = heldObject != null ? heldObject.GetComponent<Objects.ShakerContainer>() : null;
+            if (heldShaker != null && heldShaker.CanPour())
+            {
+                // 倒入玻璃杯
+                InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                if (targetItem != null && targetItem.itemType == ItemType.Glass)
+                {
+                    var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                    if (glassContainer != null && !glassContainer.IsFull())
+                    {
+                        float pourAmount = Time.deltaTime * 30f; // 30ml/s
+                        heldShaker.PourToGlass(glassContainer, pourAmount);
+                        Debug.Log($"正在从Shaker倒酒到玻璃杯");
+                    }
                 }
             }
         }
@@ -530,6 +578,42 @@ namespace BarSimulator.Player
 
             // Fallback to object name
             return obj.name;
+        }
+
+        /// <summary>
+        /// Check if holding ServeGlass near NPC and show prompt
+        /// </summary>
+        private void CheckNPCServing()
+        {
+            // Only check if holding ServeGlass with liquid
+            if (heldObject == null || heldObject.name != "ServeGlass")
+                return;
+
+            var glassContainer = heldObject.GetComponent<Objects.GlassContainer>();
+            if (glassContainer == null || glassContainer.IsEmpty())
+                return;
+
+            // Find nearby NPCs
+            var allNPCs = FindObjectsOfType<NPC.SimpleNPCServe>();
+            NPC.SimpleNPCServe closestNPC = null;
+            float closestDistance = 3f; // NPC interaction distance
+
+            foreach (var npc in allNPCs)
+            {
+                float distance = Vector3.Distance(transform.position, npc.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestNPC = npc;
+                    closestDistance = distance;
+                }
+            }
+
+            // Show prompt if near NPC
+            if (closestNPC != null)
+            {
+                string npcName = closestNPC.gameObject.name;
+                UIPromptManager.Show($"按下 F 把酒給 {npcName}");
+            }
         }
     }
 }

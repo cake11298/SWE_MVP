@@ -36,6 +36,9 @@ namespace BarSimulator.Player
         [SerializeField] private float pouringDistance = 2f;
         [SerializeField] private UI.LiquidInfoUI liquidInfoUI;
 
+        [Header("NPC Serving")]
+        [SerializeField] private float npcInteractionDistance = 3f;
+
         [Header("References")]
         private Camera playerCamera;
         private GameObject highlightedObject;
@@ -44,7 +47,12 @@ namespace BarSimulator.Player
         // Pouring state
         private bool isPouring = false;
         private Objects.LiquidContainer heldLiquidContainer;
+        private Objects.ShakerContainer heldShakerContainer;
+        private Objects.GlassContainer heldGlassContainer;
         private Objects.GlassContainer targetGlass;
+        
+        // NPC serving state
+        private NPC.SimpleNPCServe nearbyNPC;
 
         private void Awake()
         {
@@ -135,6 +143,9 @@ namespace BarSimulator.Player
 
             // Handle pouring logic
             HandlePouring(hit, hitSomething);
+            
+            // Handle NPC serving prompt
+            HandleNPCServingPrompt();
         }
 
         private bool PerformRaycast(out RaycastHit hit)
@@ -224,27 +235,37 @@ namespace BarSimulator.Player
 
         private void HandlePouring(RaycastHit hit, bool hitSomething)
         {
-            // Check if we're looking at a glass (regardless of holding anything)
+            // Check if we're looking at a glass or shaker (regardless of holding anything)
             Objects.GlassContainer glassInView = null;
+            Objects.ShakerContainer shakerInView = null;
             string targetName = "";
             
             if (hitSomething && hit.distance <= pouringDistance)
             {
                 glassInView = hit.collider.GetComponent<Objects.GlassContainer>();
+                shakerInView = hit.collider.GetComponent<Objects.ShakerContainer>();
+                
                 if (glassInView != null)
+                {
+                    targetName = hit.collider.gameObject.name;
+                }
+                else if (shakerInView != null)
                 {
                     targetName = hit.collider.gameObject.name;
                 }
             }
 
-            // Check if we're holding a liquid container
+            // Check if we're holding a liquid container (bottle)
             bool holdingLiquidContainer = heldObject != null && heldLiquidContainer != null;
+            
+            // Check if we're holding a shaker
+            bool holdingShaker = heldObject != null && heldShakerContainer != null;
 
             // Show UI when looking at a glass OR when holding a glass with liquid
             if (glassInView != null && liquidInfoUI != null)
             {
-                // If holding a bottle and looking at glass, show "Pouring into X"
-                if (holdingLiquidContainer)
+                // If holding a bottle/shaker and looking at glass, show "Pouring into X"
+                if (holdingLiquidContainer || (holdingShaker && heldShakerContainer.CanPour()))
                 {
                     liquidInfoUI.SetTargetGlass(glassInView, targetName);
                 }
@@ -252,6 +273,11 @@ namespace BarSimulator.Player
                 {
                     liquidInfoUI.SetTargetGlass(glassInView);
                 }
+            }
+            else if (shakerInView != null && liquidInfoUI != null && holdingLiquidContainer)
+            {
+                // Show UI when looking at shaker while holding a bottle
+                // Note: We don't have SetTargetShaker, so we'll just show a prompt
             }
             else if (liquidInfoUI != null && !isPouring)
             {
@@ -274,13 +300,13 @@ namespace BarSimulator.Player
                 }
             }
 
-            // Handle pouring logic
-            if (holdingLiquidContainer)
+            // Handle pouring from bottle to glass
+            if (holdingLiquidContainer && glassInView != null)
             {
                 // Handle pouring input (Left Mouse Button held)
                 bool leftClickHeld = Input.GetMouseButton(0);
 
-                if (leftClickHeld && glassInView != null && !glassInView.IsFull() && heldLiquidContainer.CanPour())
+                if (leftClickHeld && !glassInView.IsFull() && heldLiquidContainer.CanPour())
                 {
                     // Start pouring
                     if (!isPouring)
@@ -319,6 +345,93 @@ namespace BarSimulator.Player
                         
                         targetGlass = null;
                     }
+                }
+            }
+            // Handle pouring from bottle to shaker
+            else if (holdingLiquidContainer && shakerInView != null)
+            {
+                bool leftClickHeld = Input.GetMouseButton(0);
+
+                if (leftClickHeld && !shakerInView.IsFull() && heldLiquidContainer.CanPour())
+                {
+                    // Start pouring
+                    if (!isPouring)
+                    {
+                        isPouring = true;
+                        heldLiquidContainer.StartPouring();
+                        Debug.Log($"[PlayerInteraction] Started pouring {heldLiquidContainer.liquidName} into shaker");
+                    }
+
+                    // Pour liquid into shaker
+                    float pourAmount = heldLiquidContainer.pourRate * Time.deltaTime;
+                    float actualPoured = heldLiquidContainer.Pour(pourAmount);
+                    float actualAdded = shakerInView.AddLiquid(heldLiquidContainer.liquidName, actualPoured);
+                }
+                else
+                {
+                    // Stop pouring
+                    if (isPouring)
+                    {
+                        isPouring = false;
+                        heldLiquidContainer.StopPouring();
+                        Debug.Log($"[PlayerInteraction] Stopped pouring into shaker");
+                    }
+                }
+            }
+            // Handle pouring from shaker to glass
+            else if (holdingShaker && glassInView != null)
+            {
+                bool leftClickHeld = Input.GetMouseButton(0);
+
+                if (leftClickHeld && !glassInView.IsFull() && heldShakerContainer.CanPour())
+                {
+                    // Start pouring
+                    if (!isPouring)
+                    {
+                        isPouring = true;
+                        targetGlass = glassInView;
+                        Debug.Log($"[PlayerInteraction] Started pouring from shaker into {targetGlass.name}");
+                    }
+
+                    // Pour liquid from shaker to glass
+                    float pourAmount = heldShakerContainer.pourRate * Time.deltaTime;
+                    float actualPoured = heldShakerContainer.PourToGlass(targetGlass, pourAmount);
+
+                    // Update UI
+                    if (liquidInfoUI != null)
+                    {
+                        liquidInfoUI.SetTargetGlass(targetGlass, targetName);
+                    }
+                }
+                else
+                {
+                    // Stop pouring
+                    if (isPouring)
+                    {
+                        isPouring = false;
+                        Debug.Log($"[PlayerInteraction] Stopped pouring from shaker");
+                        
+                        // Keep UI visible if still looking at glass
+                        if (glassInView != null && liquidInfoUI != null)
+                        {
+                            liquidInfoUI.SetTargetGlass(glassInView);
+                        }
+                        
+                        targetGlass = null;
+                    }
+                }
+            }
+            else
+            {
+                // Stop pouring if we're no longer in a valid pouring state
+                if (isPouring)
+                {
+                    isPouring = false;
+                    if (heldLiquidContainer != null)
+                    {
+                        heldLiquidContainer.StopPouring();
+                    }
+                    targetGlass = null;
                 }
             }
         }
@@ -375,6 +488,12 @@ namespace BarSimulator.Player
 
             // Check if this is a liquid container
             heldLiquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
+            
+            // Check if this is a shaker container
+            heldShakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
+            
+            // Check if this is a glass container
+            heldGlassContainer = heldObject.GetComponent<Objects.GlassContainer>();
 
             Debug.Log($"[PlayerInteraction] Picked up: {heldObject.name}");
             
@@ -431,6 +550,8 @@ namespace BarSimulator.Player
             heldObject = null;
             heldRigidbody = null;
             heldLiquidContainer = null;
+            heldShakerContainer = null;
+            heldGlassContainer = null;
             
             // Clear UI
             if (liquidInfoUI != null)
@@ -481,12 +602,71 @@ namespace BarSimulator.Player
             heldObject = null;
             heldRigidbody = null;
             heldLiquidContainer = null;
+            heldShakerContainer = null;
+            heldGlassContainer = null;
             
             // Clear UI
             if (liquidInfoUI != null)
             {
                 liquidInfoUI.ClearTarget();
             }
+        }
+        
+        /// <summary>
+        /// Handle NPC serving prompt when holding ServeGlass near NPC
+        /// </summary>
+        private void HandleNPCServingPrompt()
+        {
+            // Only show prompt if holding ServeGlass with liquid
+            if (heldObject == null || heldGlassContainer == null || heldGlassContainer.IsEmpty())
+            {
+                nearbyNPC = null;
+                return;
+            }
+            
+            // Check if we're holding ServeGlass specifically
+            if (heldObject.name != "ServeGlass")
+            {
+                nearbyNPC = null;
+                return;
+            }
+            
+            // Find nearby NPCs
+            NPC.SimpleNPCServe[] allNPCs = FindObjectsOfType<NPC.SimpleNPCServe>();
+            NPC.SimpleNPCServe closestNPC = null;
+            float closestDistance = npcInteractionDistance;
+            
+            foreach (var npc in allNPCs)
+            {
+                float distance = Vector3.Distance(transform.position, npc.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestNPC = npc;
+                    closestDistance = distance;
+                }
+            }
+            
+            // Update nearby NPC
+            if (closestNPC != nearbyNPC)
+            {
+                nearbyNPC = closestNPC;
+                
+                if (nearbyNPC != null)
+                {
+                    // Show styled prompt with NPC name
+                    string npcName = nearbyNPC.gameObject.name;
+                    ShowStyledPrompt($"按下 F 把酒給 {npcName}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Show a styled prompt with black outline and white text
+        /// </summary>
+        private void ShowStyledPrompt(string message)
+        {
+            // UIPromptManager now handles outline automatically
+            UIPromptManager.Show(message);
         }
 
         private void UpdateHeldObject()
