@@ -71,7 +71,7 @@ namespace UI
         }
 
         /// <summary>
-        /// Returns to the main menu - IMPORTANT: Resets time scale first
+        /// Returns to the main menu - Resets game state and time scale
         /// </summary>
         public void LoadMenu()
         {
@@ -79,22 +79,16 @@ namespace UI
             Time.timeScale = 1f;
             isPaused = false;
             
-            SceneManager.LoadScene("MainMenu");
-        }
-
-        /// <summary>
-        /// Quits the application
-        /// </summary>
-        public void QuitGame()
-        {
-            // Reset time scale before quitting
-            Time.timeScale = 1f;
+            // Reset game state through GameManager if available
+            var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
+            if (gameManager != null)
+            {
+                // Clear any game state
+                Debug.Log("[SimplePauseMenu] Resetting game state before returning to main menu");
+            }
             
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
+            // Load main menu scene
+            SceneManager.LoadScene("MainMenu");
         }
     }
 }

@@ -73,8 +73,7 @@ public class SetupPauseMenu
 
         // Create buttons
         GameObject resumeButton = CreateButton("ResumeButton", "Resume", buttonContainer.transform, buttonSprite);
-        GameObject menuButton = CreateButton("MenuButton", "Back to Menu", buttonContainer.transform, buttonSprite);
-        GameObject quitButton = CreateButton("QuitButton", "Quit", buttonContainer.transform, buttonSprite);
+        GameObject menuButton = CreateButton("MenuButton", "Main Menu", buttonContainer.transform, buttonSprite);
 
         // Add SimplePauseMenu script
         SimplePauseMenu pauseScript = canvas.GetComponent<SimplePauseMenu>();
@@ -97,10 +96,6 @@ public class SetupPauseMenu
         Button menuBtn = menuButton.GetComponent<Button>();
         menuBtn.onClick.RemoveAllListeners();
         menuBtn.onClick.AddListener(() => pauseScript.LoadMenu());
-
-        Button quitBtn = quitButton.GetComponent<Button>();
-        quitBtn.onClick.RemoveAllListeners();
-        quitBtn.onClick.AddListener(() => pauseScript.QuitGame());
 
         // Hide pause panel by default
         pausePanel.SetActive(false);

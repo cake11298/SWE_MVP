@@ -219,24 +219,56 @@ namespace BarSimulator.Player
         {
             // Check if we're looking at a glass (regardless of holding anything)
             Objects.GlassContainer glassInView = null;
+            string targetName = "";
+            
             if (hitSomething && hit.distance <= pouringDistance)
             {
                 glassInView = hit.collider.GetComponent<Objects.GlassContainer>();
-            }
-
-            // Always show UI when looking at a glass
-            if (glassInView != null && liquidInfoUI != null)
-            {
-                liquidInfoUI.SetTargetGlass(glassInView);
-            }
-            else if (liquidInfoUI != null && !isPouring)
-            {
-                // Only clear UI if not currently pouring
-                liquidInfoUI.ClearTarget();
+                if (glassInView != null)
+                {
+                    targetName = hit.collider.gameObject.name;
+                }
             }
 
             // Check if we're holding a liquid container
-            if (heldObject != null && heldLiquidContainer != null)
+            bool holdingLiquidContainer = heldObject != null && heldLiquidContainer != null;
+
+            // Show UI when looking at a glass OR when holding a glass with liquid
+            if (glassInView != null && liquidInfoUI != null)
+            {
+                // If holding a bottle and looking at glass, show "Pouring into X"
+                if (holdingLiquidContainer)
+                {
+                    liquidInfoUI.SetTargetGlass(glassInView, targetName);
+                }
+                else
+                {
+                    liquidInfoUI.SetTargetGlass(glassInView);
+                }
+            }
+            else if (liquidInfoUI != null && !isPouring)
+            {
+                // Check if we're holding a glass with liquid
+                if (heldObject != null)
+                {
+                    var heldGlass = heldObject.GetComponent<Objects.GlassContainer>();
+                    if (heldGlass != null && heldGlass.currentTotalVolume > 0)
+                    {
+                        liquidInfoUI.SetTargetGlass(heldGlass);
+                    }
+                    else
+                    {
+                        liquidInfoUI.ClearTarget();
+                    }
+                }
+                else
+                {
+                    liquidInfoUI.ClearTarget();
+                }
+            }
+
+            // Handle pouring logic
+            if (holdingLiquidContainer)
             {
                 // Handle pouring input (Left Mouse Button held)
                 bool leftClickHeld = Input.GetMouseButton(0);
@@ -257,10 +289,10 @@ namespace BarSimulator.Player
                     float actualPoured = heldLiquidContainer.Pour(pourAmount);
                     float actualAdded = targetGlass.AddLiquid(heldLiquidContainer.liquidName, actualPoured);
 
-                    // Update UI immediately
+                    // Update UI immediately with pouring target name
                     if (liquidInfoUI != null)
                     {
-                        liquidInfoUI.SetTargetGlass(targetGlass);
+                        liquidInfoUI.SetTargetGlass(targetGlass, targetName);
                     }
                 }
                 else

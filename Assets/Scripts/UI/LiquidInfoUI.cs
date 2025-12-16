@@ -7,6 +7,7 @@ namespace BarSimulator.UI
     /// <summary>
     /// UI display for glass liquid contents.
     /// Shows capacity bar and ingredient list.
+    /// Also shows pouring target information.
     /// </summary>
     public class LiquidInfoUI : MonoBehaviour
     {
@@ -23,13 +24,17 @@ namespace BarSimulator.UI
         [Tooltip("Panel to show/hide")]
         public GameObject infoPanel;
 
+        [Tooltip("Title text for showing pouring target")]
+        public Text titleText;
+
         [Header("Settings")]
         [Tooltip("Update interval in seconds")]
-        public float updateInterval = 0.05f; // 更快的更新頻率
+        public float updateInterval = 0.05f;
 
         // Private state
         private Objects.GlassContainer targetGlass;
         private float updateTimer = 0f;
+        private string pouringTargetName = "";
 
         private void Awake()
         {
@@ -52,9 +57,10 @@ namespace BarSimulator.UI
         /// <summary>
         /// Set the target glass to display.
         /// </summary>
-        public void SetTargetGlass(Objects.GlassContainer glass)
+        public void SetTargetGlass(Objects.GlassContainer glass, string pouringTarget = "")
         {
             targetGlass = glass;
+            pouringTargetName = pouringTarget;
 
             if (targetGlass != null)
             {
@@ -85,6 +91,19 @@ namespace BarSimulator.UI
             {
                 HideUI();
                 return;
+            }
+
+            // Update title text with pouring target info
+            if (titleText != null)
+            {
+                if (!string.IsNullOrEmpty(pouringTargetName))
+                {
+                    titleText.text = $"Pouring into {pouringTargetName}";
+                }
+                else
+                {
+                    titleText.text = "Glass Contents";
+                }
             }
 
             // Update capacity slider
