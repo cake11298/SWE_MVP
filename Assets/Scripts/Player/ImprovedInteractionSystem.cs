@@ -21,6 +21,9 @@ namespace BarSimulator.Player
         [Header("高亮设置")]
         [SerializeField] private Color highlightColor = Color.yellow;
 
+        [Header("UI引用")]
+        [SerializeField] private UI.LiquidInfoUI liquidInfoUI;
+
         private Camera playerCamera;
         private Transform handPosition;
         
@@ -51,6 +54,12 @@ namespace BarSimulator.Player
             handObj.transform.SetParent(playerCamera.transform);
             handObj.transform.localPosition = handOffset;
             handPosition = handObj.transform;
+
+            // 查找LiquidInfoUI
+            if (liquidInfoUI == null)
+            {
+                liquidInfoUI = FindObjectOfType<UI.LiquidInfoUI>();
+            }
         }
 
         private void Update()
@@ -66,6 +75,9 @@ namespace BarSimulator.Player
             {
                 UpdateHeldObjectPosition();
             }
+
+            // 更新UI显示
+            UpdateLiquidUI();
         }
 
         private void DetectInteractableObjects()
@@ -367,7 +379,70 @@ namespace BarSimulator.Player
 
                 // 倒酒到杯子
                 targetItem.OnReceiveLiquid(heldItem.liquidType, Time.deltaTime * 30f);
+
+                // 同时倒入GlassContainer（如果存在）
+                var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                if (glassContainer != null)
+                {
+                    float pourAmount = Time.deltaTime * 30f; // 30ml/s
+                    glassContainer.AddLiquid(liquidName, pourAmount);
+                }
             }
+        }
+
+        private void UpdateLiquidUI()
+        {
+            if (liquidInfoUI == null)
+                return;
+
+            // 如果手持酒瓶并且正在看着玻璃杯
+            if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Bottle)
+            {
+                if (currentHighlightedObject != null)
+                {
+                    InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                    if (targetItem != null && targetItem.itemType == ItemType.Glass)
+                    {
+                        // 显示"Pouring into ServeGlass"
+                        var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                        if (glassContainer != null)
+                        {
+                            string targetName = currentHighlightedObject.name;
+                            liquidInfoUI.SetTargetGlass(glassContainer, targetName);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 如果手持玻璃杯
+            if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Glass)
+            {
+                var glassContainer = heldObject.GetComponent<Objects.GlassContainer>();
+                if (glassContainer != null && !glassContainer.IsEmpty())
+                {
+                    liquidInfoUI.SetTargetGlass(glassContainer);
+                    return;
+                }
+            }
+
+            // 如果正在看着有液体的玻璃杯
+            if (currentHighlightedObject != null && heldObject == null)
+            {
+                InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                if (targetItem != null && targetItem.itemType == ItemType.Glass)
+                {
+                    var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                    if (glassContainer != null && !glassContainer.IsEmpty())
+                    {
+                        liquidInfoUI.SetTargetGlass(glassContainer);
+                        return;
+                    }
+                }
+            }
+
+            // 默认情况：清除UI
+            liquidInfoUI.ClearTarget();
         }
 
         private void OnDrawGizmos()

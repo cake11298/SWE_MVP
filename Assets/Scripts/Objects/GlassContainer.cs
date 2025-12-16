@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Text;
+using BarSimulator.Data;
 
 namespace BarSimulator.Objects
 {
@@ -10,6 +11,8 @@ namespace BarSimulator.Objects
     /// </summary>
     public class GlassContainer : MonoBehaviour
     {
+        // Reference to LiquorDatabase
+        private static LiquorDatabase liquorDatabase;
         [Header("Glass Properties")]
         [Tooltip("Maximum capacity in ml")]
         public float maxGlassVolume = 300f;
@@ -99,6 +102,12 @@ namespace BarSimulator.Objects
                 return "Empty";
             }
 
+            // Load database if not already loaded
+            if (liquorDatabase == null)
+            {
+                liquorDatabase = Resources.Load<LiquorDatabase>("LiquorDataBase");
+            }
+
             StringBuilder sb = new StringBuilder();
             bool first = true;
 
@@ -108,7 +117,19 @@ namespace BarSimulator.Objects
                 {
                     sb.Append(", ");
                 }
-                sb.Append($"{kvp.Key} {kvp.Value:F0}ml");
+
+                // Try to get display name from database
+                string displayName = kvp.Key;
+                if (liquorDatabase != null)
+                {
+                    var liquorData = liquorDatabase.GetLiquor(kvp.Key.ToLower());
+                    if (liquorData != null)
+                    {
+                        displayName = liquorData.displayName;
+                    }
+                }
+
+                sb.Append($"{displayName} {kvp.Value:F0}ml");
                 first = false;
             }
 

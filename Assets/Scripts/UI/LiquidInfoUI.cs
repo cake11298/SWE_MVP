@@ -38,10 +38,10 @@ namespace BarSimulator.UI
 
         private void Awake()
         {
-            // Hide panel initially
+            // Show panel by default
             if (infoPanel != null)
             {
-                infoPanel.SetActive(false);
+                infoPanel.SetActive(true);
             }
         }
 
