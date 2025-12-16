@@ -1,4 +1,5 @@
 using UnityEngine;
+using BarSimulator.UI;
 
 namespace BarSimulator.Interaction
 {
@@ -124,11 +125,21 @@ namespace BarSimulator.Interaction
         public virtual void OnTargeted()
         {
             // 可覆寫：高亮顯示等
+            
+            // Show interaction prompt by default
+            if (!string.IsNullOrEmpty(displayName))
+            {
+                string actionText = GetActionText();
+                UIPromptManager.Show($"{actionText} {displayName}");
+            }
         }
 
         public virtual void OnUntargeted()
         {
             // 可覆寫：取消高亮等
+            
+            // Hide interaction prompt
+            UIPromptManager.Hide();
         }
 
         public virtual void OnPickup()
@@ -206,6 +217,25 @@ namespace BarSimulator.Interaction
                 InteractableType.Guitar => "吉他",
                 _ => "物品"
             };
+        }
+
+        /// <summary>
+        /// 取得互動動作文字
+        /// </summary>
+        protected virtual string GetActionText()
+        {
+            if (canPickup)
+            {
+                return "按 E 拾取";
+            }
+            else if (interactableType == InteractableType.NPC)
+            {
+                return "按 E 與";
+            }
+            else
+            {
+                return "按 E 互動";
+            }
         }
 
         #endregion

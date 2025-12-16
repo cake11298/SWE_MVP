@@ -1,4 +1,5 @@
 using UnityEngine;
+using BarSimulator.UI;
 
 namespace BarSimulator.Player
 {
@@ -156,6 +157,9 @@ namespace BarSimulator.Player
                 }
                 currentHighlightedRenderer.materials = newMaterials;
             }
+
+            // Show interaction prompt
+            ShowInteractionPrompt(obj);
         }
 
         private void ClearHighlight()
@@ -168,6 +172,9 @@ namespace BarSimulator.Player
 
             currentHighlightedObject = null;
             currentHighlightedRenderer = null;
+
+            // Hide interaction prompt
+            UIPromptManager.Hide();
         }
 
         private void HandleInput()
@@ -217,6 +224,10 @@ namespace BarSimulator.Player
 
             // 拾取物品
             heldObject = currentHighlightedObject;
+
+            // Show pickup prompt
+            string itemName = GetFriendlyName(heldObject);
+            UIPromptManager.Show($"拾取了 {itemName}");
             heldItem = item;
 
             // 禁用物理
@@ -460,6 +471,65 @@ namespace BarSimulator.Player
                 Gizmos.color = Color.blue;
                 Gizmos.DrawRay(playerCamera.transform.position, playerCamera.transform.forward * pourDistance);
             }
+        }
+
+        /// <summary>
+        /// Show interaction prompt for the targeted object
+        /// </summary>
+        private void ShowInteractionPrompt(GameObject obj)
+        {
+            if (obj == null) return;
+
+            string itemName = GetFriendlyName(obj);
+            
+            // Different prompts based on what we're holding
+            if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Bottle)
+            {
+                // Holding bottle, looking at glass
+                UIPromptManager.Show($"按住左鍵倒酒到 {itemName}");
+            }
+            else
+            {
+                // Not holding anything, looking at item
+                UIPromptManager.Show($"按 E 拾取 {itemName}");
+            }
+        }
+
+        /// <summary>
+        /// Get friendly display name for an object
+        /// </summary>
+        private string GetFriendlyName(GameObject obj)
+        {
+            // Check for InteractableItem component
+            var interactableItem = obj.GetComponent<InteractableItem>();
+            if (interactableItem != null && !string.IsNullOrEmpty(interactableItem.itemName))
+            {
+                return interactableItem.itemName;
+            }
+
+            // Check for IInteractable interface
+            var interactable = obj.GetComponent<BarSimulator.Interaction.IInteractable>();
+            if (interactable != null && !string.IsNullOrEmpty(interactable.DisplayName))
+            {
+                return interactable.DisplayName;
+            }
+
+            // Check for LiquidContainer
+            var liquidContainer = obj.GetComponent<Objects.LiquidContainer>();
+            if (liquidContainer != null && !string.IsNullOrEmpty(liquidContainer.liquidName))
+            {
+                return liquidContainer.liquidName;
+            }
+
+            // Check for GlassContainer
+            var glassContainer = obj.GetComponent<Objects.GlassContainer>();
+            if (glassContainer != null)
+            {
+                return "玻璃杯";
+            }
+
+            // Fallback to object name
+            return obj.name;
         }
     }
 }

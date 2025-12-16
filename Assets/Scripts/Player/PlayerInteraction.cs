@@ -1,5 +1,6 @@
 using UnityEngine;
 using BarSimulator.Core;
+using BarSimulator.UI;
 
 namespace BarSimulator.Player
 {
@@ -109,10 +110,16 @@ namespace BarSimulator.Player
                     if (highlightedObject != null)
                     {
                         highlightSystem.HighlightObject(highlightedObject);
+                        
+                        // Show interaction prompt
+                        ShowInteractionPrompt(highlightedObject);
                     }
                     else
                     {
                         highlightSystem.ClearHighlight();
+                        
+                        // Hide interaction prompt
+                        UIPromptManager.Hide();
                     }
                 }
             }
@@ -370,6 +377,10 @@ namespace BarSimulator.Player
             heldLiquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
 
             Debug.Log($"[PlayerInteraction] Picked up: {heldObject.name}");
+            
+            // Show pickup prompt
+            string itemName = GetFriendlyName(target);
+            UIPromptManager.Show($"拾取了 {itemName}");
 
             // Publish event (optional, for EventBus integration)
             if (EventBus.GetSubscriberCount<InteractionInputEvent>() > 0)
@@ -509,6 +520,54 @@ namespace BarSimulator.Player
                                            obj.GetComponent<StaticProp>() != null;
             
             return hasInteractableComponent;
+        }
+
+        /// <summary>
+        /// Show interaction prompt for the targeted object
+        /// </summary>
+        private void ShowInteractionPrompt(GameObject obj)
+        {
+            if (obj == null) return;
+
+            string itemName = GetFriendlyName(obj);
+            UIPromptManager.Show($"按 E 拾取 {itemName}");
+        }
+
+        /// <summary>
+        /// Get friendly display name for an object
+        /// </summary>
+        private string GetFriendlyName(GameObject obj)
+        {
+            // Check for InteractableItem component
+            var interactableItem = obj.GetComponent<InteractableItem>();
+            if (interactableItem != null && !string.IsNullOrEmpty(interactableItem.itemName))
+            {
+                return interactableItem.itemName;
+            }
+
+            // Check for IInteractable interface
+            var interactable = obj.GetComponent<BarSimulator.Interaction.IInteractable>();
+            if (interactable != null && !string.IsNullOrEmpty(interactable.DisplayName))
+            {
+                return interactable.DisplayName;
+            }
+
+            // Check for LiquidContainer
+            var liquidContainer = obj.GetComponent<Objects.LiquidContainer>();
+            if (liquidContainer != null && !string.IsNullOrEmpty(liquidContainer.liquidName))
+            {
+                return liquidContainer.liquidName;
+            }
+
+            // Check for GlassContainer
+            var glassContainer = obj.GetComponent<Objects.GlassContainer>();
+            if (glassContainer != null)
+            {
+                return "玻璃杯";
+            }
+
+            // Fallback to object name
+            return obj.name;
         }
 
         // ===================================================================
