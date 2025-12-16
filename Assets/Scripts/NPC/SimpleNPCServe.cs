@@ -1,11 +1,13 @@
 using UnityEngine;
 using BarSimulator.Objects;
 using BarSimulator.Core;
+using BarSimulator.UI;
 
 namespace BarSimulator.NPC
 {
     /// <summary>
     /// Simple NPC serving system - Press F near NPC with a non-empty glass to serve and earn coins
+    /// NPCs randomly order drinks: Neat Gin, Neat Whiskey, or Neat Cointreau
     /// </summary>
     public class SimpleNPCServe : MonoBehaviour
     {
@@ -20,9 +22,16 @@ namespace BarSimulator.NPC
         [Tooltip("Player transform (auto-detected if null)")]
         [SerializeField] private Transform player;
 
+        [Header("Order Settings")]
+        [Tooltip("Available drinks to order")]
+        [SerializeField] private string[] availableDrinks = { "Neat Gin", "Neat Whiskey", "Neat Cointreau" };
+
         // Private state
         private bool playerNearby = false;
         private GlassContainer heldGlass = null;
+        private string currentOrder = "";
+        private NPCOrdersUI ordersUI;
+        private GameStatsUI statsUI;
 
         private void Start()
         {
@@ -35,6 +44,13 @@ namespace BarSimulator.NPC
                     player = playerObj.transform;
                 }
             }
+
+            // Find UI references
+            ordersUI = FindFirstObjectByType<NPCOrdersUI>();
+            statsUI = FindFirstObjectByType<GameStatsUI>();
+
+            // Generate random order for this NPC
+            GenerateRandomOrder();
         }
 
         private void Update()
@@ -112,21 +128,59 @@ namespace BarSimulator.NPC
             // Add coins to GameManager
             if (GameManager.Instance != null)
             {
-                var score = GameManager.Instance.GetScore();
-                score.totalCoins += coinsPerServe;
+                GameManager.Instance.AddCoins(coinsPerServe);
                 
-                Debug.Log($"SimpleNPCServe: Served drink ({drinkContents}, {totalVolume:F0}ml) to {gameObject.name}. Earned {coinsPerServe} coins! Total coins: {score.totalCoins}");
-                
-                // Note: OnCoinsUpdated event can only be invoked from within GameManager
-                // We'll just log the coin update here
+                Debug.Log($"SimpleNPCServe: Served drink ({drinkContents}, {totalVolume:F0}ml) to {gameObject.name}. Earned {coinsPerServe} coins!");
             }
             else
             {
                 Debug.LogWarning("SimpleNPCServe: GameManager not found! Cannot add coins.");
+                
+                // Update GameStatsUI directly as backup
+                if (statsUI != null)
+                {
+                    statsUI.AddMoney(coinsPerServe);
+                }
+            }
+
+            // Remove order from UI
+            if (ordersUI != null)
+            {
+                ordersUI.RemoveNPCOrder(gameObject.name);
             }
 
             // Play feedback (optional - can add sound/animation here)
             Debug.Log($"SimpleNPCServe: {gameObject.name} says: Thanks for the drink!");
+
+            // Generate new order after a delay
+            Invoke(nameof(GenerateRandomOrder), 2f);
+        }
+
+        /// <summary>
+        /// Generate a random drink order for this NPC
+        /// </summary>
+        private void GenerateRandomOrder()
+        {
+            if (availableDrinks.Length == 0) return;
+
+            // Pick random drink
+            currentOrder = availableDrinks[Random.Range(0, availableDrinks.Length)];
+
+            // Update UI
+            if (ordersUI != null)
+            {
+                ordersUI.SetNPCOrder(gameObject.name, currentOrder);
+            }
+
+            Debug.Log($"SimpleNPCServe: {gameObject.name} wants {currentOrder}");
+        }
+
+        /// <summary>
+        /// Get current order
+        /// </summary>
+        public string GetCurrentOrder()
+        {
+            return currentOrder;
         }
 
         /// <summary>
