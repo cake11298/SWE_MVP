@@ -1,5 +1,6 @@
 using UnityEngine;
 using BarSimulator.UI;
+using BarSimulator.QTE;
 
 namespace BarSimulator.Player
 {
@@ -219,6 +220,42 @@ namespace BarSimulator.Player
                     TryPourLiquid();
                 }
             }
+
+            // 按下右鍵: 開始搖酒
+            if (Input.GetMouseButtonDown(1) && heldObject != null && heldItem != null)
+            {
+                if(heldItem.itemType != ItemType.Shaker)
+                    return;
+                
+                var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
+
+                if (shaker != null)
+                {
+                    // 開始搖晃
+                    Debug.Log("[HandleInput] 搖晃 Shaker");
+                    QTEManager.Instance.StartShakeQTE();
+                }
+                else
+                {
+                    Debug.Log("[HandleInput] 手上不是 Shaker");
+                }
+            }
+
+            // 鬆開右鍵: 停止搖酒
+            if (Input.GetMouseButtonUp(1) && heldObject != null && heldItem != null)
+            {
+                if(heldItem.itemType != ItemType.Shaker)
+                    return;
+                
+                var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
+
+                if (shaker != null)
+                {
+                    Debug.Log("[HandleInput] 中斷 Shaker");
+                    QTEManager.Instance.StopShakeQTE();
+                    
+                }
+            }
         }
 
         private void TryPickupObject()
@@ -275,6 +312,7 @@ namespace BarSimulator.Player
             item.OnPickedUp();
 
             Debug.Log($"拾取了: {heldObject.name}，位置: {heldObject.transform.position}");
+            Debug.Log($"類別: {item.itemType}");
         }
 
         private void ReturnToOriginalPosition()
