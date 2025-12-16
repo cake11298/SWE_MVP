@@ -142,7 +142,7 @@ namespace BarSimulator.QTE
                 float totalRotated = -currentDirection * 10f;
 
                 // 等待隨機時間後開始搖晃
-                Debug.Log($"[QTERoutine] 等待 {waitTime:.0f}秒 QTE");
+                Debug.Log($"[QTERoutine] 等待 {waitTime:F0}秒 QTE");
                 while (currentTimer < waitTime)
                 {
                     yield return null; 
@@ -181,13 +181,13 @@ namespace BarSimulator.QTE
                         if (angleDiff <= 30f)
                         {
                             results.Add(true);
+                            Debug.Log($"[QTERoutine] 第 {i+1} 回合成功！");
                         }
                         else
                         {
                             results.Add(false);
+                            Debug.Log($"[QTERoutine] 第 {i+1} 回合失敗！");
                         }
-
-                        Debug.Log($"[QTERoutine] 第 {i+1} 回合成功！");
                         break;
                     }
 
@@ -217,12 +217,17 @@ namespace BarSimulator.QTE
                     successCount++;
             }
 
+            float quality;
             if (successCount == 3)
-                onFinish?.Invoke(1f);
+                quality = 1f;
             else if (successCount == 2)
-                onFinish?.Invoke(0.8f);
+                quality = 0.8f;
+            else if (successCount == 1)
+                quality = 0.6f;
             else
-                onFinish?.Invoke(0.5f);
+                quality = 0.5f;
+            
+            onFinish?.Invoke(quality);
         }
     }
 }
