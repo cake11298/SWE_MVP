@@ -84,6 +84,9 @@ namespace BarSimulator.Data
         [Tooltip("最大容量 (ml)")]
         public float maxVolume;
 
+        [Tooltip("是否已搖晃")]
+        public bool isShaken;
+
         /// <summary>
         /// 預設建構子
         /// </summary>
@@ -141,6 +144,9 @@ namespace BarSimulator.Data
             }
 
             volume += ingredient.amount;
+
+            // 添加新成分後，重置搖晃狀態
+            isShaken = false;
 
             // 更新混合顏色
             UpdateMixedColor();
@@ -223,6 +229,7 @@ namespace BarSimulator.Data
             ingredients.Clear();
             volume = 0f;
             mixedColor = new Color(1f, 1f, 1f, 0f);
+            isShaken = false;
         }
 
         /// <summary>
@@ -258,7 +265,8 @@ namespace BarSimulator.Data
             var clone = new ContainerContents(maxVolume)
             {
                 volume = volume,
-                mixedColor = mixedColor
+                mixedColor = mixedColor,
+                isShaken = isShaken
             };
 
             foreach (var ingredient in ingredients)

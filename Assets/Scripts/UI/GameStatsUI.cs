@@ -15,12 +15,14 @@ namespace BarSimulator.UI
         [SerializeField] private Text timeText;
 
         [Header("Time Settings")]
-        [SerializeField] private float realMinutesForFullDay = 12f; // 12 real minutes = 20:00 to 24:00 (4 hours)
+        [SerializeField] private float realMinutesForFullDay = 0.5f; // 0.5 real minutes = 20:00 to 20:10 (10 minutes)
         
         // Game time settings
         private const int START_HOUR = 20;  // 20:00:00
-        private const int END_HOUR = 24;   // 24:00:00
-        private const int TOTAL_GAME_HOURS = END_HOUR - START_HOUR; // 4 hours
+        private const int START_MINUTE = 0; // 00
+        private const int END_HOUR = 20;   // 20:10:00
+        private const int END_MINUTE = 10; // 10
+        private const int TOTAL_GAME_MINUTES = 10; // 10 minutes
         
         private float gameStartTime;
         private int currentMoney = 0;
@@ -92,25 +94,23 @@ namespace BarSimulator.UI
             float elapsedRealTime = Time.time - gameStartTime;
             
             // Convert real time to game time
-            // realMinutesForFullDay real minutes = TOTAL_GAME_HOURS game hours
-            float gameHoursElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_HOURS / realMinutesForFullDay);
+            // realMinutesForFullDay real minutes = TOTAL_GAME_MINUTES game minutes
+            float gameMinutesElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_MINUTES / realMinutesForFullDay);
             
-            // Calculate current game hour
-            int currentHour = START_HOUR + Mathf.FloorToInt(gameHoursElapsed);
+            // Calculate current minute and second
+            int totalMinutes = START_MINUTE + Mathf.FloorToInt(gameMinutesElapsed);
             
             // Clamp to end time
-            if (currentHour >= END_HOUR)
+            if (totalMinutes >= END_MINUTE)
             {
-                return "24:00:00";
+                return $"{END_HOUR:D2}:{END_MINUTE:D2}:00";
             }
             
-            // Calculate minutes and seconds
-            float remainingHours = gameHoursElapsed - Mathf.Floor(gameHoursElapsed);
-            int currentMinute = Mathf.FloorToInt(remainingHours * 60f);
-            float remainingMinutes = (remainingHours * 60f) - currentMinute;
+            // Calculate seconds
+            float remainingMinutes = gameMinutesElapsed - Mathf.Floor(gameMinutesElapsed);
             int currentSecond = Mathf.FloorToInt(remainingMinutes * 60f);
             
-            return $"{currentHour:D2}:{currentMinute:D2}:{currentSecond:D2}";
+            return $"{START_HOUR:D2}:{totalMinutes:D2}:{currentSecond:D2}";
         }
 
         /// <summary>
@@ -130,15 +130,15 @@ namespace BarSimulator.UI
         }
 
         /// <summary>
-        /// Check if game should end (reached 24:00:00)
+        /// Check if game should end (reached 20:10:00)
         /// </summary>
         private void CheckGameEnd()
         {
             float elapsedRealTime = Time.time - gameStartTime;
-            float gameHoursElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_HOURS / realMinutesForFullDay);
-            int currentHour = START_HOUR + Mathf.FloorToInt(gameHoursElapsed);
+            float gameMinutesElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_MINUTES / realMinutesForFullDay);
+            int totalMinutes = START_MINUTE + Mathf.FloorToInt(gameMinutesElapsed);
             
-            if (currentHour >= END_HOUR)
+            if (totalMinutes >= END_MINUTE)
             {
                 // Game ended, trigger game over
                 if (GameManager.Instance != null)
@@ -149,13 +149,13 @@ namespace BarSimulator.UI
         }
 
         /// <summary>
-        /// Get current game hour for external use
+        /// Get current game minute for external use
         /// </summary>
-        public int GetCurrentGameHour()
+        public int GetCurrentGameMinute()
         {
             float elapsedRealTime = Time.time - gameStartTime;
-            float gameHoursElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_HOURS / realMinutesForFullDay);
-            return START_HOUR + Mathf.FloorToInt(gameHoursElapsed);
+            float gameMinutesElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_MINUTES / realMinutesForFullDay);
+            return START_MINUTE + Mathf.FloorToInt(gameMinutesElapsed);
         }
     }
 }

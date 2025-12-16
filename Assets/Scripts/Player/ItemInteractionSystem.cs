@@ -37,6 +37,9 @@ namespace BarSimulator.Player
         private Renderer currentHighlightedRenderer;
         private Material[] originalMaterials;
 
+        // Shaker控制器
+        private ShakerController shakerController;
+
         private void Awake()
         {
             // 获取相机
@@ -57,6 +60,9 @@ namespace BarSimulator.Player
 
             // 创建高亮材质
             CreateHighlightMaterial();
+
+            // 获取ShakerController
+            shakerController = GetComponent<ShakerController>();
         }
 
         private void Update()
@@ -229,6 +235,13 @@ namespace BarSimulator.Player
             // 通知物品被拾取
             item.OnPickedUp();
 
+            // 如果是Shaker，通知ShakerController
+            var shaker = heldObject.GetComponent<Objects.Shaker>();
+            if (shaker != null && shakerController != null)
+            {
+                shakerController.SetShaker(shaker);
+            }
+
             Debug.Log($"拾取了: {heldObject.name}");
 
             // Show pickup prompt
@@ -240,6 +253,13 @@ namespace BarSimulator.Player
         {
             if (heldObject == null)
                 return;
+
+            // 如果是Shaker，通知ShakerController
+            var shaker = heldObject.GetComponent<Objects.Shaker>();
+            if (shaker != null && shakerController != null)
+            {
+                shakerController.ClearShaker();
+            }
 
             // 恢复物理
             if (heldRigidbody != null)

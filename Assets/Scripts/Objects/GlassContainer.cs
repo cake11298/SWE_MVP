@@ -21,6 +21,9 @@ namespace BarSimulator.Objects
         [Tooltip("Current total volume in ml")]
         public float currentTotalVolume = 0f;
 
+        [Tooltip("Is the drink shaken")]
+        public bool isShaken = false;
+
         // Dictionary to track liquid contents: liquidName -> amount (ml)
         private Dictionary<string, float> liquidContents = new Dictionary<string, float>();
 

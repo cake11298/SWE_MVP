@@ -1,6 +1,7 @@
 using UnityEngine;
 using BarSimulator.Core;
 using BarSimulator.Interaction;
+using BarSimulator.Systems;
 
 namespace BarSimulator.Objects
 {
@@ -21,6 +22,10 @@ namespace BarSimulator.Objects
         [Tooltip("需要搖晃的最短時間（秒）才能完成混合")]
         [SerializeField] private float minShakeTime = 2f;
 
+        [Header("QTE設定")]
+        [Tooltip("QTE系統")]
+        [SerializeField] private ShakerQTESystem qteSystem;
+
         [Header("倒酒設定")]
         [Tooltip("倒酒時的傾斜角度")]
         [SerializeField] private float pourTiltAngle = 60f;
@@ -37,6 +42,7 @@ namespace BarSimulator.Objects
         private bool isPouringAnimation;
         private float currentTilt;
         private Quaternion baseRotation;
+        private bool isQTEActive;
 
         // Visual feedback
         private bool shakeCompleteNotified;
@@ -58,6 +64,22 @@ namespace BarSimulator.Objects
             base.Awake();
             interactableType = InteractableType.Shaker;
             maxVolume = Constants.ShakerMaxVolume;
+
+            // 如果沒有QTE系統，自動添加
+            if (qteSystem == null)
+            {
+                qteSystem = GetComponent<ShakerQTESystem>();
+                if (qteSystem == null)
+                {
+                    qteSystem = gameObject.AddComponent<ShakerQTESystem>();
+                }
+            }
+
+            // 訂閱QTE事件
+            if (qteSystem != null)
+            {
+                qteSystem.OnQTEComplete += OnQTEComplete;
+            }
         }
 
         protected override void Update()
@@ -82,12 +104,19 @@ namespace BarSimulator.Objects
         #region 搖酒
 
         /// <summary>
-        /// 開始搖酒
+        /// 開始搖酒（帶QTE）
         /// 參考: CocktailSystem.js shake() Line 686-707
         /// </summary>
         public void StartShaking()
         {
             if (contents.IsEmpty) return;
+
+            // 如果已經搖過，不能再搖
+            if (contents.isShaken)
+            {
+                Debug.Log("Shaker: Already shaken! Add new ingredients to shake again.");
+                return;
+            }
 
             isShaking = true;
             shakeCompleteNotified = false;
@@ -95,6 +124,13 @@ namespace BarSimulator.Objects
 
             // Create particle effect if not exists
             CreateShakeParticles();
+
+            // 啟動QTE系統
+            if (qteSystem != null && !isQTEActive)
+            {
+                qteSystem.StartQTE();
+                isQTEActive = true;
+            }
 
             OnShakeStart?.Invoke();
             Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml");
@@ -108,18 +144,11 @@ namespace BarSimulator.Objects
         {
             if (!isShaking) return;
 
-            // 檢查是否搖夠久
-            if (shakeTime >= minShakeTime)
+            // 取消QTE
+            if (qteSystem != null && isQTEActive)
             {
-                // 增強混合
-                contents.UpdateMixedColor();
-                UpdateLiquidVisual();
-                OnShakeCompleted?.Invoke();
-                Debug.Log($"Shaker: Shake completed! Contents well mixed.");
-            }
-            else
-            {
-                Debug.Log($"Shaker: Shake incomplete ({shakeTime:F1}s / {minShakeTime:F1}s required)");
+                qteSystem.CancelQTE();
+                isQTEActive = false;
             }
 
             // Stop particles
@@ -270,6 +299,53 @@ namespace BarSimulator.Objects
 
         #endregion
 
+        #region QTE回調
+
+        /// <summary>
+        /// QTE完成回調
+        /// </summary>
+        private void OnQTEComplete(bool success)
+        {
+            isQTEActive = false;
+
+            if (success)
+            {
+                // QTE成功，標記為已搖晃
+                contents.isShaken = true;
+                contents.UpdateMixedColor();
+                UpdateLiquidVisual();
+
+                // 同步到ShakerContainer（如果存在）
+                var shakerContainer = GetComponent<ShakerContainer>();
+                if (shakerContainer != null)
+                {
+                    shakerContainer.isShaken = true;
+                }
+
+                OnShakeCompleted?.Invoke();
+                Debug.Log($"Shaker: QTE Success! Contents shaken.");
+            }
+            else
+            {
+                // QTE失敗
+                Debug.Log($"Shaker: QTE Failed! Try again.");
+            }
+
+            // 停止搖晃動畫
+            isShaking = false;
+            shakeTime = 0f;
+            shakeProgressVisual = 0f;
+            transform.localRotation = baseRotation;
+
+            // Stop particles
+            if (shakeParticles != null)
+            {
+                shakeParticles.Stop();
+            }
+        }
+
+        #endregion
+
         #region 公開方法
 
         /// <summary>
@@ -318,6 +394,28 @@ namespace BarSimulator.Objects
         /// 剩餘搖酒時間
         /// </summary>
         public float RemainingShakeTime => Mathf.Max(0f, minShakeTime - shakeTime);
+
+        /// <summary>
+        /// QTE系統引用
+        /// </summary>
+        public ShakerQTESystem QTESystem => qteSystem;
+
+        /// <summary>
+        /// 是否已搖晃
+        /// </summary>
+        public bool IsShaken => contents.isShaken;
+
+        #endregion
+
+        #region 清理
+
+        private void OnDestroy()
+        {
+            if (qteSystem != null)
+            {
+                qteSystem.OnQTEComplete -= OnQTEComplete;
+            }
+        }
 
         #endregion
     }

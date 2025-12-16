@@ -384,6 +384,12 @@ namespace BarSimulator.Objects
                 target.temperature = (targetTemp * (targetTotalVolume - actualAmount) + sourceTemp * actualAmount) / targetTotalVolume;
             }
 
+            // 轉移shaken狀態
+            if (contents.isShaken)
+            {
+                target.contents.isShaken = true;
+            }
+
             // 清理空成分
             contents.ingredients.RemoveAll(i => i.amount <= 0.01f);
 

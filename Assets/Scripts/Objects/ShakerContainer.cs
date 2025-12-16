@@ -23,6 +23,9 @@ namespace BarSimulator.Objects
         [Tooltip("Current total volume in ml")]
         public float currentTotalVolume = 0f;
 
+        [Tooltip("Is the drink shaken")]
+        public bool isShaken = false;
+
         [Header("Pouring Settings")]
         [Tooltip("Pour rate in ml per second")]
         public float pourRate = 3.5f;
@@ -163,11 +166,17 @@ namespace BarSimulator.Objects
                 liquidContents.Remove(key);
             }
 
+            // Transfer shaken state to glass
+            if (isShaken)
+            {
+                targetGlass.isShaken = true;
+            }
+
             // Update total volume
             currentTotalVolume -= actualAmount;
             currentTotalVolume = Mathf.Max(0f, currentTotalVolume);
 
-            Debug.Log($"ShakerContainer: Poured {actualAmount:F0}ml to glass. Remaining: {currentTotalVolume:F0}ml");
+            Debug.Log($"ShakerContainer: Poured {actualAmount:F0}ml to glass (Shaken: {isShaken}). Remaining: {currentTotalVolume:F0}ml");
 
             return actualAmount;
         }
