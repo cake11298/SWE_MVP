@@ -27,6 +27,13 @@ namespace BarSimulator.UI
         [Tooltip("Title text for showing pouring target")]
         public Text titleText;
 
+        [Header("Liquor Levels Display")]
+        [Tooltip("Container for liquor level items")]
+        public Transform liquorLevelsContainer;
+
+        [Tooltip("Text for displaying liquor levels")]
+        public Text liquorLevelsText;
+
         [Header("Settings")]
         [Tooltip("Update interval in seconds")]
         public float updateInterval = 0.05f;
@@ -43,6 +50,9 @@ namespace BarSimulator.UI
             {
                 infoPanel.SetActive(true);
             }
+
+            // Initialize liquor levels display
+            UpdateLiquorLevelsDisplay();
         }
 
         private void Update()
@@ -51,6 +61,14 @@ namespace BarSimulator.UI
             if (targetGlass != null)
             {
                 UpdateUI();
+            }
+
+            // Update liquor levels periodically
+            updateTimer += Time.deltaTime;
+            if (updateTimer >= updateInterval)
+            {
+                UpdateLiquorLevelsDisplay();
+                updateTimer = 0f;
             }
         }
 
@@ -144,6 +162,45 @@ namespace BarSimulator.UI
             {
                 infoPanel.SetActive(false);
             }
+        }
+
+        /// <summary>
+        /// Update the liquor levels display showing 5 base liquors with their levels
+        /// </summary>
+        private void UpdateLiquorLevelsDisplay()
+        {
+            if (liquorLevelsText == null) return;
+
+            var persistentData = Data.PersistentGameData.Instance;
+            if (persistentData == null)
+            {
+                liquorLevelsText.text = "Liquor Levels: N/A";
+                return;
+            }
+
+            // Get all liquor upgrades
+            var upgrades = persistentData.GetAllLiquorUpgrades();
+            
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== Base Liquors ===");
+
+            foreach (var upgrade in upgrades)
+            {
+                string liquorName = upgrade.liquorType.ToString();
+                int level = upgrade.level;
+                int maxLevel = Data.LiquorUpgradeData.MaxLevel;
+
+                // Create level bar (e.g., "★★★☆☆")
+                string levelBar = "";
+                for (int i = 0; i < maxLevel; i++)
+                {
+                    levelBar += (i < level) ? "★" : "☆";
+                }
+
+                sb.AppendLine($"{liquorName}: {levelBar} Lv.{level}");
+            }
+
+            liquorLevelsText.text = sb.ToString();
         }
     }
 }

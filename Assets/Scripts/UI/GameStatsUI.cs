@@ -6,7 +6,7 @@ namespace BarSimulator.UI
 {
     /// <summary>
     /// Displays game statistics: current money and game time
-    /// Game time runs from 09:00:00 to 24:00:00 over 45 real minutes (15 real minutes = 6 game hours)
+    /// Game time runs from 20:00:00 to 24:00:00 over 12 real minutes (3 real minutes = 1 game hour)
     /// </summary>
     public class GameStatsUI : MonoBehaviour
     {
@@ -15,12 +15,12 @@ namespace BarSimulator.UI
         [SerializeField] private Text timeText;
 
         [Header("Time Settings")]
-        [SerializeField] private float realMinutesForFullDay = 45f; // 45 real minutes = 09:00 to 24:00 (15 hours)
+        [SerializeField] private float realMinutesForFullDay = 5f; // 5 real minutes = 22:00 to 24:00 (2 hours)
         
         // Game time settings
-        private const int START_HOUR = 9;  // 09:00:00
+        private const int START_HOUR = 22;  // 22:00:00
         private const int END_HOUR = 24;   // 24:00:00
-        private const int TOTAL_GAME_HOURS = END_HOUR - START_HOUR; // 15 hours
+        private const int TOTAL_GAME_HOURS = END_HOUR - START_HOUR; // 2 hours
         
         private float gameStartTime;
         private int currentMoney = 0;
@@ -54,6 +54,7 @@ namespace BarSimulator.UI
         private void Update()
         {
             UpdateUI();
+            CheckGameEnd();
         }
 
         /// <summary>
@@ -126,6 +127,35 @@ namespace BarSimulator.UI
         public int GetCurrentMoney()
         {
             return currentMoney;
+        }
+
+        /// <summary>
+        /// Check if game should end (reached 24:00:00)
+        /// </summary>
+        private void CheckGameEnd()
+        {
+            float elapsedRealTime = Time.time - gameStartTime;
+            float gameHoursElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_HOURS / realMinutesForFullDay);
+            int currentHour = START_HOUR + Mathf.FloorToInt(gameHoursElapsed);
+            
+            if (currentHour >= END_HOUR)
+            {
+                // Game ended, trigger game over
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.TriggerGameEnd();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get current game hour for external use
+        /// </summary>
+        public int GetCurrentGameHour()
+        {
+            float elapsedRealTime = Time.time - gameStartTime;
+            float gameHoursElapsed = (elapsedRealTime / 60f) * (TOTAL_GAME_HOURS / realMinutesForFullDay);
+            return START_HOUR + Mathf.FloorToInt(gameHoursElapsed);
         }
     }
 }
