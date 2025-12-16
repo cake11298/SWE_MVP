@@ -2,6 +2,7 @@ using UnityEngine;
 using BarSimulator.Core;
 using BarSimulator.Interaction;
 using BarSimulator.Systems;
+using BarSimulator.Data;
 
 namespace BarSimulator.Objects
 {
@@ -32,6 +33,15 @@ namespace BarSimulator.Objects
 
         [Tooltip("傾斜速度")]
         [SerializeField] private float tiltSpeed = 3f;
+
+        [Tooltip("倒酒速度 (ml/s)")]
+        [SerializeField] private float pourRate = 20f;
+
+        [Tooltip("倒酒檢測距離")]
+        [SerializeField] private float pourCheckDistance = 1.0f;
+
+        [Tooltip("倒酒點 (如果為空則自動尋找 PourPoint 子物件)")]
+        [SerializeField] private Transform pourPoint;
 
         #endregion
 
@@ -79,6 +89,21 @@ namespace BarSimulator.Objects
             if (qteSystem != null)
             {
                 qteSystem.OnQTEComplete += OnQTEComplete;
+            }
+
+            // 設置倒酒點
+            if (pourPoint == null)
+            {
+                var child = transform.Find("PourPoint");
+                if (child != null) pourPoint = child;
+                else
+                {
+                    // Create a default pour point at the top
+                    GameObject pp = new GameObject("PourPoint");
+                    pp.transform.SetParent(transform);
+                    pp.transform.localPosition = new Vector3(0, 0.3f, 0);
+                    pourPoint = pp.transform;
+                }
             }
         }
 
@@ -269,13 +294,89 @@ namespace BarSimulator.Objects
         }
 
         /// <summary>
-        /// 更新傾斜動畫
+        /// 更新傾斜動畫並執行倒酒
         /// </summary>
         private void UpdatePourAnimation()
         {
             float targetTilt = pourTiltAngle;
             currentTilt = Mathf.Lerp(currentTilt, targetTilt, tiltSpeed * Time.deltaTime);
             transform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, currentTilt);
+
+            // 執行倒酒邏輯
+            PerformPouring();
+        }
+
+        /// <summary>
+        /// 執行倒酒（檢測目標容器並倒入液體）
+        /// </summary>
+        private void PerformPouring()
+        {
+            if (pourPoint == null || contents.IsEmpty) return;
+
+            // 檢查是否有ShakerContainer
+            var shakerContainer = GetComponent<ShakerContainer>();
+            if (shakerContainer != null && shakerContainer.IsEmpty())
+            {
+                return;
+            }
+
+            // Raycast down from pour point
+            RaycastHit hit;
+            if (Physics.Raycast(pourPoint.position, Vector3.down, out hit, pourCheckDistance))
+            {
+                // 檢查是否是GlassContainer
+                var glassContainer = hit.collider.GetComponent<GlassContainer>();
+                if (glassContainer != null && shakerContainer != null)
+                {
+                    // 使用ShakerContainer的倒酒方法
+                    float amount = pourRate * Time.deltaTime;
+                    float actualPoured = shakerContainer.PourToGlass(glassContainer, amount);
+                    
+                    if (actualPoured > 0f)
+                    {
+                        // 同步更新Shaker的contents
+                        contents.volume = shakerContainer.currentTotalVolume;
+                        UpdateLiquidVisual();
+                    }
+                }
+                else
+                {
+                    // 檢查是否是普通Container
+                    Container container = hit.collider.GetComponent<Container>();
+                    if (container != null)
+                    {
+                        // 倒出混合液體
+                        float amount = pourRate * Time.deltaTime;
+                        if (contents.volume >= amount)
+                        {
+                            // 創建混合成分
+                            var mixedIngredient = new Ingredient(
+                                "mixed",
+                                "Mixed Drink",
+                                "Mixed Drink",
+                                amount,
+                                contents.mixedColor
+                            );
+
+                            // 添加到目標容器
+                            container.AddIngredient(mixedIngredient);
+                            
+                            // 減少自己的容量
+                            contents.volume -= amount;
+                            if (shakerContainer != null)
+                            {
+                                shakerContainer.PourLiquid(amount);
+                            }
+                            
+                            UpdateLiquidVisual();
+                            container.SetPouringState(true);
+                        }
+                    }
+                }
+            }
+            
+            // Debug visualization
+            Debug.DrawRay(pourPoint.position, Vector3.down * pourCheckDistance, Color.cyan);
         }
 
         #endregion

@@ -24,16 +24,19 @@ namespace BarSimulator.Systems
         
         [Header("QTE Settings")]
         [Tooltip("QTE持續時間（秒）")]
-        [SerializeField] private float qteDuration = 10f;
+        [SerializeField] private float qteDuration = 20f;
         
         [Tooltip("技能檢查觸發次數")]
-        [SerializeField] private int totalSkillChecks = 3;
+        [SerializeField] private int totalSkillChecks = 4;
         
         [Tooltip("需要成功的次數")]
-        [SerializeField] private int requiredSuccesses = 2;
+        [SerializeField] private int requiredSuccesses = 3;
         
         [Tooltip("技能檢查間隔（秒）")]
         [SerializeField] private float skillCheckInterval = 1f;
+        
+        [Tooltip("每個技能檢查的持續時間（秒）")]
+        [SerializeField] private float skillCheckDuration = 3f;
         
         [Tooltip("技能檢查判定區域大小（度）")]
         [SerializeField] private float successZoneSize = 6f; // 5-7度
@@ -57,6 +60,8 @@ namespace BarSimulator.Systems
         private float successZoneAngle; // 成功區域的角度
         private bool canTriggerNextCheck;
         private float nextCheckTimer;
+        private float skillCheckTimer; // 當前技能檢查的計時器
+        private bool wasInterrupted; // 是否被中斷
         
         #endregion
 
@@ -91,8 +96,18 @@ namespace BarSimulator.Systems
             // 更新指針旋轉
             if (isSkillCheckActive)
             {
-                UpdateNeedleRotation();
-                CheckSkillCheckInput();
+                skillCheckTimer += Time.deltaTime;
+                
+                // 檢查技能檢查是否超時
+                if (skillCheckTimer >= skillCheckDuration)
+                {
+                    SkillCheckMissed();
+                }
+                else
+                {
+                    UpdateNeedleRotation();
+                    CheckSkillCheckInput();
+                }
             }
 
             // 檢查是否該觸發下一個技能檢查
@@ -126,7 +141,7 @@ namespace BarSimulator.Systems
                 return;
             }
 
-            Debug.Log("ShakerQTESystem: Starting QTE");
+            Debug.Log("ShakerQTESystem: Starting QTE - 20 seconds, 4 skill checks");
             
             isQTEActive = true;
             qteTimer = 0f;
@@ -134,6 +149,7 @@ namespace BarSimulator.Systems
             successfulChecks = 0;
             canTriggerNextCheck = true;
             nextCheckTimer = 0f;
+            wasInterrupted = false;
 
             OnQTEStart?.Invoke();
 
@@ -142,17 +158,20 @@ namespace BarSimulator.Systems
         }
 
         /// <summary>
-        /// 強制結束QTE
+        /// 強制結束QTE（中斷）
         /// </summary>
         public void CancelQTE()
         {
             if (!isQTEActive) return;
 
-            Debug.Log("ShakerQTESystem: QTE cancelled");
+            Debug.Log("ShakerQTESystem: QTE cancelled (interrupted)");
             
+            wasInterrupted = true;
             isQTEActive = false;
             isSkillCheckActive = false;
             
+            // 中斷視為失敗
+            OnQTEComplete?.Invoke(false);
             OnQTEEnd?.Invoke();
         }
         
@@ -176,6 +195,7 @@ namespace BarSimulator.Systems
             needleAngle = 0f;
             canTriggerNextCheck = false;
             nextCheckTimer = 0f;
+            skillCheckTimer = 0f;
 
             // 隨機生成成功區域的角度（確保至少100度的反應時間）
             successZoneAngle = UnityEngine.Random.Range(minAngleToSuccessZone, 360f - successZoneSize);
@@ -188,12 +208,14 @@ namespace BarSimulator.Systems
         /// </summary>
         private void UpdateNeedleRotation()
         {
-            needleAngle += needleRotationSpeed * Time.deltaTime;
+            // 根據技能檢查持續時間調整旋轉速度，確保在持續時間內轉完一圈
+            float adjustedSpeed = 360f / skillCheckDuration;
+            needleAngle += adjustedSpeed * Time.deltaTime;
 
-            // 當指針轉完一圈後，自動失敗
+            // 限制在0-360度範圍內
             if (needleAngle >= 360f)
             {
-                SkillCheckMissed();
+                needleAngle = 360f;
             }
 
             OnNeedleRotation?.Invoke(needleAngle);

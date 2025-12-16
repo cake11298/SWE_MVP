@@ -236,10 +236,11 @@ namespace BarSimulator.Player
             item.OnPickedUp();
 
             // 如果是Shaker，通知ShakerController
-            var shaker = heldObject.GetComponent<Objects.Shaker>();
-            if (shaker != null && shakerController != null)
+            var shakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
+            if (shakerContainer != null && shakerController != null)
             {
-                shakerController.SetShaker(shaker);
+                shakerController.SetShaker(heldObject);
+                Debug.Log("ItemInteractionSystem: Shaker picked up, notified ShakerController");
             }
 
             Debug.Log($"拾取了: {heldObject.name}");
@@ -255,10 +256,11 @@ namespace BarSimulator.Player
                 return;
 
             // 如果是Shaker，通知ShakerController
-            var shaker = heldObject.GetComponent<Objects.Shaker>();
-            if (shaker != null && shakerController != null)
+            var shakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
+            if (shakerContainer != null && shakerController != null)
             {
                 shakerController.ClearShaker();
+                Debug.Log("ItemInteractionSystem: Shaker dropped, cleared ShakerController");
             }
 
             // 恢复物理

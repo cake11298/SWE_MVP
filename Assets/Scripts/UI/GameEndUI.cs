@@ -104,8 +104,11 @@ namespace BarSimulator.UI
 
         private void OnGameStateChanged(GameState newState)
         {
+            Debug.Log($"GameEndUI: Game state changed to {newState}");
+            
             if (newState == GameState.GameOver && !isShowing)
             {
+                Debug.Log("GameEndUI: Showing game end screen");
                 ShowGameEndScreen();
             }
         }
@@ -139,14 +142,24 @@ namespace BarSimulator.UI
 
         public void ShowGameEndScreen()
         {
-            if (isShowing) return;
+            if (isShowing)
+            {
+                Debug.Log("GameEndUI: Already showing");
+                return;
+            }
 
+            Debug.Log("GameEndUI: ShowGameEndScreen called");
             isShowing = true;
 
             // Show panel
             if (gameEndPanel != null)
             {
                 gameEndPanel.SetActive(true);
+                Debug.Log("GameEndUI: Panel activated");
+            }
+            else
+            {
+                Debug.LogError("GameEndUI: gameEndPanel is null!");
             }
 
             // Pause game

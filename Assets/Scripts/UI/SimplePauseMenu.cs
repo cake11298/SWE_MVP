@@ -52,8 +52,20 @@ namespace UI
                 pausePanel.SetActive(true);
             }
             
+            // Stop the entire game
             Time.timeScale = 0f;
             isPaused = true;
+            
+            // Unlock cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            
+            // Notify GameManager if available
+            var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
+            if (gameManager != null && gameManager.IsPlaying)
+            {
+                gameManager.Pause();
+            }
         }
 
         /// <summary>
@@ -68,6 +80,17 @@ namespace UI
             
             Time.timeScale = 1f;
             isPaused = false;
+            
+            // Lock cursor back
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            
+            // Notify GameManager if available
+            var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
+            if (gameManager != null && gameManager.IsPaused)
+            {
+                gameManager.Resume();
+            }
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using UnityEngine;
 using BarSimulator.Objects;
+using BarSimulator.Systems;
 using BarSimulator.UI;
 
 namespace BarSimulator.Player
@@ -32,11 +33,14 @@ namespace BarSimulator.Player
 
         #region Private Fields
         
-        private Shaker currentShaker;
+        private GameObject currentShakerObject;
+        private ShakerContainer currentShakerContainer;
+        private ShakerQTESystem currentQTESystem;
         private Vector3 originalHandPosition;
         private Quaternion originalHandRotation;
         private bool isHoldingShaker;
         private float shakeAnimationTime;
+        private bool isShaking;
         
         #endregion
 
@@ -67,7 +71,7 @@ namespace BarSimulator.Player
 
         private void Update()
         {
-            if (!isHoldingShaker || currentShaker == null) return;
+            if (!isHoldingShaker || currentShakerObject == null) return;
 
             // 檢查右鍵輸入
             if (Input.GetMouseButtonDown(1))
@@ -81,7 +85,7 @@ namespace BarSimulator.Player
             }
 
             // 更新搖晃動畫
-            if (currentShaker.IsShaking)
+            if (isShaking)
             {
                 UpdateShakeAnimation();
             }
@@ -92,12 +96,24 @@ namespace BarSimulator.Player
         #region Public Methods
         
         /// <summary>
-        /// 設置當前持有的Shaker
+        /// 設置當前持有的Shaker（支持Shaker或ShakerContainer）
         /// </summary>
-        public void SetShaker(Shaker shaker)
+        public void SetShaker(GameObject shakerObj)
         {
-            currentShaker = shaker;
-            isHoldingShaker = shaker != null;
+            currentShakerObject = shakerObj;
+            
+            if (shakerObj != null)
+            {
+                currentShakerContainer = shakerObj.GetComponent<ShakerContainer>();
+                currentQTESystem = shakerObj.GetComponent<ShakerQTESystem>();
+                
+                if (currentQTESystem != null)
+                {
+                    currentQTESystem.OnQTEComplete += OnQTEComplete;
+                }
+            }
+            
+            isHoldingShaker = shakerObj != null;
 
             if (isHoldingShaker && handPosition != null)
             {
@@ -108,17 +124,40 @@ namespace BarSimulator.Player
         }
 
         /// <summary>
+        /// 設置當前持有的Shaker（舊版兼容）
+        /// </summary>
+        public void SetShaker(Shaker shaker)
+        {
+            if (shaker != null)
+            {
+                SetShaker(shaker.gameObject);
+            }
+            else
+            {
+                ClearShaker();
+            }
+        }
+
+        /// <summary>
         /// 清除當前Shaker
         /// </summary>
         public void ClearShaker()
         {
-            if (currentShaker != null && currentShaker.IsShaking)
+            if (isShaking && currentQTESystem != null)
             {
-                currentShaker.StopShaking();
+                currentQTESystem.CancelQTE();
             }
 
-            currentShaker = null;
+            if (currentQTESystem != null)
+            {
+                currentQTESystem.OnQTEComplete -= OnQTEComplete;
+            }
+
+            currentShakerObject = null;
+            currentShakerContainer = null;
+            currentQTESystem = null;
             isHoldingShaker = false;
+            isShaking = false;
 
             if (handPosition != null)
             {
@@ -136,22 +175,26 @@ namespace BarSimulator.Player
         /// </summary>
         private void StartShaking()
         {
-            if (currentShaker == null) return;
+            if (currentShakerContainer == null || currentQTESystem == null) return;
 
-            if (currentShaker.IsEmpty)
+            if (currentShakerContainer.IsEmpty())
             {
                 UIPromptManager.Show("Shaker is empty!");
                 return;
             }
 
-            if (currentShaker.IsShaken)
+            if (currentShakerContainer.isShaken)
             {
                 UIPromptManager.Show("Already shaken! Add new ingredients to shake again.");
                 return;
             }
 
-            currentShaker.StartShaking();
+            // 啟動QTE
+            currentQTESystem.StartQTE();
+            isShaking = true;
             shakeAnimationTime = 0f;
+            
+            Debug.Log("ShakerController: Started shaking with QTE");
         }
 
         /// <summary>
@@ -159,9 +202,41 @@ namespace BarSimulator.Player
         /// </summary>
         private void StopShaking()
         {
-            if (currentShaker == null) return;
+            if (currentQTESystem == null) return;
 
-            currentShaker.StopShaking();
+            // 取消QTE
+            currentQTESystem.CancelQTE();
+            isShaking = false;
+
+            // 重置手持位置
+            if (handPosition != null)
+            {
+                handPosition.localPosition = originalHandPosition;
+                handPosition.localRotation = originalHandRotation;
+            }
+            
+            Debug.Log("ShakerController: Stopped shaking");
+        }
+
+        /// <summary>
+        /// QTE完成回調
+        /// </summary>
+        private void OnQTEComplete(bool success)
+        {
+            isShaking = false;
+
+            if (success && currentShakerContainer != null)
+            {
+                // 標記為已搖晃
+                currentShakerContainer.isShaken = true;
+                UIPromptManager.Show("Successful shaken!");
+                Debug.Log("ShakerController: QTE Success! Shaker contents marked as shaken.");
+            }
+            else
+            {
+                UIPromptManager.Show("Shake Failed! Please try again.");
+                Debug.Log("ShakerController: QTE Failed!");
+            }
 
             // 重置手持位置
             if (handPosition != null)
@@ -215,8 +290,20 @@ namespace BarSimulator.Player
         #region Public Properties
         
         public bool IsHoldingShaker => isHoldingShaker;
-        public Shaker CurrentShaker => currentShaker;
+        public GameObject CurrentShakerObject => currentShakerObject;
         
+        #endregion
+
+        #region Cleanup
+
+        private void OnDestroy()
+        {
+            if (currentQTESystem != null)
+            {
+                currentQTESystem.OnQTEComplete -= OnQTEComplete;
+            }
+        }
+
         #endregion
     }
 }
