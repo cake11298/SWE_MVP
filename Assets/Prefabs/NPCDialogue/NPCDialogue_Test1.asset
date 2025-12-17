@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: NPCDialogue_Test1
   m_EditorClassIdentifier: 
   dialogue_ordering: Hello, I would like a {%DrinkName} please.
-  dialogue_perfectDrink: :D
+  dialogue_perfectDrink: :D Perfect! Thank you
   dialogue_ratiosOffDrink: :/
-  dialogue_wrongDrink: :(
+  dialogue_wrongDrink: :( Bruh
