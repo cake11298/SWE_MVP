@@ -21,6 +21,8 @@ namespace BarSimulator.NPC
         public Canvas dialogueUI;
         public Text dialogueText;
         bool isShowingDialogue = false;
+        int interactedTimes = 0;
+
 
         [Header("Serve Settings")]
         [Tooltip("Interaction distance")]
@@ -115,14 +117,14 @@ namespace BarSimulator.NPC
         /// </summary>
         private void HandleServeInput()
         {
-            if (!playerNearby || !hasActiveOrder) return;
+            if (!playerNearby) return;
 
             // Check if F key is pressed
             if (Input.GetKeyDown(KeyCode.F))
             {
                 // Get held object from player's interaction system
                 var interactionSystem = player.GetComponent<BarSimulator.Player.ImprovedInteractionSystem>();
-                if (interactionSystem != null && interactionSystem.HeldObject != null)
+                if (interactionSystem != null && interactionSystem.HeldObject != null && hasActiveOrder)
                 {
                     var heldObj = interactionSystem.HeldObject;
                     heldGlass = heldObj.GetComponent<GlassContainer>();
@@ -142,15 +144,32 @@ namespace BarSimulator.NPC
                     else
                     {
                         Debug.Log($"EnhancedNPCServe: You need to be holding a glass to serve to {gameObject.name}.");
-                        ShowDialogueUI(dialogueData.dialogue_ordering);
                     }
                 }
                 else
                 {
                     Debug.Log($"EnhancedNPCServe: You need to be holding a glass to serve to {gameObject.name}.");
-                    if (!isShowingDialogue)
+                    if (!isShowingDialogue && hasActiveOrder)
                     {
-                        ShowDialogueUI(dialogueData.dialogue_ordering);
+                        switch (interactedTimes)
+                        {
+                            case 0:
+                                ShowDialogueUI(dialogueData.dialogue_ordering);
+                                interactedTimes++;
+                                break;
+                            case 1:
+                                ShowDialogueUI(dialogueData.dialogue_ordering_1);
+                                interactedTimes++;
+                                break;
+                            default:
+                                ShowDialogueUI(dialogueData.dialogue_ordering_2);
+                                break;
+                        }
+                        isShowingDialogue = true;
+                    }
+                    else if (!isShowingDialogue && !hasActiveOrder)
+                    {
+                        ShowDialogueUI(dialogueData.dialogue_notOrdering);
                         isShowingDialogue = true;
                     }
                 }
@@ -200,6 +219,7 @@ namespace BarSimulator.NPC
             nextOrderTime = Time.time + orderCooldown;
 
             Debug.Log($"EnhancedNPCServe: {gameObject.name} will order again in {orderCooldown} seconds");
+            interactedTimes = 0;
         }
 
         private void ShowDialogueUI(string message)

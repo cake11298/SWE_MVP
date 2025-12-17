@@ -13,6 +13,12 @@ MonoBehaviour:
   m_Name: NPCDialogue_Test1
   m_EditorClassIdentifier: 
   dialogue_ordering: Hello, I would like a {%DrinkName} please.
+  dialogue_ordering_1: I'm still waiting for my {%DrinkName}.
+  dialogue_ordering_2: 'I see, misclicking ''F'' is normal here.
+
+    Anyways, {%DrinkName}
+    please.'
+  dialogue_notOrdering: I'm not ready to order anything yet...
   dialogue_perfectDrink: :D Perfect! Thank you
   dialogue_ratiosOffDrink: :/
   dialogue_wrongDrink: :( Bruh
