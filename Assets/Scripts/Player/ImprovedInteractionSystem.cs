@@ -215,7 +215,7 @@ namespace BarSimulator.Player
             // 按下E键：切換播放/拾取或放回原位
             if (Input.GetKeyDown(KeyCode.E))
             {
-                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                if(currentHighlightedObject?.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
                 {
                     // 切換音樂播放
                     var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
@@ -236,7 +236,7 @@ namespace BarSimulator.Player
             // 按下Q键：輪換歌曲/原地放下
             if (Input.GetKeyDown(KeyCode.Q))
             {
-                if (currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                if (currentHighlightedObject?.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
                 {
                     // 輪換歌曲
                     var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
@@ -253,7 +253,7 @@ namespace BarSimulator.Player
             // 按下左键：減小音量/倒酒
             if(Input.GetMouseButton(0))
             {
-                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                if(currentHighlightedObject?.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
                 {
                     // 減小音量
                     var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
@@ -265,44 +265,31 @@ namespace BarSimulator.Player
                     TryPourLiquid();
                 }
             }
-            
 
-            // 按下右鍵: 增加音量/開始搖酒
-            if (Input.GetMouseButton(1))
+
+            // 按住右鍵: 增加音量
+            if (Input.GetMouseButton(1) && currentHighlightedObject?.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
             {
-                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
+                speaker.SetVolume(speaker.GetComponent<AudioSource>().volume + 0.01f);
+                Debug.Log("[HandleInput] 增加音量");
+            }
+            // 按下右鍵：開始搖酒
+            else if (Input.GetMouseButtonDown(1) && heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
+            {
+                // 嘗試獲取 Shaker 組件 (優先) 或 ShakerContainer
+                var shaker = heldObject.GetComponent<Objects.Shaker>();
+                var shakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
+
+                if (shakerContainer != null && QTEManager.Instance != null)
                 {
-                    // 增加音量
-                    var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
-                    speaker.SetVolume(speaker.GetComponent<AudioSource>().volume + 0.01f);
-                    Debug.Log("[HandleInput] 增加音量");
+                    Debug.Log("[HandleInput] 搖晃 ShakerContainer (Legacy)");
+                    QTEManager.Instance.StartShakeQTE();
+                    isShaking = true;
                 }
-                else if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
+                else
                 {
-                    // 嘗試獲取 Shaker 組件 (優先) 或 ShakerContainer
-                    var shaker = heldObject.GetComponent<Objects.Shaker>();
-                    
-                    if (shaker != null && false)
-                    {
-                        Debug.Log("[HandleInput] 開始搖晃 Shaker");
-                        isShaking = true;
-                        shaker.StartShaking();
-                    }
-                    else
-                    {
-                        // 舊版兼容
-                        var shakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
-                        if (shakerContainer != null && QTEManager.Instance != null)
-                        {
-                            Debug.Log("[HandleInput] 搖晃 ShakerContainer (Legacy)");
-                            QTEManager.Instance.StartShakeQTE();
-                            isShaking = true;
-                        }
-                        else
-                        {
-                            Debug.Log("[HandleInput] 手上不是 Shaker 組件");
-                        }
-                    }
+                    Debug.Log("[HandleInput] 手上不是 Shaker 組件");
                 }
             }
             

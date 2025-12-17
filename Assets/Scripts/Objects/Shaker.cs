@@ -23,10 +23,6 @@ namespace BarSimulator.Objects
         [Tooltip("需要搖晃的最短時間（秒）才能完成混合")]
         [SerializeField] private float minShakeTime = 2f;
 
-        [Header("QTE設定")]
-        [Tooltip("QTE系統")]
-        [SerializeField] private ShakerQTESystem qteSystem;
-
         [Header("倒酒設定")]
         [Tooltip("倒酒時的傾斜角度")]
         [SerializeField] private float pourTiltAngle = 60f;
@@ -42,6 +38,7 @@ namespace BarSimulator.Objects
 
         [Tooltip("倒酒點 (如果為空則自動尋找 PourPoint 子物件)")]
         [SerializeField] private Transform pourPoint;
+        [SerializeField] private AudioSource shakerAudioSource;
 
         #endregion
 
@@ -74,22 +71,6 @@ namespace BarSimulator.Objects
             base.Awake();
             interactableType = InteractableType.Shaker;
             maxVolume = Constants.ShakerMaxVolume;
-
-            // 如果沒有QTE系統，自動添加
-            if (qteSystem == null)
-            {
-                qteSystem = GetComponent<ShakerQTESystem>();
-                if (qteSystem == null)
-                {
-                    qteSystem = gameObject.AddComponent<ShakerQTESystem>();
-                }
-            }
-
-            // 訂閱QTE事件
-            if (qteSystem != null)
-            {
-                qteSystem.OnQTEComplete += OnQTEComplete;
-            }
 
             // 設置倒酒點
             if (pourPoint == null)
@@ -150,13 +131,6 @@ namespace BarSimulator.Objects
             // Create particle effect if not exists
             CreateShakeParticles();
 
-            // 移除強制 QTE 啟動，改為純動畫計時邏輯
-            // if (qteSystem != null && !isQTEActive)
-            // {
-            //     qteSystem.StartQTE();
-            //     isQTEActive = true;
-            // }
-
             OnShakeStart?.Invoke();
             Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml");
         }
@@ -168,13 +142,6 @@ namespace BarSimulator.Objects
         public void StopShaking()
         {
             if (!isShaking) return;
-
-            // 取消QTE
-            if (qteSystem != null && isQTEActive)
-            {
-                qteSystem.CancelQTE();
-                isQTEActive = false;
-            }
 
             // Stop particles
             if (shakeParticles != null)
@@ -479,11 +446,6 @@ namespace BarSimulator.Objects
         public float RemainingShakeTime => Mathf.Max(0f, minShakeTime - shakeTime);
 
         /// <summary>
-        /// QTE系統引用
-        /// </summary>
-        public ShakerQTESystem QTESystem => qteSystem;
-
-        /// <summary>
         /// 是否已搖晃
         /// </summary>
         public bool IsShaken => contents.isShaken;
@@ -491,14 +453,6 @@ namespace BarSimulator.Objects
         #endregion
 
         #region 清理
-
-        private void OnDestroy()
-        {
-            if (qteSystem != null)
-            {
-                qteSystem.OnQTEComplete -= OnQTEComplete;
-            }
-        }
 
         #endregion
     }
