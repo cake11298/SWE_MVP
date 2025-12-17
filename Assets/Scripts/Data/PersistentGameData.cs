@@ -35,7 +35,7 @@ namespace BarSimulator.Data
         public BaseLiquorType liquorType;
         public int level = 1; // 1-5
         public const int MaxLevel = 5;
-        public const int UpgradeCost = 1000;
+        public const int UpgradeCost = 75;
 
         public LiquorUpgradeData(BaseLiquorType type)
         {
