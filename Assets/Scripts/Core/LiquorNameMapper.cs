@@ -24,6 +24,8 @@ namespace BarSimulator.Core
                 { "vermouth_sweet", "vermouth" },
                 { "sweet_vermouth", "vermouth" },
                 { "Sweet Vermouth", "vermouth" },
+                { "vermouth_dry", "vermouth" }, // Dry Vermouth 統一為 Vermouth
+                { "Dry Vermouth", "vermouth" },
                 { "vermouth", "vermouth" },
                 
                 // === SYRUP 統一為 syrup ===
@@ -55,8 +57,8 @@ namespace BarSimulator.Core
                 { "campari", "campari" },
                 
                 // === OTHER ===
-                { "vermouth_dry", "vermouth_dry" },
-                { "soda_water", "soda" },
+                { "soda_water", "syrup" }, // Soda replaced by Syrup as requested
+                { "soda", "syrup" },       // Soda replaced by Syrup as requested
                 { "tonic_water", "tonic" },
                 { "cola", "cola" },
                 { "orange_juice", "orange_juice" },
@@ -109,13 +111,12 @@ namespace BarSimulator.Core
                 case "tequila": return "龍舌蘭";
                 case "brandy": return "白蘭地";
                 case "cognac": return "干邑白蘭地";
-                case "vermouth": return "甜香艾酒";
-                case "vermouth_dry": return "不甜香艾酒";
+                case "vermouth": return "香艾酒";
                 case "syrup": return "糖漿";
                 case "juice": return "果汁";
                 case "cointreau": return "君度橙酒";
                 case "campari": return "金巴利";
-                case "soda": return "蘇打水";
+                case "soda": return "糖漿"; // Soda -> Syrup
                 case "tonic": return "通寧水";
                 case "cola": return "可樂";
                 case "orange_juice": return "柳橙汁";
@@ -143,12 +144,11 @@ namespace BarSimulator.Core
                 case "brandy": return "Brandy";
                 case "cognac": return "Cognac";
                 case "vermouth": return "Vermouth";
-                case "vermouth_dry": return "Dry Vermouth";
                 case "syrup": return "Syrup";
                 case "juice": return "Juice";
                 case "cointreau": return "Cointreau";
                 case "campari": return "Campari";
-                case "soda": return "Soda";
+                case "soda": return "Syrup"; // Soda -> Syrup
                 case "tonic": return "Tonic";
                 case "cola": return "Cola";
                 case "orange_juice": return "Orange Juice";

@@ -96,13 +96,13 @@ namespace BarSimulator.NPC
             // Martini: 2份琴酒 + 1份乾苦艾酒
             { "Martini", new RecipeData("Martini", new Dictionary<string, float> {
                 { "gin", 0.67f },
-                { "vermouth_dry", 0.33f }
+                { "vermouth", 0.33f }
             })},
 
             // Vodka Martini: 2份伏特加 + 1份乾苦艾酒
             { "Vodka Martini", new RecipeData("Vodka Martini", new Dictionary<string, float> {
                 { "vodka", 0.67f },
-                { "vermouth_dry", 0.33f }
+                { "vermouth", 0.33f }
             })},
 
             // Negroni: 1:1:1 比例
@@ -115,37 +115,37 @@ namespace BarSimulator.NPC
             // Margarita: 2份龍舌蘭 + 1份橙酒 + 1份青檸汁
             { "Margarita", new RecipeData("Margarita", new Dictionary<string, float> {
                 { "tequila", 0.5f },
-                { "triple_sec", 0.25f },
-                { "lime_juice", 0.25f }
+                { "cointreau", 0.25f },
+                { "juice", 0.25f }
             })},
 
             // Daiquiri: 2份朗姆酒 + 1份青檸汁 + 0.5份糖漿
             { "Daiquiri", new RecipeData("Daiquiri", new Dictionary<string, float> {
                 { "rum", 0.57f },
-                { "lime_juice", 0.29f },
+                { "juice", 0.29f },
                 { "syrup", 0.14f }
             })},
 
             // Cosmopolitan: 1.5份伏特加 + 1份橙酒 + 0.5份青檸汁 + 1份蔓越莓汁
             { "Cosmopolitan", new RecipeData("Cosmopolitan", new Dictionary<string, float> {
                 { "vodka", 0.375f },
-                { "triple_sec", 0.25f },
-                { "lime_juice", 0.125f },
+                { "cointreau", 0.25f },
+                { "juice", 0.125f },
                 { "cranberry_juice", 0.25f }
             })},
 
             // Whiskey Sour: 2份威士忌 + 1份檸檬汁 + 0.5份糖漿
             { "Whiskey Sour", new RecipeData("Whiskey Sour", new Dictionary<string, float> {
                 { "whiskey", 0.57f },
-                { "lemon_juice", 0.29f },
-                { "simple_syrup", 0.14f }
+                { "juice", 0.29f },
+                { "syrup", 0.14f }
             })},
 
             // Mojito: 2份朗姆酒 + 1份青檸汁 + 0.5份糖漿
             { "Mojito", new RecipeData("Mojito", new Dictionary<string, float> {
                 { "rum", 0.57f },
-                { "lime_juice", 0.29f },
-                { "simple_syrup", 0.14f }
+                { "juice", 0.29f },
+                { "syrup", 0.14f }
             })},
 
             // Pina Colada: 2份朗姆酒 + 2份鳳梨汁 + 1份椰漿

@@ -52,25 +52,25 @@ namespace BarSimulator.Systems
 
         private void InitializeRecipes()
         {
-            // 1. Martini (Gin + Dry Vermouth)
+            // 1. Martini (Gin + Vermouth)
             var martini = new CocktailRecipe("martini", "Martini", false, "MartiniGlass");
             martini.AddIngredient("gin", 6f);
-            martini.AddIngredient("vermouth_dry", 1f);
+            martini.AddIngredient("vermouth", 1f);
             recipes.Add(martini);
 
-            // 2. Margarita (Tequila + Triple Sec + Lime)
+            // 2. Margarita (Tequila + Cointreau + Juice)
             var margarita = new CocktailRecipe("margarita", "Margarita", true, "MargaritaGlass");
             margarita.AddIngredient("tequila", 4f);
-            margarita.AddIngredient("triple_sec", 2f);
-            margarita.AddIngredient("lime_juice", 1.5f);
+            margarita.AddIngredient("cointreau", 2f);
+            margarita.AddIngredient("juice", 1.5f);
             recipes.Add(margarita);
 
-            // 3. Cosmopolitan (Vodka + Triple Sec + Cranberry + Lime)
+            // 3. Cosmopolitan (Vodka + Cointreau + Cranberry + Juice)
             var cosmo = new CocktailRecipe("cosmopolitan", "Cosmopolitan", true, "MartiniGlass");
             cosmo.AddIngredient("vodka", 4f);
-            cosmo.AddIngredient("triple_sec", 1.5f);
+            cosmo.AddIngredient("cointreau", 1.5f);
             cosmo.AddIngredient("cranberry_juice", 1.5f);
-            cosmo.AddIngredient("lime_juice", 0.5f);
+            cosmo.AddIngredient("juice", 0.5f);
             recipes.Add(cosmo);
 
             // 4. Negroni (Gin + Campari + Vermouth)
@@ -107,12 +107,11 @@ namespace BarSimulator.Systems
             oldFashioned.AddIngredient("syrup", 0.5f);
             recipes.Add(oldFashioned);
 
-            // 9. Mojito (Rum + Juice + Syrup + Soda + Mint)
+            // 9. Mojito (Rum + Juice + Syrup)
             var mojito = new CocktailRecipe("mojito", "Mojito", false, "HighballGlass");
             mojito.AddIngredient("rum", 4f);
             mojito.AddIngredient("juice", 2f);
             mojito.AddIngredient("syrup", 1.5f);
-            mojito.AddIngredient("soda", 6f);
             recipes.Add(mojito);
 
             // 10. Gin Tonic (Gin + Tonic)
@@ -172,12 +171,11 @@ namespace BarSimulator.Systems
             gimlet.AddIngredient("syrup", 1f);
             recipes.Add(gimlet);
 
-            // 18. Tom Collins (Gin + Juice + Syrup + Soda)
+            // 18. Tom Collins (Gin + Juice + Syrup)
             var tomCollins = new CocktailRecipe("tom_collins", "Tom Collins", true, "HighballGlass");
             tomCollins.AddIngredient("gin", 3f);
             tomCollins.AddIngredient("juice", 2f);
             tomCollins.AddIngredient("syrup", 1f);
-            tomCollins.AddIngredient("soda", 4f);
             recipes.Add(tomCollins);
 
             // 19. Pina Colada (Rum + Pineapple + Coconut)
@@ -202,11 +200,11 @@ namespace BarSimulator.Systems
             sidecar.AddIngredient("juice", 1.5f);
             recipes.Add(sidecar);
 
-            // 22. Americano (Campari + Vermouth + Soda)
+            // 22. Americano (Campari + Vermouth + Syrup)
             var americano = new CocktailRecipe("americano", "Americano", false, "HighballGlass");
             americano.AddIngredient("campari", 1f);
             americano.AddIngredient("vermouth", 1f);
-            americano.AddIngredient("soda", 2f);
+            americano.AddIngredient("syrup", 2f);
             recipes.Add(americano);
 
             // 23. Boulevardier (Whiskey + Campari + Vermouth)

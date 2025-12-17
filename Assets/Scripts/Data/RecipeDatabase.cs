@@ -40,7 +40,7 @@ namespace BarSimulator.Data
                 // Martini - The king of cocktails
                 new DrinkRecipe(
                     name: "Martini",
-                    ingredients: new List<string> { "gin", "vermouth_dry" },
+                    ingredients: new List<string> { "gin", "vermouth" },
                     shakeTime: 0f,
                     requiresShaking: false, // Traditionally stirred, not shaken
                     difficultyLevel: 2,
@@ -75,7 +75,7 @@ namespace BarSimulator.Data
                 // Gin & Tonic - Simple highball
                 new DrinkRecipe(
                     name: "Gin & Tonic",
-                    ingredients: new List<string> { "gin", "tonic_water" },
+                    ingredients: new List<string> { "gin", "syrup" }, // Replaced tonic_water with syrup as requested
                     shakeTime: 0f,
                     requiresShaking: false,
                     difficultyLevel: 1,
@@ -86,7 +86,7 @@ namespace BarSimulator.Data
                 // Vodka Tonic - Vodka variation
                 new DrinkRecipe(
                     name: "Vodka Tonic",
-                    ingredients: new List<string> { "vodka", "tonic_water" },
+                    ingredients: new List<string> { "vodka", "syrup" }, // Replaced tonic_water with syrup as requested
                     shakeTime: 0f,
                     requiresShaking: false,
                     difficultyLevel: 1,
@@ -108,7 +108,7 @@ namespace BarSimulator.Data
                 // Cosmopolitan - Modern classic
                 new DrinkRecipe(
                     name: "Cosmopolitan",
-                    ingredients: new List<string> { "vodka", "triple_sec", "lime_juice", "cranberry_juice" },
+                    ingredients: new List<string> { "vodka", "cointreau", "juice" }, // Removed cranberry_juice as it's not available
                     shakeTime: 3.5f,
                     requiresShaking: true, // REQUIRES SHAKING
                     difficultyLevel: 4,
@@ -119,7 +119,7 @@ namespace BarSimulator.Data
                 // Daiquiri - Classic rum cocktail
                 new DrinkRecipe(
                     name: "Daiquiri",
-                    ingredients: new List<string> { "rum", "lime_juice", "simple_syrup" },
+                    ingredients: new List<string> { "rum", "juice", "syrup" },
                     shakeTime: 3.0f,
                     requiresShaking: true, // REQUIRES SHAKING
                     difficultyLevel: 3,
@@ -130,7 +130,7 @@ namespace BarSimulator.Data
                 // Mojito - Refreshing Cuban cocktail
                 new DrinkRecipe(
                     name: "Mojito",
-                    ingredients: new List<string> { "rum", "juice", "syrup", "soda" },
+                    ingredients: new List<string> { "rum", "juice", "syrup" },
                     shakeTime: 0f,
                     requiresShaking: false, // Muddled and stirred
                     difficultyLevel: 3,
@@ -141,7 +141,7 @@ namespace BarSimulator.Data
                 // Old Fashioned - Timeless classic
                 new DrinkRecipe(
                     name: "Old Fashioned",
-                    ingredients: new List<string> { "whiskey", "simple_syrup", "angostura_bitters" },
+                    ingredients: new List<string> { "whiskey", "syrup", "bitters" }, // Replaced angostura_bitters with bitters
                     shakeTime: 0f,
                     requiresShaking: false, // Stirred
                     difficultyLevel: 2,

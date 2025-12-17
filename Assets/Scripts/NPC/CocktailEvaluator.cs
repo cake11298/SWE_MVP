@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using BarSimulator.Data;
 using BarSimulator.Objects;
+using BarSimulator.Core;
 
 namespace BarSimulator.NPC
 {
@@ -24,6 +25,9 @@ namespace BarSimulator.NPC
         /// <returns>Evaluation result with score and coins</returns>
         public static EvaluationResult Evaluate(CocktailRecipe recipe, Dictionary<string, float> glassContents, LiquorDatabase liquorDatabase)
         {
+            // Normalize glass contents names
+            glassContents = LiquorNameMapper.NormalizeIngredients(glassContents);
+
             EvaluationResult result = new EvaluationResult();
             result.recipeName = recipe.name;
 
