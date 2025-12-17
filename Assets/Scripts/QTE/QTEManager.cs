@@ -131,7 +131,7 @@ namespace BarSimulator.QTE
                 // 旋轉方向
                 float currentDirection = (Random.value > 0.5f) ? 1f : -1f;
                 // 選轉速度
-                float rotateSpeed = 180f + i * Random.Range(0f, 30f);
+                float rotateSpeed = 360f + i * Random.Range(0f, 30f);
                 // 判定點角度
                 float randomAngle = Random.Range(0f, 360f);
                 float currentTimer = 0f;

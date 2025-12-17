@@ -403,6 +403,46 @@ namespace BarSimulator.Objects
         }
 
         /// <summary>
+        /// 轉移內容到舊版 GlassContainer
+        /// </summary>
+        public virtual float TransferTo(GlassContainer target, float amount)
+        {
+            if (contents.IsEmpty || target.IsFull()) return 0f;
+
+            float actualAmount = Mathf.Min(amount, contents.volume, target.GetRemainingSpace());
+            float ratio = actualAmount / contents.volume;
+
+            // 轉移每種成分
+            foreach (var ingredient in contents.ingredients)
+            {
+                float transferAmount = ingredient.amount * ratio;
+                target.AddLiquid(ingredient.name, transferAmount);
+                
+                ingredient.amount -= transferAmount;
+            }
+
+            // 更新體積
+            contents.volume -= actualAmount;
+
+            // 轉移shaken狀態
+            if (contents.isShaken)
+            {
+                target.isShaken = true;
+            }
+
+            // 清理空成分
+            contents.ingredients.RemoveAll(i => i.amount <= 0.01f);
+
+            // 更新顏色
+            contents.UpdateMixedColor();
+
+            // 更新視覺
+            UpdateLiquidVisual();
+
+            return actualAmount;
+        }
+
+        /// <summary>
         /// 倒入目標容器（便捷方法）
         /// </summary>
         public virtual void PourInto(Container target, float amount)
@@ -651,6 +691,33 @@ namespace BarSimulator.Objects
             }
 
             return info;
+        }
+
+        /// <summary>
+        /// 取得內容物字串
+        /// </summary>
+        public virtual string GetContentsString()
+        {
+            if (contents.IsEmpty)
+            {
+                return "Empty";
+            }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            bool first = true;
+
+            foreach (var ingredient in contents.ingredients)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+
+                sb.Append($"{ingredient.displayName} {ingredient.amount:F0}ml");
+                first = false;
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
