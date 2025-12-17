@@ -188,8 +188,11 @@ namespace BarSimulator.Objects
         {
             if (liquorData == null) return null;
 
+            // 使用標準化名稱
+            string canonicalId = LiquorNameMapper.GetCanonicalName(liquorData.id);
+
             return new Ingredient(
-                liquorData.id,
+                canonicalId,
                 liquorData.nameZH,
                 liquorData.displayName,
                 amount,

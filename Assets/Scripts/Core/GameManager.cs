@@ -333,6 +333,23 @@ namespace BarSimulator.Core
             }
 
             SetGameState(GameState.GameOver);
+            
+            // 延遲載入結算場景，讓狀態變更事件先處理
+            StartCoroutine(LoadGameEndSceneDelayed());
+        }
+
+        /// <summary>
+        /// 延遲載入結算場景
+        /// </summary>
+        private System.Collections.IEnumerator LoadGameEndSceneDelayed()
+        {
+            yield return new WaitForSecondsRealtime(0.5f);
+            
+            // 恢復時間流速以便場景切換
+            Time.timeScale = 1f;
+            
+            // 載入結算場景
+            UnityEngine.SceneManagement.SceneManager.LoadScene("GameEnd");
         }
 
         /// <summary>
