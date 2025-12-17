@@ -138,7 +138,7 @@ namespace BarSimulator.Objects
             this.isQTEActive = !useTimer;
 
             // Create particle effect if not exists
-            CreateShakeParticles();
+            // CreateShakeParticles();
 
             OnShakeStart?.Invoke();
             Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml (Timer: {useTimer})");
