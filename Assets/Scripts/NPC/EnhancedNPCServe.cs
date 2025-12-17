@@ -1,10 +1,12 @@
-using UnityEngine;
-using BarSimulator.Objects;
 using BarSimulator.Core;
-using BarSimulator.UI;
 using BarSimulator.Data;
-using UnityEngine.UI;
+using BarSimulator.Objects;
+using BarSimulator.UI;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace BarSimulator.NPC
 {
@@ -227,7 +229,7 @@ namespace BarSimulator.NPC
             if (dialogueUI != null)
             {
                 message = message.Replace("{%DrinkName}", currentOrder.name);
-
+                message = message.Replace("{%ingridentRequest}", currentOrder.ingredients.Keys.ElementAt(Random.Range(0, currentOrder.ingredients.Keys.Count)));
 
                 dialogueText.text = message;
                 dialogueUI.gameObject.SetActive(true);
