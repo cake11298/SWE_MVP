@@ -46,8 +46,8 @@ namespace BarSimulator.Data
 
         // === 商店升級系統新增欄位 ===
 
-        /// <summary>當前等級 (1-3)，Level 1 = 普通，Level 2 = 中級，Level 3 = 高級</summary>
-        [Range(1, 3)]
+        /// <summary>當前等級 (1-5)，Level 1 = 普通，Level 5 = 最高級</summary>
+        [Range(1, 5)]
         public int level = 1;
 
         /// <summary>是否已解鎖（用於新酒類或稀有酒類）</summary>
@@ -56,15 +56,17 @@ namespace BarSimulator.Data
         /// <summary>解鎖價格（金幣）</summary>
         public int unlockPrice = 0;
 
-        /// <summary>升級價格陣列 [Lv1→Lv2的價格, Lv2→Lv3的價格]</summary>
-        public int[] upgradePrices = new int[] { 500, 1000 };
+        /// <summary>升級價格陣列 [Lv1→Lv2, Lv2→Lv3, Lv3→Lv4, Lv4→Lv5]</summary>
+        public int[] upgradePrices = new int[] { 1000, 1000, 1000, 1000 };
 
         /// <summary>等級描述</summary>
         public string[] levelDescriptions = new string[]
         {
             "普通品質", // Level 1
             "中級品質 - 提升評分上限", // Level 2
-            "高級品質 - 最高評分上限和精準度加成" // Level 3
+            "高級品質 - 最高評分上限和精準度加成", // Level 3
+            "特級品質 - 大幅提升評分", // Level 4
+            "傳奇品質 - 完美評分加成" // Level 5
         };
 
         /// <summary>
@@ -181,7 +183,7 @@ namespace BarSimulator.Data
             var liquor = GetLiquor(id);
             if (liquor == null) return false;
 
-            if (liquor.level >= 3)
+            if (liquor.level >= 5)
             {
                 Debug.LogWarning($"LiquorDatabase: {liquor.displayName} 已達最高等級");
                 return false;
@@ -217,7 +219,7 @@ namespace BarSimulator.Data
         public int GetUpgradePrice(string id)
         {
             var liquor = GetLiquor(id);
-            if (liquor == null || liquor.level >= 3) return -1;
+            if (liquor == null || liquor.level >= 5) return -1;
 
             int priceIndex = liquor.level - 1; // Level 1→2 用index 0, Level 2→3 用index 1
             if (priceIndex < 0 || priceIndex >= liquor.upgradePrices.Length) return -1;
@@ -242,9 +244,9 @@ namespace BarSimulator.Data
                 LiquorData.Create("brandy", "白蘭地", "Brandy", 0x8b4513, 40f, LiquorCategory.BaseSpirit),
 
                 // === 調味料 ===
-                LiquorData.Create("lemon_juice", "檸檬汁", "Lemon Juice", 0xfff44f, 0f, LiquorCategory.Mixer),
-                LiquorData.Create("lime_juice", "萊姆汁", "Lime Juice", 0x32cd32, 0f, LiquorCategory.Mixer),
-                LiquorData.Create("simple_syrup", "糖漿", "Simple Syrup", 0xffe4b5, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("lemon_juice", "檸檬汁", "Juice", 0xfff44f, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("lime_juice", "萊姆汁", "Juice", 0x32cd32, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("simple_syrup", "糖漿", "Syrup", 0xffe4b5, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("grenadine", "紅石榴糖漿", "Grenadine", 0xff0000, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("angostura_bitters", "安格仕苦精", "Angostura Bitters", 0x8b0000, 44.7f, LiquorCategory.Mixer),
                 LiquorData.Create("soda_water", "蘇打水", "Soda Water", 0xe0ffff, 0f, LiquorCategory.Mixer),
@@ -261,7 +263,7 @@ namespace BarSimulator.Data
 
                 // === 利口酒 & 香艾酒 ===
                 LiquorData.Create("vermouth_dry", "不甜香艾酒", "Dry Vermouth", 0xe8e8d0, 18f, LiquorCategory.FortifiedWine),
-                LiquorData.Create("vermouth_sweet", "甜香艾酒", "Sweet Vermouth", 0x8b4513, 18f, LiquorCategory.FortifiedWine),
+                LiquorData.Create("vermouth", "甜香艾酒", "Vermouth", 0x8b4513, 18f, LiquorCategory.FortifiedWine),
                 LiquorData.Create("campari", "金巴利", "Campari", 0xdc143c, 25f, LiquorCategory.Liqueur),
                 LiquorData.Create("triple_sec", "橙皮酒", "Triple Sec", 0xffa500, 40f, LiquorCategory.Liqueur),
                 LiquorData.Create("cointreau", "君度橙酒", "Cointreau", 0xffa500, 40f, LiquorCategory.Liqueur),

@@ -15,6 +15,9 @@ namespace BarSimulator.NPC
         [Tooltip("Coins earned per serve")]
         [SerializeField] private int coinsPerServe = 200;
 
+        [Tooltip("Default coins for incorrect drinks")]
+        [SerializeField] private int defaultCoins = 20;
+
         [Tooltip("Interaction distance")]
         [SerializeField] private float interactionDistance = 3f;
 
@@ -122,15 +125,23 @@ namespace BarSimulator.NPC
             string drinkContents = heldGlass.GetContentsString();
             float totalVolume = heldGlass.currentTotalVolume;
 
+            // Check if drink matches order (simple check based on contents)
+            bool isCorrectDrink = CheckIfDrinkMatchesOrder(drinkContents);
+            int coinsToGive = isCorrectDrink ? coinsPerServe : defaultCoins;
+
             // Clear the glass
             heldGlass.Clear();
 
             // Add coins to GameManager
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.AddCoins(coinsPerServe);
+                GameManager.Instance.AddCoins(coinsToGive);
                 
-                Debug.Log($"SimpleNPCServe: Served drink ({drinkContents}, {totalVolume:F0}ml) to {gameObject.name}. Earned {coinsPerServe} coins!");
+                string feedback = isCorrectDrink 
+                    ? $"Perfect! Earned {coinsToGive} coins!" 
+                    : $"This isn't what I ordered, but I'll take it. Earned {coinsToGive} coins.";
+                
+                Debug.Log($"SimpleNPCServe: Served drink ({drinkContents}, {totalVolume:F0}ml) to {gameObject.name}. {feedback}");
             }
             else
             {
@@ -139,7 +150,7 @@ namespace BarSimulator.NPC
                 // Update GameStatsUI directly as backup
                 if (statsUI != null)
                 {
-                    statsUI.AddMoney(coinsPerServe);
+                    statsUI.AddMoney(coinsToGive);
                 }
             }
 
@@ -150,10 +161,36 @@ namespace BarSimulator.NPC
             }
 
             // Play feedback (optional - can add sound/animation here)
-            Debug.Log($"SimpleNPCServe: {gameObject.name} says: Thanks for the drink!");
+            string npcMessage = isCorrectDrink 
+                ? "Thanks for the drink!" 
+                : "This isn't what I ordered, but okay...";
+            Debug.Log($"SimpleNPCServe: {gameObject.name} says: {npcMessage}");
 
             // Generate new order after a delay
             Invoke(nameof(GenerateRandomOrder), 2f);
+        }
+
+        /// <summary>
+        /// Check if the drink matches the current order
+        /// </summary>
+        private bool CheckIfDrinkMatchesOrder(string drinkContents)
+        {
+            if (string.IsNullOrEmpty(currentOrder) || string.IsNullOrEmpty(drinkContents))
+                return false;
+
+            // Simple check: if order contains "Gin" and drink contains "gin", it's a match
+            string orderLower = currentOrder.ToLower();
+            string contentsLower = drinkContents.ToLower();
+
+            // Extract the main ingredient from the order (e.g., "Neat Gin" -> "gin")
+            if (orderLower.Contains("gin") && contentsLower.Contains("gin"))
+                return true;
+            if (orderLower.Contains("whiskey") && contentsLower.Contains("whiskey"))
+                return true;
+            if (orderLower.Contains("cointreau") && contentsLower.Contains("cointreau"))
+                return true;
+
+            return false;
         }
 
         /// <summary>

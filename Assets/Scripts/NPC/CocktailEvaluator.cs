@@ -12,6 +12,7 @@ namespace BarSimulator.NPC
     {
         // Scoring constants
         private const int BASE_COINS = 200;
+        private const int WRONG_DRINK_COINS = 20; // Default payment for wrong drinks
         private const float RATIO_TOLERANCE = 0.10f; // 10% tolerance for ratios
 
         /// <summary>
@@ -30,8 +31,8 @@ namespace BarSimulator.NPC
             if (!recipe.HasCorrectIngredients(glassContents))
             {
                 result.hasCorrectIngredients = false;
-                result.coins = 0;
-                result.feedback = "Wrong ingredients!";
+                result.coins = WRONG_DRINK_COINS; // Give default payment for wrong drinks
+                result.feedback = "Wrong ingredients! Here's something for your effort.";
                 return result;
             }
 

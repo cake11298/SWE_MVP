@@ -1,202 +1,286 @@
 using UnityEngine;
-using UnityEditor;
 using UnityEngine.UI;
-using BarSimulator.UI;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 
-/// <summary>
-/// Creates the Game End UI panel
-/// </summary>
-public class CreateGameEndUI
+namespace BarSimulator.Editor
 {
-    public static void Execute()
+    public static class CreateGameEndUI
     {
-        Debug.Log("=== Creating Game End UI ===");
-
-        // Find UI_Canvas
-        GameObject canvas = GameObject.Find("UI_Canvas");
-        if (canvas == null)
+        [MenuItem("Bar/Create Game End UI")]
+        public static void Execute()
         {
-            Debug.LogError("UI_Canvas not found in scene!");
-            return;
+            // Open GameEnd scene
+            EditorSceneManager.OpenScene("Assets/SceneS/GameEnd.unity");
+
+            // Create Canvas
+            GameObject canvasObj = new GameObject("Canvas");
+            Canvas canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+
+            CanvasScaler scaler = canvasObj.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
+            // Create EventSystem
+            GameObject eventSystem = new GameObject("EventSystem");
+            eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+
+            // Create Background
+            GameObject bgObj = CreateUIElement("Background", canvasObj.transform);
+            Image bgImage = bgObj.AddComponent<Image>();
+            bgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            RectTransform bgRect = bgObj.GetComponent<RectTransform>();
+            bgRect.anchorMin = Vector2.zero;
+            bgRect.anchorMax = Vector2.one;
+            bgRect.offsetMin = Vector2.zero;
+            bgRect.offsetMax = Vector2.zero;
+
+            // Create Title
+            GameObject titleObj = CreateUIElement("TitleText", canvasObj.transform);
+            Text titleText = titleObj.AddComponent<Text>();
+            titleText.text = "遊戲結束 - Game Over";
+            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.fontSize = 60;
+            titleText.alignment = TextAnchor.MiddleCenter;
+            titleText.color = Color.white;
+            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0.5f, 0.85f);
+            titleRect.anchorMax = new Vector2(0.5f, 0.95f);
+            titleRect.sizeDelta = new Vector2(800, 100);
+
+            // Create Stats Panel (Center)
+            GameObject statsPanel = CreateUIElement("StatsPanel", canvasObj.transform);
+            Image statsPanelImg = statsPanel.AddComponent<Image>();
+            statsPanelImg.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+            RectTransform statsRect = statsPanel.GetComponent<RectTransform>();
+            statsRect.anchorMin = new Vector2(0.35f, 0.4f);
+            statsRect.anchorMax = new Vector2(0.65f, 0.75f);
+            statsRect.offsetMin = Vector2.zero;
+            statsRect.offsetMax = Vector2.zero;
+
+            // Stats Title
+            GameObject statsTitleObj = CreateUIElement("StatsTitle", statsPanel.transform);
+            Text statsTitleText = statsTitleObj.AddComponent<Text>();
+            statsTitleText.text = "本局統計 Statistics";
+            statsTitleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            statsTitleText.fontSize = 32;
+            statsTitleText.alignment = TextAnchor.MiddleCenter;
+            statsTitleText.color = Color.yellow;
+            RectTransform statsTitleRect = statsTitleObj.GetComponent<RectTransform>();
+            statsTitleRect.anchorMin = new Vector2(0, 0.85f);
+            statsTitleRect.anchorMax = new Vector2(1, 1);
+            statsTitleRect.offsetMin = new Vector2(20, -10);
+            statsTitleRect.offsetMax = new Vector2(-20, -10);
+
+            // Coins Text
+            GameObject coinsObj = CreateUIElement("CoinsText", statsPanel.transform);
+            Text coinsText = coinsObj.AddComponent<Text>();
+            coinsText.text = "總金幣 Total Coins: $0";
+            coinsText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            coinsText.fontSize = 28;
+            coinsText.alignment = TextAnchor.MiddleCenter;
+            coinsText.color = Color.white;
+            RectTransform coinsRect = coinsObj.GetComponent<RectTransform>();
+            coinsRect.anchorMin = new Vector2(0, 0.65f);
+            coinsRect.anchorMax = new Vector2(1, 0.8f);
+            coinsRect.offsetMin = new Vector2(20, 0);
+            coinsRect.offsetMax = new Vector2(-20, 0);
+
+            // Drinks Served Text
+            GameObject drinksObj = CreateUIElement("DrinksServedText", statsPanel.transform);
+            Text drinksText = drinksObj.AddComponent<Text>();
+            drinksText.text = "服務杯數 Drinks Served: 0";
+            drinksText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            drinksText.fontSize = 24;
+            drinksText.alignment = TextAnchor.MiddleCenter;
+            drinksText.color = Color.white;
+            RectTransform drinksRect = drinksObj.GetComponent<RectTransform>();
+            drinksRect.anchorMin = new Vector2(0, 0.5f);
+            drinksRect.anchorMax = new Vector2(1, 0.65f);
+            drinksRect.offsetMin = new Vector2(20, 0);
+            drinksRect.offsetMax = new Vector2(-20, 0);
+
+            // Create Left Panel (Upgrades)
+            GameObject upgradesPanel = CreateUIElement("UpgradesPanel", canvasObj.transform);
+            Image upgradesPanelImg = upgradesPanel.AddComponent<Image>();
+            upgradesPanelImg.color = new Color(0.15f, 0.25f, 0.15f, 0.9f);
+            RectTransform upgradesRect = upgradesPanel.GetComponent<RectTransform>();
+            upgradesRect.anchorMin = new Vector2(0.05f, 0.15f);
+            upgradesRect.anchorMax = new Vector2(0.3f, 0.75f);
+            upgradesRect.offsetMin = Vector2.zero;
+            upgradesRect.offsetMax = Vector2.zero;
+
+            // Upgrades Title
+            GameObject upgradeTitleObj = CreateUIElement("UpgradesTitle", upgradesPanel.transform);
+            Text upgradeTitleText = upgradeTitleObj.AddComponent<Text>();
+            upgradeTitleText.text = "酒類升級 Liquor Upgrades";
+            upgradeTitleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            upgradeTitleText.fontSize = 24;
+            upgradeTitleText.alignment = TextAnchor.MiddleCenter;
+            upgradeTitleText.color = Color.green;
+            RectTransform upgradeTitleRect = upgradeTitleObj.GetComponent<RectTransform>();
+            upgradeTitleRect.anchorMin = new Vector2(0, 0.9f);
+            upgradeTitleRect.anchorMax = new Vector2(1, 1);
+            upgradeTitleRect.offsetMin = new Vector2(10, -10);
+            upgradeTitleRect.offsetMax = new Vector2(-10, -10);
+
+            // Upgrades Scroll View
+            GameObject upgradesScrollView = CreateScrollView("UpgradesScrollView", upgradesPanel.transform);
+            RectTransform upgradesScrollRect = upgradesScrollView.GetComponent<RectTransform>();
+            upgradesScrollRect.anchorMin = new Vector2(0, 0);
+            upgradesScrollRect.anchorMax = new Vector2(1, 0.88f);
+            upgradesScrollRect.offsetMin = new Vector2(10, 10);
+            upgradesScrollRect.offsetMax = new Vector2(-10, -10);
+
+            // Create Right Panel (Decorations)
+            GameObject decorationsPanel = CreateUIElement("DecorationsPanel", canvasObj.transform);
+            Image decorationsPanelImg = decorationsPanel.AddComponent<Image>();
+            decorationsPanelImg.color = new Color(0.25f, 0.15f, 0.15f, 0.9f);
+            RectTransform decorationsRect = decorationsPanel.GetComponent<RectTransform>();
+            decorationsRect.anchorMin = new Vector2(0.7f, 0.15f);
+            decorationsRect.anchorMax = new Vector2(0.95f, 0.75f);
+            decorationsRect.offsetMin = Vector2.zero;
+            decorationsRect.offsetMax = Vector2.zero;
+
+            // Decorations Title
+            GameObject decorationTitleObj = CreateUIElement("DecorationsTitle", decorationsPanel.transform);
+            Text decorationTitleText = decorationTitleObj.AddComponent<Text>();
+            decorationTitleText.text = "裝飾品 Decorations";
+            decorationTitleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            decorationTitleText.fontSize = 24;
+            decorationTitleText.alignment = TextAnchor.MiddleCenter;
+            decorationTitleText.color = new Color(1f, 0.7f, 0.3f);
+            RectTransform decorationTitleRect = decorationTitleObj.GetComponent<RectTransform>();
+            decorationTitleRect.anchorMin = new Vector2(0, 0.9f);
+            decorationTitleRect.anchorMax = new Vector2(1, 1);
+            decorationTitleRect.offsetMin = new Vector2(10, -10);
+            decorationTitleRect.offsetMax = new Vector2(-10, -10);
+
+            // Decorations Scroll View
+            GameObject decorationsScrollView = CreateScrollView("DecorationsScrollView", decorationsPanel.transform);
+            RectTransform decorationsScrollRect = decorationsScrollView.GetComponent<RectTransform>();
+            decorationsScrollRect.anchorMin = new Vector2(0, 0);
+            decorationsScrollRect.anchorMax = new Vector2(1, 0.88f);
+            decorationsScrollRect.offsetMin = new Vector2(10, 10);
+            decorationsScrollRect.offsetMax = new Vector2(-10, -10);
+
+            // Create Buttons Panel
+            GameObject buttonsPanel = CreateUIElement("ButtonsPanel", canvasObj.transform);
+            RectTransform buttonsPanelRect = buttonsPanel.GetComponent<RectTransform>();
+            buttonsPanelRect.anchorMin = new Vector2(0.3f, 0.05f);
+            buttonsPanelRect.anchorMax = new Vector2(0.7f, 0.15f);
+            buttonsPanelRect.offsetMin = Vector2.zero;
+            buttonsPanelRect.offsetMax = Vector2.zero;
+
+            // Main Menu Button
+            GameObject mainMenuBtn = CreateButton("MainMenuButton", "返回主選單 Main Menu", buttonsPanel.transform);
+            RectTransform mainMenuRect = mainMenuBtn.GetComponent<RectTransform>();
+            mainMenuRect.anchorMin = new Vector2(0, 0);
+            mainMenuRect.anchorMax = new Vector2(0.45f, 1);
+            mainMenuRect.offsetMin = new Vector2(10, 10);
+            mainMenuRect.offsetMax = new Vector2(-10, -10);
+            mainMenuBtn.GetComponent<Image>().color = new Color(0.8f, 0.3f, 0.3f);
+
+            // Next Game Button
+            GameObject nextGameBtn = CreateButton("NextGameButton", "下一局 Next Game", buttonsPanel.transform);
+            RectTransform nextGameRect = nextGameBtn.GetComponent<RectTransform>();
+            nextGameRect.anchorMin = new Vector2(0.55f, 0);
+            nextGameRect.anchorMax = new Vector2(1, 1);
+            nextGameRect.offsetMin = new Vector2(10, 10);
+            nextGameRect.offsetMax = new Vector2(-10, -10);
+            nextGameBtn.GetComponent<Image>().color = new Color(0.3f, 0.8f, 0.3f);
+
+            // Add GameEndUIController component to Canvas
+            var controller = canvasObj.AddComponent<BarSimulator.UI.GameEndUIController>();
+
+            // Save scene
+            EditorSceneManager.SaveOpenScenes();
+
+            Debug.Log("Game End UI created successfully!");
         }
 
-        // Check if GameEndPanel already exists
-        Transform existingPanel = canvas.transform.Find("GameEndPanel");
-        if (existingPanel != null)
+        private static GameObject CreateUIElement(string name, Transform parent)
         {
-            Debug.Log("GameEndPanel already exists, updating it...");
-            GameObject.DestroyImmediate(existingPanel.gameObject);
+            GameObject obj = new GameObject(name);
+            obj.transform.SetParent(parent, false);
+            RectTransform rect = obj.AddComponent<RectTransform>();
+            return obj;
         }
 
-        // Create Game End Panel
-        GameObject gameEndPanel = new GameObject("GameEndPanel");
-        gameEndPanel.transform.SetParent(canvas.transform, false);
+        private static GameObject CreateButton(string name, string text, Transform parent)
+        {
+            GameObject btnObj = CreateUIElement(name, parent);
+            Image btnImage = btnObj.AddComponent<Image>();
+            btnImage.color = Color.white;
+            Button btn = btnObj.AddComponent<Button>();
 
-        // Add RectTransform
-        RectTransform panelRect = gameEndPanel.AddComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.sizeDelta = Vector2.zero;
-        panelRect.anchoredPosition = Vector2.zero;
+            GameObject textObj = CreateUIElement("Text", btnObj.transform);
+            Text btnText = textObj.AddComponent<Text>();
+            btnText.text = text;
+            btnText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            btnText.fontSize = 24;
+            btnText.alignment = TextAnchor.MiddleCenter;
+            btnText.color = Color.white;
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
 
-        // Add Image (background)
-        Image panelImage = gameEndPanel.AddComponent<Image>();
-        panelImage.color = new Color(0f, 0f, 0f, 0.9f); // Dark semi-transparent
+            return btnObj;
+        }
 
-        // Create Content Panel
-        GameObject contentPanel = new GameObject("ContentPanel");
-        contentPanel.transform.SetParent(gameEndPanel.transform, false);
+        private static GameObject CreateScrollView(string name, Transform parent)
+        {
+            GameObject scrollViewObj = CreateUIElement(name, parent);
+            Image scrollImage = scrollViewObj.AddComponent<Image>();
+            scrollImage.color = new Color(0.1f, 0.1f, 0.1f, 0.5f);
+            ScrollRect scrollRect = scrollViewObj.AddComponent<ScrollRect>();
 
-        RectTransform contentRect = contentPanel.AddComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0.5f, 0.5f);
-        contentRect.anchorMax = new Vector2(0.5f, 0.5f);
-        contentRect.sizeDelta = new Vector2(600f, 500f);
-        contentRect.anchoredPosition = Vector2.zero;
+            // Create Viewport
+            GameObject viewportObj = CreateUIElement("Viewport", scrollViewObj.transform);
+            Image viewportImage = viewportObj.AddComponent<Image>();
+            viewportImage.color = new Color(0, 0, 0, 0);
+            Mask viewportMask = viewportObj.AddComponent<Mask>();
+            viewportMask.showMaskGraphic = false;
+            RectTransform viewportRect = viewportObj.GetComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
 
-        Image contentImage = contentPanel.AddComponent<Image>();
-        contentImage.color = new Color(0.1f, 0.1f, 0.1f, 1f);
+            // Create Content
+            GameObject contentObj = CreateUIElement("Content", viewportObj.transform);
+            RectTransform contentRect = contentObj.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0, 1);
+            contentRect.anchorMax = new Vector2(1, 1);
+            contentRect.pivot = new Vector2(0.5f, 1);
+            contentRect.sizeDelta = new Vector2(0, 600);
 
-        // Create Title Text
-        GameObject titleObj = new GameObject("TitleText");
-        titleObj.transform.SetParent(contentPanel.transform, false);
+            // Add VerticalLayoutGroup to Content
+            VerticalLayoutGroup layoutGroup = contentObj.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = 10;
+            layoutGroup.padding = new RectOffset(10, 10, 10, 10);
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childForceExpandHeight = false;
 
-        RectTransform titleRect = titleObj.AddComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0.5f, 1f);
-        titleRect.anchorMax = new Vector2(0.5f, 1f);
-        titleRect.sizeDelta = new Vector2(500f, 80f);
-        titleRect.anchoredPosition = new Vector2(0f, -60f);
+            // Add ContentSizeFitter
+            ContentSizeFitter fitter = contentObj.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        Text titleText = titleObj.AddComponent<Text>();
-        titleText.text = "Bar Closed - Time's Up!";
-        titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        titleText.fontSize = 36;
-        titleText.fontStyle = FontStyle.Bold;
-        titleText.alignment = TextAnchor.MiddleCenter;
-        titleText.color = Color.white;
+            // Setup ScrollRect
+            scrollRect.content = contentRect;
+            scrollRect.viewport = viewportRect;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
 
-        // Create Stats Container
-        GameObject statsContainer = new GameObject("StatsContainer");
-        statsContainer.transform.SetParent(contentPanel.transform, false);
-
-        RectTransform statsRect = statsContainer.AddComponent<RectTransform>();
-        statsRect.anchorMin = new Vector2(0.5f, 0.5f);
-        statsRect.anchorMax = new Vector2(0.5f, 0.5f);
-        statsRect.sizeDelta = new Vector2(500f, 250f);
-        statsRect.anchoredPosition = new Vector2(0f, 20f);
-
-        // Create stat texts
-        CreateStatText(statsContainer, "TotalMoneyText", "Total Money: $0", new Vector2(0f, 80f));
-        CreateStatText(statsContainer, "DrinksServedText", "Drinks Served: 0", new Vector2(0f, 40f));
-        CreateStatText(statsContainer, "SatisfiedCustomersText", "Satisfied Customers: 0", new Vector2(0f, 0f));
-        CreateStatText(statsContainer, "AverageRatingText", "Average Rating: 0%", new Vector2(0f, -40f));
-
-        // Create Buttons Container
-        GameObject buttonsContainer = new GameObject("ButtonsContainer");
-        buttonsContainer.transform.SetParent(contentPanel.transform, false);
-
-        RectTransform buttonsRect = buttonsContainer.AddComponent<RectTransform>();
-        buttonsRect.anchorMin = new Vector2(0.5f, 0f);
-        buttonsRect.anchorMax = new Vector2(0.5f, 0f);
-        buttonsRect.sizeDelta = new Vector2(500f, 80f);
-        buttonsRect.anchoredPosition = new Vector2(0f, 60f);
-
-        // Create Main Menu Button
-        GameObject mainMenuBtn = CreateButton(buttonsContainer, "MainMenuButton", "Main Menu", new Vector2(-130f, 0f));
-
-        // Create Quit Button
-        GameObject quitBtn = CreateButton(buttonsContainer, "QuitButton", "Quit", new Vector2(130f, 0f));
-
-        // Add GameEndUI component
-        GameEndUI gameEndUI = gameEndPanel.AddComponent<GameEndUI>();
-
-        // Use reflection to set private fields
-        var gameEndUIType = typeof(GameEndUI);
-        
-        var gameEndPanelField = gameEndUIType.GetField("gameEndPanel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (gameEndPanelField != null) gameEndPanelField.SetValue(gameEndUI, gameEndPanel);
-
-        var titleTextField = gameEndUIType.GetField("titleText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (titleTextField != null) titleTextField.SetValue(gameEndUI, titleText);
-
-        var totalMoneyTextField = gameEndUIType.GetField("totalMoneyText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (totalMoneyTextField != null) totalMoneyTextField.SetValue(gameEndUI, statsContainer.transform.Find("TotalMoneyText").GetComponent<Text>());
-
-        var drinksServedTextField = gameEndUIType.GetField("drinksServedText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (drinksServedTextField != null) drinksServedTextField.SetValue(gameEndUI, statsContainer.transform.Find("DrinksServedText").GetComponent<Text>());
-
-        var satisfiedCustomersTextField = gameEndUIType.GetField("satisfiedCustomersText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (satisfiedCustomersTextField != null) satisfiedCustomersTextField.SetValue(gameEndUI, statsContainer.transform.Find("SatisfiedCustomersText").GetComponent<Text>());
-
-        var averageRatingTextField = gameEndUIType.GetField("averageRatingText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (averageRatingTextField != null) averageRatingTextField.SetValue(gameEndUI, statsContainer.transform.Find("AverageRatingText").GetComponent<Text>());
-
-        var mainMenuButtonField = gameEndUIType.GetField("mainMenuButton", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (mainMenuButtonField != null) mainMenuButtonField.SetValue(gameEndUI, mainMenuBtn.GetComponent<Button>());
-
-        var quitButtonField = gameEndUIType.GetField("quitButton", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (quitButtonField != null) quitButtonField.SetValue(gameEndUI, quitBtn.GetComponent<Button>());
-
-        // Mark scene as dirty
-        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
-
-        Debug.Log("Game End UI created successfully!");
-        EditorUtility.DisplayDialog("Success", "Game End UI has been created!", "OK");
-    }
-
-    private static void CreateStatText(GameObject parent, string name, string text, Vector2 position)
-    {
-        GameObject textObj = new GameObject(name);
-        textObj.transform.SetParent(parent.transform, false);
-
-        RectTransform rect = textObj.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(450f, 30f);
-        rect.anchoredPosition = position;
-
-        Text textComponent = textObj.AddComponent<Text>();
-        textComponent.text = text;
-        textComponent.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        textComponent.fontSize = 24;
-        textComponent.alignment = TextAnchor.MiddleCenter;
-        textComponent.color = Color.white;
-    }
-
-    private static GameObject CreateButton(GameObject parent, string name, string text, Vector2 position)
-    {
-        GameObject buttonObj = new GameObject(name);
-        buttonObj.transform.SetParent(parent.transform, false);
-
-        RectTransform rect = buttonObj.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(200f, 50f);
-        rect.anchoredPosition = position;
-
-        Image image = buttonObj.AddComponent<Image>();
-        image.color = new Color(0.2f, 0.6f, 0.8f, 1f);
-
-        Button button = buttonObj.AddComponent<Button>();
-        button.targetGraphic = image;
-
-        // Create button text
-        GameObject textObj = new GameObject("Text");
-        textObj.transform.SetParent(buttonObj.transform, false);
-
-        RectTransform textRect = textObj.AddComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.sizeDelta = Vector2.zero;
-        textRect.anchoredPosition = Vector2.zero;
-
-        Text textComponent = textObj.AddComponent<Text>();
-        textComponent.text = text;
-        textComponent.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        textComponent.fontSize = 20;
-        textComponent.fontStyle = FontStyle.Bold;
-        textComponent.alignment = TextAnchor.MiddleCenter;
-        textComponent.color = Color.white;
-
-        return buttonObj;
+            return scrollViewObj;
+        }
     }
 }

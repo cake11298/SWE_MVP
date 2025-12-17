@@ -135,14 +135,14 @@ namespace BarSimulator.Data
             recipes["Martini"] = new CocktailRecipe("Martini", new Dictionary<string, int>
             {
                 { "Gin", 5 },
-                { "Wine", 1 }
+                { "Vermouth", 1 }
             }, difficulty: 2);
 
             // Vodka Martini
             recipes["Vodka Martini"] = new CocktailRecipe("Vodka Martini", new Dictionary<string, int>
             {
                 { "Vodka", 5 },
-                { "Wine", 1 }
+                { "Vermouth", 1 }
             }, difficulty: 2);
 
             // Whiskey Highball
@@ -178,7 +178,7 @@ namespace BarSimulator.Data
             // Sidecar
             recipes["Sidecar"] = new CocktailRecipe("Sidecar", new Dictionary<string, int>
             {
-                { "Wine", 2 },
+                { "Cognac", 2 },
                 { "Cointreau", 1 },
                 { "Juice", 1 }
             }, difficulty: 3);

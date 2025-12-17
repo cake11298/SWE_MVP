@@ -51,7 +51,7 @@ namespace BarSimulator.Data
                 // Negroni - Perfect bitter Italian cocktail
                 new DrinkRecipe(
                     name: "Negroni",
-                    ingredients: new List<string> { "gin", "campari", "vermouth_sweet" },
+                    ingredients: new List<string> { "gin", "campari", "vermouth" },
                     shakeTime: 0f,
                     requiresShaking: false, // Built in glass, stirred
                     difficultyLevel: 2,
@@ -62,7 +62,7 @@ namespace BarSimulator.Data
                 // Margarita - Classic tequila cocktail
                 new DrinkRecipe(
                     name: "Margarita",
-                    ingredients: new List<string> { "tequila", "triple_sec", "lime_juice" },
+                    ingredients: new List<string> { "tequila", "cointreau", "juice" },
                     shakeTime: 3.0f,
                     requiresShaking: true, // REQUIRES SHAKING - triggers QTE
                     difficultyLevel: 3,
@@ -97,7 +97,7 @@ namespace BarSimulator.Data
                 // Whiskey Sour - Classic sour cocktail
                 new DrinkRecipe(
                     name: "Whiskey Sour",
-                    ingredients: new List<string> { "whiskey", "lemon_juice", "simple_syrup" },
+                    ingredients: new List<string> { "whiskey", "juice", "syrup" },
                     shakeTime: 4.0f,
                     requiresShaking: true, // REQUIRES SHAKING
                     difficultyLevel: 3,
@@ -130,7 +130,7 @@ namespace BarSimulator.Data
                 // Mojito - Refreshing Cuban cocktail
                 new DrinkRecipe(
                     name: "Mojito",
-                    ingredients: new List<string> { "rum", "lime_juice", "simple_syrup", "soda_water" },
+                    ingredients: new List<string> { "rum", "juice", "syrup", "soda" },
                     shakeTime: 0f,
                     requiresShaking: false, // Muddled and stirred
                     difficultyLevel: 3,

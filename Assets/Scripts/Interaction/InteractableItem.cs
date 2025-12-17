@@ -27,7 +27,9 @@ namespace BarSimulator.Player
         Wine,
         Beer,
         Juice,
-        Soda
+        Soda,
+        Cointreau,
+        Other
     }
 
     /// <summary>

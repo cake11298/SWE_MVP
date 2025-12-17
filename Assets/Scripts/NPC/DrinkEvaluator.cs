@@ -109,7 +109,7 @@ namespace BarSimulator.NPC
             { "Negroni", new RecipeData("Negroni", new Dictionary<string, float> {
                 { "gin", 0.33f },
                 { "campari", 0.33f },
-                { "vermouth_sweet", 0.33f }
+                { "vermouth", 0.33f }
             })},
 
             // Margarita: 2份龍舌蘭 + 1份橙酒 + 1份青檸汁
@@ -123,7 +123,7 @@ namespace BarSimulator.NPC
             { "Daiquiri", new RecipeData("Daiquiri", new Dictionary<string, float> {
                 { "rum", 0.57f },
                 { "lime_juice", 0.29f },
-                { "simple_syrup", 0.14f }
+                { "syrup", 0.14f }
             })},
 
             // Cosmopolitan: 1.5份伏特加 + 1份橙酒 + 0.5份青檸汁 + 1份蔓越莓汁

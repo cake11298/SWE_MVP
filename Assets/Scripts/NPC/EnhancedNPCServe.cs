@@ -154,24 +154,17 @@ namespace BarSimulator.NPC
             // Clear the glass
             heldGlass.Clear();
 
-            // Give coins based on evaluation
-            if (evaluation.coins > 0)
+            // Give coins based on evaluation (always give at least something)
+            if (GameManager.Instance != null)
             {
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.AddCoins(evaluation.coins);
-                }
-                else if (statsUI != null)
-                {
-                    statsUI.AddMoney(evaluation.coins);
-                }
+                GameManager.Instance.AddCoins(evaluation.coins);
+            }
+            else if (statsUI != null)
+            {
+                statsUI.AddMoney(evaluation.coins);
+            }
 
-                Debug.Log($"EnhancedNPCServe: {gameObject.name} - {evaluation.feedback} Earned {evaluation.coins} coins!");
-            }
-            else
-            {
-                Debug.Log($"EnhancedNPCServe: {gameObject.name} - {evaluation.feedback} No coins earned.");
-            }
+            Debug.Log($"EnhancedNPCServe: {gameObject.name} - {evaluation.feedback} Earned {evaluation.coins} coins!");
 
             // Show feedback to player
             ShowFeedback(evaluation);
@@ -206,7 +199,7 @@ namespace BarSimulator.NPC
             }
             else
             {
-                message += "\nWrong drink!";
+                message += $"\n+{evaluation.coins} coins (wrong drink)";
             }
 
             Debug.Log(message);

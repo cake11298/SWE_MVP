@@ -234,8 +234,13 @@ namespace BarSimulator.Systems
             float amountPoured = pourRate * deltaTime;
             amountPoured = Mathf.Min(amountPoured, target.RemainingSpace);
 
+            // 使用標準化的酒類資料
+            var normalizedData = bottle.LiquorData;
+            // 確保 ID 是標準化的
+            normalizedData.id = LiquorNameMapper.GetCanonicalName(normalizedData.id);
+
             // 添加到容器
-            target.AddLiquor(bottle.LiquorData, amountPoured);
+            target.AddLiquor(normalizedData, amountPoured);
 
             // 更新狀態
             if (!isPouringActive)
