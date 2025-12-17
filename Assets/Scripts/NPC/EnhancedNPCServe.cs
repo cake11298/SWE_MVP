@@ -198,6 +198,9 @@ namespace BarSimulator.NPC
         {
             if (dialogueUI != null)
             {
+                message = message.Replace("{%DrinkName}", currentOrder.name);
+
+
                 dialogueText.text = message;
                 dialogueUI.gameObject.SetActive(true);
 
