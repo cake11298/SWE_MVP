@@ -248,7 +248,7 @@ namespace BarSimulator.Player
                     // 嘗試獲取 Shaker 組件 (優先) 或 ShakerContainer
                     var shaker = heldObject.GetComponent<Objects.Shaker>();
                     
-                    if (shaker != null)
+                    if (shaker != null && false)
                     {
                         Debug.Log("[HandleInput] 開始搖晃 Shaker");
                         isShaking = true;
@@ -279,7 +279,7 @@ namespace BarSimulator.Player
                 {
                     var shaker = heldObject.GetComponent<Objects.Shaker>();
                     
-                    if (shaker != null)
+                    if (shaker != null && false)
                     {
                         Debug.Log("[HandleInput] 停止搖晃 Shaker");
                         isShaking = false;
