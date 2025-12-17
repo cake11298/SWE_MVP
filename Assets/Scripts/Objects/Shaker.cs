@@ -110,10 +110,9 @@ namespace BarSimulator.Objects
         #region 搖酒
 
         /// <summary>
-        /// 開始搖酒（移除QTE強制綁定，改為計時完成）
-        /// 參考: CocktailSystem.js shake() Line 686-707
+        /// 開始搖酒
         /// </summary>
-        public void StartShaking()
+        public void StartShaking(bool useTimer = true)
         {
             if (contents.IsEmpty) return;
 
@@ -127,12 +126,22 @@ namespace BarSimulator.Objects
             isShaking = true;
             shakeCompleteNotified = false;
             baseRotation = transform.localRotation;
+            
+            // 如果使用 QTE，則禁用計時器自動完成
+            if (!useTimer)
+            {
+                // 設置一個非常大的時間，避免自動完成，或者在 Update 中處理
+                // 這裡我們簡單地標記一下，或者依賴 Update 中的邏輯
+                // 為了簡單起見，我們讓 Update 繼續運行動畫，但我們不觸發完成事件
+                // 這需要修改 UpdateShakeAnimation
+            }
+            this.isQTEActive = !useTimer;
 
             // Create particle effect if not exists
             CreateShakeParticles();
 
             OnShakeStart?.Invoke();
-            Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml");
+            Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml (Timer: {useTimer})");
         }
 
         /// <summary>
@@ -168,13 +177,13 @@ namespace BarSimulator.Objects
             shakeProgressVisual = progress;
             OnShakeProgress?.Invoke(progress);
 
-            // Notify when shake is complete
-            if (progress >= 1f && !shakeCompleteNotified)
+            // Notify when shake is complete (Only if not in QTE mode)
+            if (!isQTEActive && progress >= 1f && !shakeCompleteNotified)
             {
                 shakeCompleteNotified = true;
                 Debug.Log("Shaker: Shake ready! You can stop shaking now.");
 
-                // 自動完成搖晃狀態 (因為移除了QTE)
+                // 自動完成搖晃狀態
                 contents.isShaken = true;
                 contents.UpdateMixedColor();
                 UpdateLiquidVisual();
@@ -352,46 +361,38 @@ namespace BarSimulator.Objects
         #region QTE回調
 
         /// <summary>
-        /// QTE完成回調
+        /// QTE完成回調 (由外部 QTEManager 呼叫)
         /// </summary>
-        private void OnQTEComplete(bool success)
+        public void OnShakeFinished(float quality)
         {
             isQTEActive = false;
 
-            if (success)
-            {
-                // QTE成功，標記為已搖晃
-                contents.isShaken = true;
-                contents.UpdateMixedColor();
-                UpdateLiquidVisual();
+            // 假設 quality > 0 即為成功，或者總是標記為 shaken 但品質不同
+            // 這裡我們簡單標記為 shaken
+            contents.isShaken = true;
+            contents.UpdateMixedColor();
+            UpdateLiquidVisual();
 
-                // 同步到ShakerContainer（如果存在）
-                var shakerContainer = GetComponent<ShakerContainer>();
-                if (shakerContainer != null)
-                {
-                    shakerContainer.isShaken = true;
-                }
-
-                OnShakeCompleted?.Invoke();
-                Debug.Log($"Shaker: QTE Success! Contents shaken.");
-            }
-            else
+            // 同步到ShakerContainer（如果存在）
+            var shakerContainer = GetComponent<ShakerContainer>();
+            if (shakerContainer != null)
             {
-                // QTE失敗
-                Debug.Log($"Shaker: QTE Failed! Try again.");
+                shakerContainer.isShaken = true;
             }
+
+            OnShakeCompleted?.Invoke();
+            Debug.Log($"Shaker: QTE Finished with quality {quality}. Contents shaken.");
 
             // 停止搖晃動畫
-            isShaking = false;
-            shakeTime = 0f;
-            shakeProgressVisual = 0f;
-            transform.localRotation = baseRotation;
+            StopShaking();
+        }
 
-            // Stop particles
-            if (shakeParticles != null)
-            {
-                shakeParticles.Stop();
-            }
+        /// <summary>
+        /// QTE完成回調 (Legacy)
+        /// </summary>
+        private void OnQTEComplete(bool success)
+        {
+            OnShakeFinished(success ? 1.0f : 0.0f);
         }
 
         #endregion

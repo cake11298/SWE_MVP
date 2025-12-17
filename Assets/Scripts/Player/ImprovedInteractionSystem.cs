@@ -46,6 +46,11 @@ namespace BarSimulator.Player
         // 搖酒狀態
         private bool isShaking = false;
 
+        /// <summary>
+        /// 當前手持的物件
+        /// </summary>
+        public GameObject HeldObject => heldObject;
+
         private void Awake()
         {
             playerCamera = GetComponentInChildren<Camera>();
@@ -281,7 +286,22 @@ namespace BarSimulator.Player
                 var shaker = heldObject.GetComponent<Objects.Shaker>();
                 var shakerContainer = heldObject.GetComponent<Objects.ShakerContainer>();
 
-                if (shakerContainer != null && QTEManager.Instance != null)
+                if (shaker != null && QTEManager.Instance != null)
+                {
+                    Debug.Log("[HandleInput] 搖晃 Shaker (New)");
+                    // 啟動 Shaker 的視覺效果 (不使用計時器)
+                    shaker.StartShaking(false);
+                    
+                    // 啟動 QTE，並傳入回調
+                    QTEManager.Instance.StartShakeQTE((quality) => {
+                        if (shaker != null)
+                        {
+                            shaker.OnShakeFinished(quality);
+                        }
+                    });
+                    isShaking = true;
+                }
+                else if (shakerContainer != null && QTEManager.Instance != null)
                 {
                     Debug.Log("[HandleInput] 搖晃 ShakerContainer (Legacy)");
                     QTEManager.Instance.StartShakeQTE();
@@ -289,7 +309,7 @@ namespace BarSimulator.Player
                 }
                 else
                 {
-                    Debug.Log("[HandleInput] 手上不是 Shaker 組件");
+                    Debug.Log("[HandleInput] 無法搖晃: 缺少 Shaker 組件或 QTEManager");
                 }
             }
             
@@ -301,10 +321,16 @@ namespace BarSimulator.Player
                 {
                     var shaker = heldObject.GetComponent<Objects.Shaker>();
                     
-                    if (shaker != null && false)
+                    if (shaker != null)
                     {
                         Debug.Log("[HandleInput] 停止搖晃 Shaker");
                         isShaking = false;
+                        // 注意：這裡不呼叫 shaker.StopShaking()，因為我們希望 QTE 失敗或中斷時由 QTEManager 處理
+                        // 或者如果 QTE 還沒完成就鬆開，視為中斷
+                        if (QTEManager.Instance != null)
+                        {
+                            QTEManager.Instance.StopShakeQTE();
+                        }
                         shaker.StopShaking();
                     }
                     else
@@ -592,31 +618,36 @@ namespace BarSimulator.Player
             // 检查是否手持Shaker（可以倒出）
             // 優先檢查 Shaker 組件
             var heldShakerObj = heldObject != null ? heldObject.GetComponent<Objects.Shaker>() : null;
-            if (heldShakerObj != null && !heldShakerObj.IsEmpty)
+            if (heldShakerObj != null)
             {
-                // 倒入玻璃杯
-                InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
-                if (targetItem != null && targetItem.itemType == ItemType.Glass)
+                // Debug.Log($"手持 Shaker: IsEmpty={heldShakerObj.IsEmpty}, Volume={heldShakerObj.Volume}");
+                
+                if (!heldShakerObj.IsEmpty)
                 {
-                    // 優先嘗試新的 Glass 組件
-                    var glass = currentHighlightedObject.GetComponent<Objects.Glass>();
-                    if (glass != null && !glass.IsFull)
+                    // 倒入玻璃杯
+                    InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                    if (targetItem != null && targetItem.itemType == ItemType.Glass)
                     {
-                        float pourAmount = Time.deltaTime * 30f;
-                        heldShakerObj.TransferTo(glass, pourAmount);
-                        Debug.Log($"正在从Shaker倒酒到Glass");
-                        return;
-                    }
+                        // 優先嘗試新的 Glass 組件
+                        var glass = currentHighlightedObject.GetComponent<Objects.Glass>();
+                        if (glass != null && !glass.IsFull)
+                        {
+                            float pourAmount = Time.deltaTime * 30f;
+                            heldShakerObj.TransferTo(glass, pourAmount);
+                            Debug.Log($"正在从Shaker倒酒到Glass");
+                            return;
+                        }
 
-                    // 嘗試舊的 GlassContainer
-                    var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
-                    if (glassContainer != null && !glassContainer.IsFull())
-                    {
-                        float pourAmount = Time.deltaTime * 30f; // 30ml/s
-                        // 使用 Container 的 TransferTo 方法 (需要 Container.cs 支援)
-                        heldShakerObj.TransferTo(glassContainer, pourAmount);
-                        Debug.Log($"正在从Shaker倒酒到GlassContainer");
-                        return;
+                        // 嘗試舊的 GlassContainer
+                        var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                        if (glassContainer != null && !glassContainer.IsFull())
+                        {
+                            float pourAmount = Time.deltaTime * 30f; // 30ml/s
+                            // 使用 Container 的 TransferTo 方法 (需要 Container.cs 支援)
+                            heldShakerObj.TransferTo(glassContainer, pourAmount);
+                            Debug.Log($"正在从Shaker倒酒到GlassContainer");
+                            return;
+                        }
                     }
                 }
             }
@@ -651,6 +682,8 @@ namespace BarSimulator.Player
                 if (currentHighlightedObject != null)
                 {
                     InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                    
+                    // 檢測玻璃杯
                     if (targetItem != null && targetItem.itemType == ItemType.Glass)
                     {
                         // 显示"Pouring into ServeGlass"
@@ -661,6 +694,15 @@ namespace BarSimulator.Player
                             liquidInfoUI.SetTargetGlass(glassContainer, targetName);
                             return;
                         }
+                    }
+
+                    // 檢測 Shaker
+                    var shaker = currentHighlightedObject.GetComponent<Objects.Shaker>();
+                    if (shaker != null)
+                    {
+                        string targetName = currentHighlightedObject.name;
+                        liquidInfoUI.SetTargetContainer(shaker, targetName);
+                        return;
                     }
                 }
             }

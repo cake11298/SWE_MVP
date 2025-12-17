@@ -56,7 +56,7 @@ namespace BarSimulator.QTE
         }
 
         // 開始搖晃QTE，由ImproveInteractionSystem.HandleInput呼叫
-        public void StartShakeQTE()
+        public void StartShakeQTE(Action<float> onComplete = null)
         {
             // 等待時創建新的shakeQTE
             if (shakeState == ShakeState.Wait)
@@ -67,6 +67,10 @@ namespace BarSimulator.QTE
                 currentShakeQTE = new ShakeQTE(qteCanvas, pointer, circle);
                 // 設定搖酒完成後的callback
                 currentShakeQTE.onFinish += HandleFinishShakeQTE;
+                if (onComplete != null)
+                {
+                    currentShakeQTE.onFinish += onComplete;
+                }
                 StartCoroutine(currentShakeQTE.StartQTE());
             }
             else if(shakeState == ShakeState.STOP)
@@ -74,6 +78,16 @@ namespace BarSimulator.QTE
                 Debug.Log("[QTE] 繼續QTE");
                 shakeState = ShakeState.Shaking;
                 currentShakeQTE.isShaking = true;
+                if (onComplete != null)
+                {
+                    // Avoid adding the same callback multiple times if possible, 
+                    // but for now we assume the caller handles it or it's a one-off.
+                    // Actually, if we resume, the previous callback is still attached to currentShakeQTE.
+                    // So we might not need to re-attach, or we might duplicate.
+                    // For simplicity in this context, we'll assume StartShakeQTE is called to START.
+                    // If resuming, we might not pass a new callback or we accept duplication.
+                    // However, ImprovedInteractionSystem calls StartShakeQTE on MouseDown.
+                }
             }
         }
 

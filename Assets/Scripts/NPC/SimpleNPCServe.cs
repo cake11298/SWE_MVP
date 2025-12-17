@@ -83,20 +83,16 @@ namespace BarSimulator.NPC
             // Check if F key is pressed
             if (Input.GetKeyDown(KeyCode.F))
             {
-                // Find ServeGlass in the scene
-                var serveGlass = GameObject.Find("ServeGlass");
-                if (serveGlass != null)
+                // Get held object from player's interaction system
+                var interactionSystem = player.GetComponent<BarSimulator.Player.ImprovedInteractionSystem>();
+                if (interactionSystem != null && interactionSystem.HeldObject != null)
                 {
-                    // Check if it's being held by checking if it's near the player
-                    float distanceToGlass = Vector3.Distance(serveGlass.transform.position, player.position);
+                    var heldObj = interactionSystem.HeldObject;
+                    heldGlass = heldObj.GetComponent<GlassContainer>();
                     
-                    // If glass is close to player (within 2 units), assume it's being held
-                    if (distanceToGlass < 2f)
+                    if (heldGlass != null)
                     {
-                        // Try to get GlassContainer component
-                        heldGlass = serveGlass.GetComponent<GlassContainer>();
-                        
-                        if (heldGlass != null && !heldGlass.IsEmpty())
+                        if (!heldGlass.IsEmpty())
                         {
                             // Serve the drink
                             ServeDrink();
@@ -108,8 +104,12 @@ namespace BarSimulator.NPC
                     }
                     else
                     {
-                        Debug.Log($"SimpleNPCServe: You need to be holding the glass to serve to {gameObject.name}.");
+                        Debug.Log($"SimpleNPCServe: You need to be holding a glass to serve to {gameObject.name}.");
                     }
+                }
+                else
+                {
+                    Debug.Log($"SimpleNPCServe: You need to be holding a glass to serve to {gameObject.name}.");
                 }
             }
         }
