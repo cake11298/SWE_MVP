@@ -13,7 +13,7 @@ namespace BarSimulator.Data
         Gin,
         Rum,
         Whiskey,
-        Wine
+        Tequila
     }
 
     /// <summary>
@@ -70,7 +70,22 @@ namespace BarSimulator.Data
     {
         public DecorationType decorationType;
         public bool isPurchased = false;
-        public const int PurchaseCost = 3000;
+        
+        // Different costs for different decorations
+        public int GetPurchaseCost()
+        {
+            switch (decorationType)
+            {
+                case DecorationType.Speaker:
+                    return 2000;
+                case DecorationType.Plant:
+                    return 3000;
+                case DecorationType.Painting:
+                    return 3000;
+                default:
+                    return 3000;
+            }
+        }
 
         public DecorationData(DecorationType type)
         {
@@ -86,11 +101,6 @@ namespace BarSimulator.Data
         public void Purchase()
         {
             isPurchased = true;
-        }
-
-        public int GetPurchaseCost()
-        {
-            return CanPurchase() ? PurchaseCost : 0;
         }
     }
 
