@@ -15,19 +15,22 @@ namespace BarSimulator.UI
         [SerializeField] private Text timeText;
 
         [Header("Time Settings")]
-        [SerializeField] private float realMinutesForFullDay = 5f; // 5 real minutes = 22:00 to 24:00 (2 hours)
+        [SerializeField] private float realMinutesForFullDay = 5f; // 5 real minutes = 20:00 to 24:00 (4 hours)
         
         // Game time settings
-        private const int START_HOUR = 22;  // 22:00:00
+        private const int START_HOUR = 20;  // 20:00:00
         private const int END_HOUR = 24;   // 24:00:00
-        private const int TOTAL_GAME_HOURS = END_HOUR - START_HOUR; // 2 hours
+        private const int TOTAL_GAME_HOURS = END_HOUR - START_HOUR; // 4 hours
         
         private float gameStartTime;
         private int currentMoney = 0;
 
         private void Start()
         {
+            // Use Time.timeSinceLevelLoad to ensure we start counting from when this scene loaded
+            // This prevents issues if the script is reused or if Time.time is large
             gameStartTime = Time.time;
+            Debug.Log($"[GameStatsUI] Game started at {gameStartTime}, Real minutes for full day: {realMinutesForFullDay}");
             
             // Subscribe to GameManager events
             if (GameManager.Instance != null)
@@ -140,11 +143,15 @@ namespace BarSimulator.UI
             
             if (currentHour >= END_HOUR)
             {
+                Debug.Log($"[GameStatsUI] Game Over triggered! Current Hour: {currentHour}, Elapsed Real Time: {elapsedRealTime}");
                 // Game ended, trigger game over
                 if (GameManager.Instance != null)
                 {
                     GameManager.Instance.TriggerGameEnd();
                 }
+                
+                // Disable this script to prevent multiple triggers
+                this.enabled = false;
             }
         }
 
