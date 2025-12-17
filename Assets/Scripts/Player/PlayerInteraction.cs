@@ -463,8 +463,8 @@ namespace BarSimulator.Player
             heldRigidbody.velocity = Vector3.zero;
             heldRigidbody.angularVelocity = Vector3.zero;
 
-            // Parent to hand position
-            heldObject.transform.SetParent(handPosition);
+            // Don't parent - we'll update position manually for better control
+            // This prevents issues with child objects and LOD groups
 
             // Clear highlight
             if (highlightSystem != null)
@@ -512,9 +512,6 @@ namespace BarSimulator.Player
         {
             if (heldObject == null)
                 return;
-
-            // Unparent from hand
-            heldObject.transform.SetParent(null);
 
             // Position slightly above the surface
             heldObject.transform.position = position + normal * 0.1f;
@@ -564,9 +561,6 @@ namespace BarSimulator.Player
         {
             if (heldObject == null)
                 return;
-
-            // Unparent from hand
-            heldObject.transform.SetParent(null);
 
             // Re-enable physics
             heldRigidbody.isKinematic = false;
@@ -624,8 +618,9 @@ namespace BarSimulator.Player
                 return;
             }
             
-            // Check if we're holding ServeGlass specifically
-            if (heldObject.name != "ServeGlass")
+            // Check if we're holding ServeGlass specifically (check both name and name without clone suffix)
+            string objName = heldObject.name.Replace("(Clone)", "").Trim();
+            if (objName != "ServeGlass" && objName != "ServeGlass_2")
             {
                 nearbyNPC = null;
                 return;
@@ -646,17 +641,17 @@ namespace BarSimulator.Player
                 }
             }
             
-            // Update nearby NPC
-            if (closestNPC != nearbyNPC)
+            // Update nearby NPC - always show prompt when near NPC with glass
+            if (closestNPC != null)
             {
+                // Show styled prompt with NPC name
+                string npcName = closestNPC.gameObject.name;
+                ShowStyledPrompt($"按下 F 把酒給 {npcName}");
                 nearbyNPC = closestNPC;
-                
-                if (nearbyNPC != null)
-                {
-                    // Show styled prompt with NPC name
-                    string npcName = nearbyNPC.gameObject.name;
-                    ShowStyledPrompt($"按下 F 把酒給 {npcName}");
-                }
+            }
+            else
+            {
+                nearbyNPC = null;
             }
         }
         
@@ -674,19 +669,9 @@ namespace BarSimulator.Player
             if (heldObject == null || handPosition == null)
                 return;
 
-            // Smoothly move to hand position
-            heldObject.transform.localPosition = Vector3.Lerp(
-                heldObject.transform.localPosition,
-                Vector3.zero,
-                Time.deltaTime * 10f
-            );
-
-            // Smoothly rotate to hand rotation
-            heldObject.transform.localRotation = Quaternion.Slerp(
-                heldObject.transform.localRotation,
-                Quaternion.identity,
-                Time.deltaTime * 5f
-            );
+            // Directly set position and rotation for immediate response
+            heldObject.transform.position = handPosition.position;
+            heldObject.transform.rotation = handPosition.rotation;
         }
 
         private bool IsInteractable(GameObject obj)

@@ -40,6 +40,18 @@ namespace UI
                     Pause();
                 }
             }
+            
+            // Handle C key - Back to Main Menu (only when paused)
+            if (isPaused && Input.GetKeyDown(KeyCode.C))
+            {
+                LoadMenu();
+            }
+            
+            // Handle M key - Force to Game End (only when paused)
+            if (isPaused && Input.GetKeyDown(KeyCode.M))
+            {
+                ForceGameEnd();
+            }
         }
 
         /// <summary>
@@ -112,6 +124,46 @@ namespace UI
             
             // Load main menu scene
             SceneManager.LoadScene("MainMenu");
+        }
+        
+        /// <summary>
+        /// Force jump to Game End screen - Shows GameEndPanel directly
+        /// </summary>
+        public void ForceGameEnd()
+        {
+            // Reset time scale
+            Time.timeScale = 1f;
+            isPaused = false;
+            
+            // Hide pause panel
+            if (pausePanel != null)
+            {
+                pausePanel.SetActive(false);
+            }
+            
+            // Find and show GameEndPanel
+            var canvas = GameObject.Find("UI_Canvas");
+            if (canvas != null)
+            {
+                var gameEndPanel = canvas.transform.Find("GameEndPanel");
+                if (gameEndPanel != null)
+                {
+                    gameEndPanel.gameObject.SetActive(true);
+                    Debug.Log("[SimplePauseMenu] Forced game end - showing GameEndPanel");
+                    
+                    // Unlock cursor for UI interaction
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    Debug.LogWarning("[SimplePauseMenu] GameEndPanel not found in UI_Canvas!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SimplePauseMenu] UI_Canvas not found!");
+            }
         }
     }
 }
