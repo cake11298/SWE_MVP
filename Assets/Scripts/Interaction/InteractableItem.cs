@@ -10,6 +10,7 @@ namespace BarSimulator.Player
         Bottle,  // 酒瓶
         Glass,   // 玻璃杯
         Shaker,  // 摇酒器
+        Speaker, // 揚聲器
         Other    // 其他
     }
 
