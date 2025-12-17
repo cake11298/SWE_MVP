@@ -4,6 +4,7 @@ using BarSimulator.Core;
 using BarSimulator.UI;
 using BarSimulator.Data;
 using UnityEngine.UI;
+using System.Collections;
 
 namespace BarSimulator.NPC
 {
@@ -16,7 +17,7 @@ namespace BarSimulator.NPC
     public class EnhancedNPCServe : MonoBehaviour
     {
         [Tooltip("NPC Dialogue")]
-        public NPCDialogue_SO dialogue;
+        public NPCDialogue_SO dialogueData;
         public Canvas dialogueUI;
         public Text dialogueText;
 
@@ -79,7 +80,12 @@ namespace BarSimulator.NPC
             HandleServeInput();
             CheckOrderCooldown();
         }
-
+        void LateUpdate()
+        {
+            dialogueUI.transform.LookAt(Camera.main.transform);
+            dialogueUI.transform.rotation = Quaternion.Euler(0, dialogueUI.transform.rotation.eulerAngles.y, 0);
+            dialogueUI.transform.Rotate(0, 180, 0); // fixes backward-facing canvas
+        }
         /// <summary>
         /// Check if player is within interaction distance
         /// </summary>
@@ -188,6 +194,22 @@ namespace BarSimulator.NPC
             Debug.Log($"EnhancedNPCServe: {gameObject.name} will order again in {orderCooldown} seconds");
         }
 
+        private void ShowDialogueUI(string message)
+        {
+            if (dialogueUI != null)
+            {
+                dialogueText.text = message;
+                dialogueUI.gameObject.SetActive(true);
+
+                StartCoroutine(HideDialogueUI(10f));
+            }
+        }
+        IEnumerator HideDialogueUI(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            dialogueUI.gameObject.SetActive(false);
+        }
+
         /// <summary>
         /// Show feedback to the player
         /// </summary>
@@ -198,14 +220,17 @@ namespace BarSimulator.NPC
             if (evaluation.hasCorrectIngredients && evaluation.hasCorrectRatios)
             {
                 message += $"\n+{evaluation.coins} coins!";
+                ShowDialogueUI(dialogueData.dialogue_perfectDrink);
             }
             else if (evaluation.hasCorrectIngredients)
             {
                 message += $"\n+{evaluation.coins} coins (ratios off)";
+                ShowDialogueUI(dialogueData.dialogue_ratiosOffDrink);
             }
             else
             {
                 message += $"\n+{evaluation.coins} coins (wrong drink)";
+                ShowDialogueUI(dialogueData.dialogue_wrongDrink);
             }
 
             Debug.Log(message);
