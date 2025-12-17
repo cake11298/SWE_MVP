@@ -229,7 +229,7 @@ namespace BarSimulator.Player
                 
                 var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
 
-                if (shaker != null)
+                if (shaker != null && QTEManager.Instance != null)
                 {
                     // 開始搖晃
                     Debug.Log("[HandleInput] 搖晃 Shaker");
@@ -237,7 +237,7 @@ namespace BarSimulator.Player
                 }
                 else
                 {
-                    Debug.Log("[HandleInput] 手上不是 Shaker");
+                    Debug.Log("[HandleInput] 手上不是 Shaker 或 QTEManager 不存在");
                 }
             }
 
@@ -249,11 +249,10 @@ namespace BarSimulator.Player
                 
                 var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
 
-                if (shaker != null)
+                if (shaker != null && QTEManager.Instance != null)
                 {
                     Debug.Log("[HandleInput] 中斷 Shaker");
                     QTEManager.Instance.StopShakeQTE();
-                    
                 }
             }
         }
@@ -441,8 +440,13 @@ namespace BarSimulator.Player
                     // 再次检查 heldItem 是否仍然有效
                     if (heldItem == null) return;
                     
-                    // 获取酒的类型
+                    // 获取酒的类型 - 优先使用LiquidContainer的liquidName
                     string liquidName = heldItem.liquidType.ToString();
+                    var liquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
+                    if (liquidContainer != null && !string.IsNullOrEmpty(liquidContainer.liquidName))
+                    {
+                        liquidName = liquidContainer.liquidName;
+                    }
                     
                     Debug.Log($"正在倒酒，倒的是: {liquidName}");
 
@@ -466,7 +470,14 @@ namespace BarSimulator.Player
                     // 再次检查 heldItem 是否仍然有效
                     if (heldItem == null) return;
                     
+                    // 获取酒的类型 - 优先使用LiquidContainer的liquidName
                     string liquidName = heldItem.liquidType.ToString();
+                    var liquidContainer = heldObject.GetComponent<Objects.LiquidContainer>();
+                    if (liquidContainer != null && !string.IsNullOrEmpty(liquidContainer.liquidName))
+                    {
+                        liquidName = liquidContainer.liquidName;
+                    }
+                    
                     float pourAmount = Time.deltaTime * 30f; // 30ml/s
                     shakerContainer.AddLiquid(liquidName, pourAmount);
                     Debug.Log($"正在倒酒到Shaker: {liquidName}");
@@ -629,25 +640,39 @@ namespace BarSimulator.Player
         /// </summary>
         private void CheckNPCServing()
         {
-            // Only check if holding ServeGlass with liquid
-            if (heldObject == null || heldObject.name != "ServeGlass")
+            // Only check if holding any glass with liquid
+            if (heldObject == null)
                 return;
 
+            // Check if holding any glass with liquid (not just ServeGlass)
             var glassContainer = heldObject.GetComponent<Objects.GlassContainer>();
             if (glassContainer == null || glassContainer.IsEmpty())
                 return;
 
-            // Find nearby NPCs
-            var allNPCs = FindObjectsOfType<NPC.SimpleNPCServe>();
-            NPC.SimpleNPCServe closestNPC = null;
+            // Find nearby NPCs (check both SimpleNPCServe and EnhancedNPCServe)
+            GameObject closestNPC = null;
             float closestDistance = 3f; // NPC interaction distance
 
-            foreach (var npc in allNPCs)
+            // Check SimpleNPCServe
+            var simpleNPCs = FindObjectsOfType<NPC.SimpleNPCServe>();
+            foreach (var npc in simpleNPCs)
             {
                 float distance = Vector3.Distance(transform.position, npc.transform.position);
                 if (distance < closestDistance)
                 {
-                    closestNPC = npc;
+                    closestNPC = npc.gameObject;
+                    closestDistance = distance;
+                }
+            }
+
+            // Check EnhancedNPCServe
+            var enhancedNPCs = FindObjectsOfType<NPC.EnhancedNPCServe>();
+            foreach (var npc in enhancedNPCs)
+            {
+                float distance = Vector3.Distance(transform.position, npc.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestNPC = npc.gameObject;
                     closestDistance = distance;
                 }
             }
@@ -655,7 +680,7 @@ namespace BarSimulator.Player
             // Show prompt if near NPC
             if (closestNPC != null)
             {
-                string npcName = closestNPC.gameObject.name;
+                string npcName = closestNPC.name;
                 UIPromptManager.Show($"按下 F 把酒給 {npcName}");
             }
         }
