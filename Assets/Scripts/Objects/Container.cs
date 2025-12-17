@@ -366,12 +366,13 @@ namespace BarSimulator.Objects
                     transferAmount,
                     ingredient.color
                 ));
-
-                ingredient.amount -= transferAmount;
+                // 避免減少(GlassContainer也要用)
+                // ingredient.amount -= transferAmount;
             }
 
             // 更新體積
-            contents.volume -= actualAmount;
+            // 避免減少(GlassContainer也要用)
+            // contents.volume -= actualAmount;
 
             // 轉移溫度（混合溫度）
             if (actualAmount > 0)

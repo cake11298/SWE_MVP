@@ -106,7 +106,7 @@ namespace BarSimulator.Player
             if (heldObject != null)
             {
                 // 如果手持酒瓶，检测玻璃杯
-                if (heldItem != null && heldItem.itemType == ItemType.Bottle)
+                if (heldItem != null && heldItem.itemType == ItemType.Bottle || heldItem.itemType == ItemType.Shaker)
                 {
                     DetectGlassForPouring();
                 }
@@ -143,7 +143,7 @@ namespace BarSimulator.Player
             if (Physics.Raycast(ray, out hit, pourDistance))
             {
                 InteractableItem item = hit.collider.GetComponent<InteractableItem>();
-                
+
                 // 如果手持酒瓶，检测玻璃杯或Shaker
                 if (heldItem != null && heldItem.itemType == ItemType.Bottle)
                 {
@@ -390,6 +390,7 @@ namespace BarSimulator.Player
 
             // 禁用所有碰撞器（包括父物件和子物件）
             Collider[] allColliders = heldObject.GetComponentsInChildren<Collider>();
+            
             foreach (Collider col in allColliders)
             {
                 col.enabled = false;
@@ -546,7 +547,7 @@ namespace BarSimulator.Player
         private void TryPourLiquid()
         {
             if (currentHighlightedObject == null)
-                return;
+                return;   
 
             // 检查是否手持酒瓶
             if (heldItem != null && heldItem.itemType == ItemType.Bottle)
@@ -634,7 +635,7 @@ namespace BarSimulator.Player
             var heldShakerObj = heldObject != null ? heldObject.GetComponent<Objects.Shaker>() : null;
             if (heldShakerObj != null)
             {
-                // Debug.Log($"手持 Shaker: IsEmpty={heldShakerObj.IsEmpty}, Volume={heldShakerObj.Volume}");
+                Debug.Log($"手持 Shaker: IsEmpty={heldShakerObj.IsEmpty}, Volume={heldShakerObj.Volume}");
                 
                 // 只要有液體就可以倒出，不需要檢查是否搖過
                 if (!heldShakerObj.IsEmpty)
@@ -653,8 +654,8 @@ namespace BarSimulator.Player
                             {
                                 Debug.Log($"正在从Shaker倒酒到Glass: {transferred}ml");
                             }
-                            return;
                         }
+                        
 
                         // 嘗試舊的 GlassContainer
                         var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
@@ -674,24 +675,6 @@ namespace BarSimulator.Player
                 else
                 {
                     // Debug.Log("Shaker is empty, cannot pour.");
-                }
-            }
-
-            // 舊版 ShakerContainer 兼容
-            var heldShakerContainer = heldObject != null ? heldObject.GetComponent<Objects.ShakerContainer>() : null;
-            if (heldShakerContainer != null && heldShakerContainer.CanPour())
-            {
-                // 倒入玻璃杯
-                InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
-                if (targetItem != null && targetItem.itemType == ItemType.Glass)
-                {
-                    var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
-                    if (glassContainer != null && !glassContainer.IsFull())
-                    {
-                        float pourAmount = Time.deltaTime * 30f; // 30ml/s
-                        heldShakerContainer.PourToGlass(glassContainer, pourAmount);
-                        Debug.Log($"正在从ShakerContainer倒酒到玻璃杯");
-                    }
                 }
             }
         }
