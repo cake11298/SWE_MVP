@@ -32,7 +32,7 @@ namespace BarSimulator.NPC
 
         // 對話索引
         private int currentDialogueIndex;
-
+        private string currentDialogueLabel;
         // 動畫狀態
         private Vector3 basePosition;
         private float animationTime;
@@ -81,6 +81,7 @@ namespace BarSimulator.NPC
         {
             npcData = data;
             currentDialogueIndex = 0;
+            currentDialogueLabel = "init";
             currentMood = NPCMood.Neutral;
 
             // 設定名稱
@@ -343,16 +344,12 @@ namespace BarSimulator.NPC
                 return "I'd like to order something...";
             }
 
-            string desc = $"I'll have a {currentOrder.drinkName}";
-            string requirements = currentOrder.GetRequirementsText();
+            string npcRequestText = npcData.dialogue.GetDialogueLine("request", 0);
 
-            if (!string.IsNullOrEmpty(requirements))
-            {
-                desc += $", {requirements}";
-            }
+            npcRequestText = npcRequestText.Replace("{%drinkName}", currentOrder.drinkName);
+            npcRequestText = npcRequestText.Replace("{%drinkRequirements}", currentOrder.GetRequirementsText());
 
-            desc += " please!";
-            return desc;
+            return npcRequestText;
         }
 
         #endregion
@@ -360,41 +357,29 @@ namespace BarSimulator.NPC
         #region 對話
 
         /// <summary>
-        /// 取得下一句對話
+        /// 取得當前對話狀態的下一句對話
         /// </summary>
         public string GetNextDialogue()
         {
-            // 優先使用直接資料
-            var dialogues = directDialogues ?? npcData?.dialogues;
+            string dialogue = npcData.dialogue.GetDialogueLine(currentDialogueLabel, currentDialogueIndex);
 
-            if (dialogues == null || dialogues.Length == 0)
+            if (currentDialogueIndex < npcData.dialogue.GetDialogueLength(currentDialogueLabel) - 1)
             {
-                return "...";
+                currentDialogueIndex++;
             }
-
-            string dialogue = dialogues[currentDialogueIndex];
-
-            // 循環對話
-            currentDialogueIndex = (currentDialogueIndex + 1) % dialogues.Length;
-
+            else
+            {
+                ResetDialogue();
+            }
             return dialogue;
         }
 
         /// <summary>
         /// 取得特定索引的對話
         /// </summary>
-        public string GetDialogue(int index)
+        public string GetDialogue(string dialogueLabel, int dialogueIndex)
         {
-            // 優先使用直接資料
-            var dialogues = directDialogues ?? npcData?.dialogues;
-
-            if (dialogues == null)
-                return "...";
-
-            if (index < 0 || index >= dialogues.Length)
-                return "...";
-
-            return dialogues[index];
+            return npcData.dialogue.GetDialogueLine(dialogueLabel, dialogueIndex);
         }
 
         /// <summary>

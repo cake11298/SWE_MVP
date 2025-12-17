@@ -1,3 +1,4 @@
+using BarSimulator.NPC;
 using UnityEngine;
 
 namespace BarSimulator.Data
@@ -44,8 +45,7 @@ namespace BarSimulator.Data
 
         [Header("對話")]
         [Tooltip("對話內容列表")]
-        [TextArea(3, 10)]
-        public string[] dialogues;
+        public NPCDialogue dialogue;
 
         /// <summary>
         /// 取得旋轉角度（度數）

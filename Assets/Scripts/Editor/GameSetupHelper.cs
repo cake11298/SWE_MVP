@@ -10,7 +10,8 @@ using BarSimulator.Player;
 namespace BarSimulator.Editor
 {
     /// <summary>
-    /// 遊戲設置助手 - 幫助設置測試場景
+    /// 遊戲設置助手 - 幫助設置測試場景<br/>
+    /// Unused in game code (?
     /// </summary>
     public class GameSetupHelper : EditorWindow
     {
@@ -353,13 +354,8 @@ namespace BarSimulator.Editor
             {
                 npcName = name,
                 position = position,
-                dialogues = new string[] {
-                    "Hello! I'd like a drink please.",
-                    "What cocktails do you recommend?",
-                    "I'm feeling like something strong today."
-                }
+                dialogue = Resources.Load<NPCDialogue>("TestNPCDialogue")
             };
-
             controller.Initialize(npcData);
 
             return npc;
