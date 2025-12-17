@@ -20,6 +20,7 @@ namespace BarSimulator.NPC
         public NPCDialogue_SO dialogueData;
         public Canvas dialogueUI;
         public Text dialogueText;
+        bool isShowingDialogue = false;
 
         [Header("Serve Settings")]
         [Tooltip("Interaction distance")]
@@ -147,7 +148,11 @@ namespace BarSimulator.NPC
                 else
                 {
                     Debug.Log($"EnhancedNPCServe: You need to be holding a glass to serve to {gameObject.name}.");
-                    ShowDialogueUI(dialogueData.dialogue_ordering);
+                    if (!isShowingDialogue)
+                    {
+                        ShowDialogueUI(dialogueData.dialogue_ordering);
+                        isShowingDialogue = true;
+                    }
                 }
             }
         }
@@ -214,6 +219,7 @@ namespace BarSimulator.NPC
         {
             yield return new WaitForSeconds(delay);
             dialogueUI.gameObject.SetActive(false);
+            isShowingDialogue = false;
         }
 
         /// <summary>
