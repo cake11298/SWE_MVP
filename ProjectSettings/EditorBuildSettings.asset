@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/SceneS/TheBar.unity
     guid: aca7304053fa9b1439d3bb81fc33fb69
+  - enabled: 1
+    path: Assets/SceneS/GameEnd.unity
+    guid: 46b89f97924655d4c879923d58e85dd0
   m_configObjects: {}

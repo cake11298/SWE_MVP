@@ -148,7 +148,7 @@ namespace BarSimulator.Data
         #region Data
 
         [Header("Persistent Data")]
-        [SerializeField] private int totalCoins = 0;
+        [SerializeField] private int totalCoins = 1000000;
 
         [Header("Liquor Upgrades")]
         [SerializeField] private List<LiquorUpgradeData> liquorUpgrades = new List<LiquorUpgradeData>();
