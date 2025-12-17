@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using BarSimulator.Core;
 
 namespace BarSimulator.Data
 {
@@ -16,7 +17,7 @@ namespace BarSimulator.Data
 
         /// <summary>
         /// Ingredient requirements: liquor ID -> required amount (in units, not ml)
-        /// Example: "Vodka" -> 2 means 2 units of vodka
+        /// Example: "vodka" -> 2 means 2 units of vodka
         /// </summary>
         public Dictionary<string, int> ingredients;
 
@@ -70,6 +71,10 @@ namespace BarSimulator.Data
             // Check if there are no extra ingredients
             foreach (var providedIngredient in providedIngredients.Keys)
             {
+                // Ignore water (from melted ice)
+                if (providedIngredient == "water")
+                    continue;
+
                 if (!ingredients.ContainsKey(providedIngredient))
                     return false;
             }
@@ -83,7 +88,7 @@ namespace BarSimulator.Data
         public List<string> GetBaseSpiritIds()
         {
             List<string> baseSpirits = new List<string>();
-            string[] baseSpiritNames = { "Vodka", "Gin", "Whiskey", "Rum", "Cointreau" };
+            string[] baseSpiritNames = { "vodka", "gin", "whiskey", "rum", "cointreau" };
 
             foreach (var ingredient in ingredients.Keys)
             {
@@ -127,76 +132,76 @@ namespace BarSimulator.Data
             // Screwdriver
             recipes["Screwdriver"] = new CocktailRecipe("Screwdriver", new Dictionary<string, int>
             {
-                { "Vodka", 2 },
-                { "Juice", 3 }
+                { "vodka", 2 },
+                { "juice", 3 }
             }, difficulty: 1);
 
             // Martini
             recipes["Martini"] = new CocktailRecipe("Martini", new Dictionary<string, int>
             {
-                { "Gin", 5 },
-                { "Vermouth", 1 }
+                { "gin", 5 },
+                { "vermouth", 1 }
             }, difficulty: 2);
 
             // Vodka Martini
             recipes["Vodka Martini"] = new CocktailRecipe("Vodka Martini", new Dictionary<string, int>
             {
-                { "Vodka", 5 },
-                { "Vermouth", 1 }
+                { "vodka", 5 },
+                { "vermouth", 1 }
             }, difficulty: 2);
 
-            // Whiskey Highball
+            // Whiskey Highball - Replaced Soda with Syrup as requested
             recipes["Whiskey Highball"] = new CocktailRecipe("Whiskey Highball", new Dictionary<string, int>
             {
-                { "Whiskey", 1 },
-                { "Soda", 3 }
+                { "whiskey", 1 },
+                { "syrup", 3 }
             }, difficulty: 1);
 
-            // Gin and Tonic
+            // Gin and Tonic - Replaced Soda with Syrup as requested
             recipes["Gin and Tonic"] = new CocktailRecipe("Gin and Tonic", new Dictionary<string, int>
             {
-                { "Gin", 1 },
-                { "Soda", 2 }
+                { "gin", 1 },
+                { "syrup", 2 }
             }, difficulty: 1);
 
-            // Whiskey Sour
+            // Whiskey Sour - Replaced Soda with Syrup as requested
             recipes["Whiskey Sour"] = new CocktailRecipe("Whiskey Sour", new Dictionary<string, int>
             {
-                { "Whiskey", 2 },
-                { "Juice", 1 },
-                { "Soda", 1 }
+                { "whiskey", 2 },
+                { "juice", 1 },
+                { "syrup", 1 }
             }, difficulty: 2);
 
-            // Daiquiri
+            // Daiquiri - Replaced Soda with Syrup as requested
             recipes["Daiquiri"] = new CocktailRecipe("Daiquiri", new Dictionary<string, int>
             {
-                { "Rum", 2 },
-                { "Juice", 1 },
-                { "Soda", 1 }
+                { "rum", 2 },
+                { "juice", 1 },
+                { "syrup", 1 }
             }, difficulty: 2);
 
             // Sidecar
             recipes["Sidecar"] = new CocktailRecipe("Sidecar", new Dictionary<string, int>
             {
-                { "Cognac", 2 },
-                { "Cointreau", 1 },
-                { "Juice", 1 }
+                { "cognac", 2 },
+                { "cointreau", 1 },
+                { "juice", 1 }
             }, difficulty: 3);
 
             // White Lady
             recipes["White Lady"] = new CocktailRecipe("White Lady", new Dictionary<string, int>
             {
-                { "Gin", 2 },
-                { "Cointreau", 1 },
-                { "Juice", 1 }
+                { "gin", 2 },
+                { "cointreau", 1 },
+                { "juice", 1 }
             }, difficulty: 3);
 
             // Cosmopolitan
             recipes["Cosmopolitan"] = new CocktailRecipe("Cosmopolitan", new Dictionary<string, int>
             {
-                { "Vodka", 2 },
-                { "Cointreau", 1 },
-                { "Juice", 1 }
+                { "vodka", 2 },
+                { "cointreau", 1 },
+                { "juice", 1 }
             }, difficulty: 3);
 
             Debug.Log($"[CocktailDatabase] Initialized with {recipes.Count} cocktail recipes");

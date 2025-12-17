@@ -628,14 +628,33 @@ namespace BarSimulator.Objects
                 ingredients = contents.ingredients.ToArray()
             };
 
-            // 根據成分識別雞尾酒
-            info.cocktailName = RecognizeCocktailName();
+            // 優先使用 CocktailRecognition 系統
+            if (BarSimulator.Systems.CocktailRecognition.Instance != null)
+            {
+                // 轉換成分字典
+                var ingredientDict = new System.Collections.Generic.Dictionary<string, float>();
+                foreach (var ing in contents.ingredients)
+                {
+                    if (ingredientDict.ContainsKey(ing.type))
+                        ingredientDict[ing.type] += ing.amount;
+                    else
+                        ingredientDict.Add(ing.type, ing.amount);
+                }
+
+                var result = BarSimulator.Systems.CocktailRecognition.Instance.Recognize(ingredientDict, contents.isShaken);
+                info.cocktailName = result.name.Replace(" ✨", ""); // 移除完美標記，只保留名稱
+            }
+            else
+            {
+                // 降級使用簡單識別
+                info.cocktailName = RecognizeCocktailName();
+            }
 
             return info;
         }
 
         /// <summary>
-        /// 根據成分識別雞尾酒名稱
+        /// 根據成分識別雞尾酒名稱 (Fallback)
         /// </summary>
         protected virtual string RecognizeCocktailName()
         {
@@ -646,28 +665,35 @@ namespace BarSimulator.Objects
             bool hasTequila = false;
             bool hasWhiskey = false;
             bool hasVermouth = false;
-            bool hasTripleSec = false;
-            bool hasCitrus = false;
+            bool hasCointreau = false;
+            bool hasJuice = false;
+            bool hasSyrup = false;
 
             foreach (var ingredient in contents.ingredients)
             {
                 string name = ingredient.name.ToLower();
-                if (name.Contains("gin")) hasGin = true;
-                if (name.Contains("vodka")) hasVodka = true;
-                if (name.Contains("rum")) hasRum = true;
-                if (name.Contains("tequila")) hasTequila = true;
-                if (name.Contains("whiskey") || name.Contains("bourbon")) hasWhiskey = true;
-                if (name.Contains("vermouth")) hasVermouth = true;
-                if (name.Contains("triple sec") || name.Contains("cointreau")) hasTripleSec = true;
-                if (name.Contains("lime") || name.Contains("lemon")) hasCitrus = true;
+                string type = ingredient.type.ToLower();
+                
+                if (name.Contains("gin") || type.Contains("gin")) hasGin = true;
+                if (name.Contains("vodka") || type.Contains("vodka")) hasVodka = true;
+                if (name.Contains("rum") || type.Contains("rum")) hasRum = true;
+                if (name.Contains("tequila") || type.Contains("tequila")) hasTequila = true;
+                if (name.Contains("whiskey") || name.Contains("bourbon") || type.Contains("whiskey")) hasWhiskey = true;
+                if (name.Contains("vermouth") || type.Contains("vermouth")) hasVermouth = true;
+                if (name.Contains("cointreau") || name.Contains("triple sec") || type.Contains("cointreau")) hasCointreau = true;
+                if (name.Contains("juice") || name.Contains("lime") || name.Contains("lemon") || type.Contains("juice")) hasJuice = true;
+                if (name.Contains("syrup") || type.Contains("syrup")) hasSyrup = true;
             }
 
             // 識別雞尾酒
             if (hasGin && hasVermouth) return "Martini";
-            if (hasTequila && hasTripleSec && hasCitrus) return "Margarita";
-            if (hasRum && hasCitrus) return "Daiquiri";
-            if (hasVodka && hasTripleSec) return "Cosmopolitan";
+            if (hasTequila && hasCointreau && hasJuice) return "Margarita";
+            if (hasRum && hasJuice && hasSyrup) return "Daiquiri";
+            if (hasVodka && hasCointreau && hasJuice) return "Cosmopolitan";
             if (hasWhiskey && hasVermouth) return "Manhattan";
+            if (hasWhiskey && hasJuice && hasSyrup) return "Whiskey Sour";
+            if (hasRum && hasJuice && hasSyrup) return "Mojito";
+            
             if (hasWhiskey) return "Whiskey Cocktail";
             if (hasGin) return "Gin Cocktail";
             if (hasVodka) return "Vodka Cocktail";

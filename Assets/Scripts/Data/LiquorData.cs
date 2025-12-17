@@ -249,7 +249,7 @@ namespace BarSimulator.Data
                 LiquorData.Create("simple_syrup", "糖漿", "Syrup", 0xffe4b5, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("grenadine", "紅石榴糖漿", "Grenadine", 0xff0000, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("angostura_bitters", "安格仕苦精", "Angostura Bitters", 0x8b0000, 44.7f, LiquorCategory.Mixer),
-                LiquorData.Create("soda_water", "蘇打水", "Soda Water", 0xe0ffff, 0f, LiquorCategory.Mixer),
+                // LiquorData.Create("soda_water", "蘇打水", "Soda Water", 0xe0ffff, 0f, LiquorCategory.Mixer), // Removed as requested
                 LiquorData.Create("tonic_water", "通寧水", "Tonic Water", 0xf0ffff, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("cola", "可樂", "Cola", 0x3e2723, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("coconut_cream", "椰漿", "Coconut Cream", 0xfffaf0, 0f, LiquorCategory.Mixer),
