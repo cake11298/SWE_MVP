@@ -5,15 +5,15 @@ using System.Collections.Generic;
 namespace BarSimulator.Data
 {
     /// <summary>
-    /// Base liquor types that can be upgraded
+    /// Base liquor types that can be upgraded (matching the 5 base spirits in LiquorData)
     /// </summary>
     public enum BaseLiquorType
     {
-        Vodka,
-        Gin,
-        Rum,
-        Whiskey,
-        Tequila
+        Vodka,      // 伏特加
+        Gin,        // 琴酒
+        Rum,        // 蘭姆酒
+        Whiskey,    // 威士忌
+        Tequila     // 龍舌蘭
     }
 
     /// <summary>

@@ -463,8 +463,10 @@ namespace BarSimulator.Player
             heldRigidbody.velocity = Vector3.zero;
             heldRigidbody.angularVelocity = Vector3.zero;
 
-            // Don't parent - we'll update position manually for better control
-            // This prevents issues with child objects and LOD groups
+            // Parent to hand position for proper visual attachment
+            heldObject.transform.SetParent(handPosition);
+            heldObject.transform.localPosition = Vector3.zero;
+            heldObject.transform.localRotation = Quaternion.identity;
 
             // Clear highlight
             if (highlightSystem != null)
@@ -512,6 +514,9 @@ namespace BarSimulator.Player
         {
             if (heldObject == null)
                 return;
+
+            // Unparent from hand
+            heldObject.transform.SetParent(null);
 
             // Position slightly above the surface
             heldObject.transform.position = position + normal * 0.1f;
@@ -561,6 +566,9 @@ namespace BarSimulator.Player
         {
             if (heldObject == null)
                 return;
+
+            // Unparent from hand
+            heldObject.transform.SetParent(null);
 
             // Re-enable physics
             heldRigidbody.isKinematic = false;
@@ -669,9 +677,8 @@ namespace BarSimulator.Player
             if (heldObject == null || handPosition == null)
                 return;
 
-            // Directly set position and rotation for immediate response
-            heldObject.transform.position = handPosition.position;
-            heldObject.transform.rotation = handPosition.rotation;
+            // Object is parented to hand position, so no need to manually update
+            // The transform hierarchy handles it automatically
         }
 
         private bool IsInteractable(GameObject obj)

@@ -242,9 +242,9 @@ namespace BarSimulator.Data
                 LiquorData.Create("brandy", "白蘭地", "Brandy", 0x8b4513, 40f, LiquorCategory.BaseSpirit),
 
                 // === 調味料 ===
-                LiquorData.Create("lemon_juice", "檸檬汁", "Lemon Juice", 0xfff44f, 0f, LiquorCategory.Mixer),
-                LiquorData.Create("lime_juice", "萊姆汁", "Lime Juice", 0x32cd32, 0f, LiquorCategory.Mixer),
-                LiquorData.Create("simple_syrup", "糖漿", "Simple Syrup", 0xffe4b5, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("lemon_juice", "檸檬汁", "Juice", 0xfff44f, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("lime_juice", "萊姆汁", "Juice", 0x32cd32, 0f, LiquorCategory.Mixer),
+                LiquorData.Create("simple_syrup", "糖漿", "Syrup", 0xffe4b5, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("grenadine", "紅石榴糖漿", "Grenadine", 0xff0000, 0f, LiquorCategory.Mixer),
                 LiquorData.Create("angostura_bitters", "安格仕苦精", "Angostura Bitters", 0x8b0000, 44.7f, LiquorCategory.Mixer),
                 LiquorData.Create("soda_water", "蘇打水", "Soda Water", 0xe0ffff, 0f, LiquorCategory.Mixer),
@@ -261,7 +261,7 @@ namespace BarSimulator.Data
 
                 // === 利口酒 & 香艾酒 ===
                 LiquorData.Create("vermouth_dry", "不甜香艾酒", "Dry Vermouth", 0xe8e8d0, 18f, LiquorCategory.FortifiedWine),
-                LiquorData.Create("vermouth_sweet", "甜香艾酒", "Sweet Vermouth", 0x8b4513, 18f, LiquorCategory.FortifiedWine),
+                LiquorData.Create("vermouth_sweet", "甜香艾酒", "Vermouth", 0x8b4513, 18f, LiquorCategory.FortifiedWine),
                 LiquorData.Create("campari", "金巴利", "Campari", 0xdc143c, 25f, LiquorCategory.Liqueur),
                 LiquorData.Create("triple_sec", "橙皮酒", "Triple Sec", 0xffa500, 40f, LiquorCategory.Liqueur),
                 LiquorData.Create("cointreau", "君度橙酒", "Cointreau", 0xffa500, 40f, LiquorCategory.Liqueur),

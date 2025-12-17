@@ -354,6 +354,10 @@ namespace BarSimulator.UI
                 GameManager.Instance.PlayerController.EnableInput();
             }
             
+            // Unlock cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            
             // Load main menu scene
             SceneManager.LoadScene("MainMenu");
         }
@@ -375,6 +379,7 @@ namespace BarSimulator.UI
             HideGameEndScreen();
             
             // Reload the current scene (TheBar) - coins and upgrades persist via PersistentGameData
+            // This starts a new game with inherited coins
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
@@ -468,10 +473,19 @@ namespace BarSimulator.UI
             {
                 if (upgradeData == null) return;
 
-                // Update name
+                // Update name with Chinese translation
                 if (nameText != null)
                 {
-                    nameText.text = upgradeData.liquorType.ToString();
+                    string displayName = upgradeData.liquorType switch
+                    {
+                        BaseLiquorType.Vodka => "伏特加",
+                        BaseLiquorType.Gin => "琴酒",
+                        BaseLiquorType.Rum => "蘭姆酒",
+                        BaseLiquorType.Whiskey => "威士忌",
+                        BaseLiquorType.Tequila => "龍舌蘭",
+                        _ => upgradeData.liquorType.ToString()
+                    };
+                    nameText.text = displayName;
                 }
 
                 // Update level

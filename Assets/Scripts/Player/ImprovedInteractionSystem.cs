@@ -129,19 +129,34 @@ namespace BarSimulator.Player
             {
                 InteractableItem item = hit.collider.GetComponent<InteractableItem>();
                 
-                // 检测玻璃杯
-                if (item != null && item.itemType == ItemType.Glass)
+                // 如果手持酒瓶，检测玻璃杯或Shaker
+                if (heldItem != null && heldItem.itemType == ItemType.Bottle)
                 {
-                    HighlightObject(hit.collider.gameObject);
-                    return;
+                    // 检测玻璃杯
+                    if (item != null && item.itemType == ItemType.Glass)
+                    {
+                        HighlightObject(hit.collider.gameObject);
+                        return;
+                    }
+                    
+                    // 检测Shaker（可以接收酒水）
+                    var shakerContainer = hit.collider.GetComponent<Objects.ShakerContainer>();
+                    if (shakerContainer != null)
+                    {
+                        HighlightObject(hit.collider.gameObject);
+                        return;
+                    }
                 }
                 
-                // 检测Shaker（可以接收酒水）
-                var shakerContainer = hit.collider.GetComponent<Objects.ShakerContainer>();
-                if (shakerContainer != null)
+                // 如果手持Shaker，检测玻璃杯
+                if (heldItem != null && heldItem.itemType == ItemType.Shaker)
                 {
-                    HighlightObject(hit.collider.gameObject);
-                    return;
+                    // 检测玻璃杯
+                    if (item != null && item.itemType == ItemType.Glass)
+                    {
+                        HighlightObject(hit.collider.gameObject);
+                        return;
+                    }
                 }
             }
 
@@ -215,7 +230,7 @@ namespace BarSimulator.Player
             // 左键：倒酒
             if (Input.GetMouseButton(0) && heldObject != null && heldItem != null)
             {
-                if (heldItem.itemType == ItemType.Bottle)
+                if (heldItem.itemType == ItemType.Bottle || heldItem.itemType == ItemType.Shaker)
                 {
                     TryPourLiquid();
                 }
@@ -224,35 +239,50 @@ namespace BarSimulator.Player
             // 按下右鍵: 開始搖酒
             if (Input.GetMouseButtonDown(1) && heldObject != null && heldItem != null)
             {
-                if(heldItem.itemType != ItemType.Shaker)
-                    return;
-                
-                var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
+                if(heldItem.itemType == ItemType.Shaker)
+                {
+                    var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
 
-                if (shaker != null && QTEManager.Instance != null)
-                {
-                    // 開始搖晃
-                    Debug.Log("[HandleInput] 搖晃 Shaker");
-                    QTEManager.Instance.StartShakeQTE();
-                }
-                else
-                {
-                    Debug.Log("[HandleInput] 手上不是 Shaker 或 QTEManager 不存在");
+                    if (shaker != null && QTEManager.Instance != null)
+                    {
+                        // 開始搖晃
+                        Debug.Log("[HandleInput] 搖晃 Shaker");
+                        QTEManager.Instance.StartShakeQTE();
+                        
+                        // 開始搖晃動畫
+                        var shakeAnimation = heldObject.GetComponent<QTE.ShakerShakeAnimation>();
+                        if (shakeAnimation == null)
+                        {
+                            shakeAnimation = heldObject.AddComponent<QTE.ShakerShakeAnimation>();
+                        }
+                        shakeAnimation.StartShake();
+                    }
+                    else
+                    {
+                        Debug.Log("[HandleInput] 手上不是 Shaker 或 QTEManager 不存在");
+                    }
                 }
             }
 
             // 鬆開右鍵: 停止搖酒
             if (Input.GetMouseButtonUp(1) && heldObject != null && heldItem != null)
             {
-                if(heldItem.itemType != ItemType.Shaker)
-                    return;
-                
-                var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
-
-                if (shaker != null && QTEManager.Instance != null)
+                if(heldItem.itemType == ItemType.Shaker)
                 {
-                    Debug.Log("[HandleInput] 中斷 Shaker");
-                    QTEManager.Instance.StopShakeQTE();
+                    var shaker = heldObject.GetComponent<Objects.ShakerContainer>();
+
+                    if (shaker != null && QTEManager.Instance != null)
+                    {
+                        Debug.Log("[HandleInput] 中斷 Shaker");
+                        QTEManager.Instance.StopShakeQTE();
+                        
+                        // 停止搖晃動畫
+                        var shakeAnimation = heldObject.GetComponent<QTE.ShakerShakeAnimation>();
+                        if (shakeAnimation != null)
+                        {
+                            shakeAnimation.StopShake();
+                        }
+                    }
                 }
             }
         }
@@ -537,6 +567,26 @@ namespace BarSimulator.Player
                 {
                     liquidInfoUI.SetTargetGlass(glassContainer);
                     return;
+                }
+            }
+            
+            // 如果手持Shaker并且正在看着玻璃杯
+            if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
+            {
+                if (currentHighlightedObject != null)
+                {
+                    InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
+                    if (targetItem != null && targetItem.itemType == ItemType.Glass)
+                    {
+                        // 显示"Pouring from Shaker to Glass"
+                        var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
+                        if (glassContainer != null)
+                        {
+                            string targetName = currentHighlightedObject.name;
+                            liquidInfoUI.SetTargetGlass(glassContainer, targetName);
+                            return;
+                        }
+                    }
                 }
             }
 

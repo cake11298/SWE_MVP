@@ -87,6 +87,20 @@ namespace UI
                     gameManager.PlayerController.DisableInput();
                 }
             }
+            
+            // Also disable ImprovedInteractionSystem if it exists
+            var improvedInteraction = FindObjectOfType<BarSimulator.Player.ImprovedInteractionSystem>();
+            if (improvedInteraction != null)
+            {
+                improvedInteraction.enabled = false;
+            }
+            
+            // Disable PlayerInteraction if it exists
+            var playerInteraction = FindObjectOfType<BarSimulator.Player.PlayerInteraction>();
+            if (playerInteraction != null)
+            {
+                playerInteraction.enabled = false;
+            }
         }
 
         /// <summary>
@@ -121,6 +135,20 @@ namespace UI
                 {
                     gameManager.PlayerController.EnableInput();
                 }
+            }
+            
+            // Re-enable ImprovedInteractionSystem if it exists
+            var improvedInteraction = FindObjectOfType<BarSimulator.Player.ImprovedInteractionSystem>();
+            if (improvedInteraction != null)
+            {
+                improvedInteraction.enabled = true;
+            }
+            
+            // Re-enable PlayerInteraction if it exists
+            var playerInteraction = FindObjectOfType<BarSimulator.Player.PlayerInteraction>();
+            if (playerInteraction != null)
+            {
+                playerInteraction.enabled = true;
             }
         }
 
