@@ -25,6 +25,7 @@ namespace BarSimulator.Player
 
         [Header("UI引用")]
         [SerializeField] private UI.LiquidInfoUI liquidInfoUI;
+        [SerializeField] private UI.ShakerInfoUI shakerInfoUI;
 
         private Camera playerCamera;
         private Transform handPosition;
@@ -69,6 +70,12 @@ namespace BarSimulator.Player
             if (liquidInfoUI == null)
             {
                 liquidInfoUI = FindObjectOfType<UI.LiquidInfoUI>();
+            }
+
+            // 查找ShakerInfoUI
+            if (shakerInfoUI == null)
+            {
+                shakerInfoUI = FindObjectOfType<UI.ShakerInfoUI>();
             }
         }
 
@@ -564,6 +571,13 @@ namespace BarSimulator.Player
                     // 倒酒到杯子
                     targetItem.OnReceiveLiquid(heldItem.liquidType, Time.deltaTime * 30f);
 
+                    // 優先嘗試新的 Glass 組件
+                    var glass = currentHighlightedObject.GetComponent<Objects.Glass>();
+                    if (glass != null)
+                    {
+                        glass.AddLiquid(liquidName, Time.deltaTime * 30f);
+                    }
+
                     // 同时倒入GlassContainer（如果存在）
                     var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
                     if (glassContainer != null)
@@ -684,10 +698,33 @@ namespace BarSimulator.Player
 
         private void UpdateLiquidUI()
         {
+            // 1. 處理 ShakerInfoUI (當手持 Shaker 時顯示)
+            if (shakerInfoUI != null)
+            {
+                if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
+                {
+                    var shaker = heldObject.GetComponent<Objects.Shaker>();
+                    if (shaker != null)
+                    {
+                        shakerInfoUI.SetTargetShaker(shaker);
+                    }
+                    else
+                    {
+                        shakerInfoUI.ClearTarget();
+                    }
+                }
+                else
+                {
+                    shakerInfoUI.ClearTarget();
+                }
+            }
+
             if (liquidInfoUI == null)
                 return;
 
-            // 如果手持酒瓶并且正在看着玻璃杯
+            // 2. 處理 LiquidInfoUI (顯示目標容器或手持的其他容器)
+
+            // 如果手持酒瓶并且正在看着玻璃杯或Shaker
             if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Bottle)
             {
                 if (currentHighlightedObject != null)
@@ -697,7 +734,16 @@ namespace BarSimulator.Player
                     // 檢測玻璃杯
                     if (targetItem != null && targetItem.itemType == ItemType.Glass)
                     {
-                        // 显示"Pouring into ServeGlass"
+                        // 優先嘗試新的 Glass 組件
+                        var glass = currentHighlightedObject.GetComponent<Objects.Glass>();
+                        if (glass != null)
+                        {
+                            // 不傳遞 targetName，避免顯示 "Pouring into..."
+                            liquidInfoUI.SetTargetContainer(glass);
+                            return;
+                        }
+
+                        // 舊版 GlassContainer
                         var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
                         if (glassContainer != null)
                         {
@@ -729,36 +775,24 @@ namespace BarSimulator.Player
                 }
             }
             
-            // 如果手持Shaker
+            // 如果手持Shaker，且正在看著玻璃杯 (顯示目標玻璃杯的狀態)
             if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
             {
-                // 優先顯示 Shaker 內容
-                var shaker = heldObject.GetComponent<Objects.Shaker>();
-                if (shaker != null)
-                {
-                    string targetName = "";
-                    
-                    // 如果正在看著玻璃杯，顯示倒酒目標
-                    if (currentHighlightedObject != null)
-                    {
-                        InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
-                        if (targetItem != null && targetItem.itemType == ItemType.Glass)
-                        {
-                            targetName = currentHighlightedObject.name;
-                        }
-                    }
-                    
-                    liquidInfoUI.SetTargetContainer(shaker, targetName);
-                    return;
-                }
-                
-                // 舊版 ShakerContainer 支援
                 if (currentHighlightedObject != null)
                 {
                     InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
                     if (targetItem != null && targetItem.itemType == ItemType.Glass)
                     {
-                        // 显示"Pouring from Shaker to Glass"
+                        // 優先嘗試新的 Glass 組件
+                        var glass = currentHighlightedObject.GetComponent<Objects.Glass>();
+                        if (glass != null)
+                        {
+                            string targetName = currentHighlightedObject.name;
+                            liquidInfoUI.SetTargetContainer(glass, targetName);
+                            return;
+                        }
+
+                        // 舊版 GlassContainer
                         var glassContainer = currentHighlightedObject.GetComponent<Objects.GlassContainer>();
                         if (glassContainer != null)
                         {
@@ -770,7 +804,7 @@ namespace BarSimulator.Player
                 }
             }
 
-            // 如果正在看着有液体的玻璃杯
+            // 如果正在看着有液体的玻璃杯 (且沒拿東西)
             if (currentHighlightedObject != null && heldObject == null)
             {
                 InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
