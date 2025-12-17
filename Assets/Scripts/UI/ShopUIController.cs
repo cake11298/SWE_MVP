@@ -17,9 +17,6 @@ namespace BarSimulator.UI
         [SerializeField] private Button nextGameButton;
         [SerializeField] private Button mainMenuButton;
 
-        [Header("Prefabs")]
-        [SerializeField] private GameObject shopItemPrefab; // Generic prefab for both
-
         private void Start()
         {
             // Initialize UI
@@ -28,9 +25,8 @@ namespace BarSimulator.UI
             // Subscribe to events
             PersistentGameData.Instance.OnCoinsChanged += UpdateCoinsUI;
             
-            // Generate Shop Items
-            GenerateLiquorItems();
-            GenerateDecorationItems();
+            // Refresh existing items
+            RefreshShopItems();
 
             // Bind Buttons
             nextGameButton.onClick.AddListener(OnNextGameClicked);
@@ -51,116 +47,82 @@ namespace BarSimulator.UI
                 coinsText.text = $"Coins: {coins}";
         }
 
-        private void GenerateLiquorItems()
+        private void RefreshShopItems()
         {
-            foreach (Transform child in liquorListContainer) Destroy(child.gameObject);
-
-            var upgrades = PersistentGameData.Instance.GetAllLiquorUpgrades();
-            foreach (var upgrade in upgrades)
+            var views = GetComponentsInChildren<ShopItemView>(true);
+            foreach (var view in views)
             {
-                GameObject itemObj = Instantiate(shopItemPrefab, liquorListContainer);
-                SetupLiquorItem(itemObj, upgrade);
+                if (view.isLiquor)
+                {
+                    var data = PersistentGameData.Instance.GetLiquorUpgrade(view.liquorType);
+                    if (data != null)
+                    {
+                        UpdateLiquorItemVisuals(view, data);
+                        view.actionButton.onClick.RemoveAllListeners();
+                        view.actionButton.onClick.AddListener(() => {
+                            if (PersistentGameData.Instance.UpgradeLiquor(view.liquorType))
+                            {
+                                UpdateLiquorItemVisuals(view, data);
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    var data = PersistentGameData.Instance.GetDecoration(view.decorationType);
+                    if (data != null)
+                    {
+                        UpdateDecorationItemVisuals(view, data);
+                        view.actionButton.onClick.RemoveAllListeners();
+                        view.actionButton.onClick.AddListener(() => {
+                            if (PersistentGameData.Instance.PurchaseDecoration(view.decorationType))
+                            {
+                                UpdateDecorationItemVisuals(view, data);
+                            }
+                        });
+                    }
+                }
             }
         }
 
-        private void SetupLiquorItem(GameObject itemObj, LiquorUpgradeData upgrade)
+        private void UpdateLiquorItemVisuals(ShopItemView view, LiquorUpgradeData upgrade)
         {
-            // Assuming Prefab has: NameText, LevelText, CostText, ActionButton
-            var texts = itemObj.GetComponentsInChildren<TextMeshProUGUI>();
-            var button = itemObj.GetComponentInChildren<Button>();
-
-            // Simple finding by order or name (adjust based on actual prefab structure)
-            // Let's assume: 0: Name, 1: Info/Level, 2: Cost
-            if (texts.Length > 0) texts[0].text = upgrade.liquorType.ToString();
-            
-            UpdateLiquorItemVisuals(itemObj, upgrade);
-
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => {
-                if (PersistentGameData.Instance.UpgradeLiquor(upgrade.liquorType))
-                {
-                    UpdateLiquorItemVisuals(itemObj, upgrade);
-                }
-            });
-        }
-
-        private void UpdateLiquorItemVisuals(GameObject itemObj, LiquorUpgradeData upgrade)
-        {
-            var texts = itemObj.GetComponentsInChildren<TextMeshProUGUI>();
-            var button = itemObj.GetComponentInChildren<Button>();
-
-            if (texts.Length > 1) texts[1].text = $"Lvl {upgrade.level} -> {(upgrade.CanUpgrade() ? (upgrade.level + 1).ToString() : "MAX")}";
+            if (view.nameText != null) view.nameText.text = upgrade.liquorType.ToString();
+            if (view.infoText != null) view.infoText.text = $"Lvl {upgrade.level} -> {(upgrade.CanUpgrade() ? (upgrade.level + 1).ToString() : "MAX")}";
             
             if (upgrade.CanUpgrade())
             {
                 int cost = upgrade.GetUpgradeCost();
-                if (texts.Length > 2) texts[2].text = $"${cost}";
-                button.interactable = PersistentGameData.Instance.GetTotalCoins() >= cost;
-                button.GetComponentInChildren<TextMeshProUGUI>().text = "Upgrade";
+                view.actionButton.interactable = PersistentGameData.Instance.GetTotalCoins() >= cost;
+                if (view.buttonText != null) view.buttonText.text = $"${cost}";
             }
             else
             {
-                if (texts.Length > 2) texts[2].text = "---";
-                button.interactable = false;
-                button.GetComponentInChildren<TextMeshProUGUI>().text = "Maxed";
+                view.actionButton.interactable = false;
+                if (view.buttonText != null) view.buttonText.text = "Maxed";
             }
         }
 
-        private void GenerateDecorationItems()
+        private void UpdateDecorationItemVisuals(ShopItemView view, DecorationData deco)
         {
-            foreach (Transform child in decorationListContainer) Destroy(child.gameObject);
-
-            var decorations = PersistentGameData.Instance.GetAllDecorations();
-            foreach (var deco in decorations)
-            {
-                GameObject itemObj = Instantiate(shopItemPrefab, decorationListContainer);
-                SetupDecorationItem(itemObj, deco);
-            }
-        }
-
-        private void SetupDecorationItem(GameObject itemObj, DecorationData deco)
-        {
-            var texts = itemObj.GetComponentsInChildren<TextMeshProUGUI>();
-            var button = itemObj.GetComponentInChildren<Button>();
-
-            if (texts.Length > 0) texts[0].text = deco.decorationType.ToString();
-            
-            UpdateDecorationItemVisuals(itemObj, deco);
-
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => {
-                if (PersistentGameData.Instance.PurchaseDecoration(deco.decorationType))
-                {
-                    UpdateDecorationItemVisuals(itemObj, deco);
-                }
-            });
-        }
-
-        private void UpdateDecorationItemVisuals(GameObject itemObj, DecorationData deco)
-        {
-            var texts = itemObj.GetComponentsInChildren<TextMeshProUGUI>();
-            var button = itemObj.GetComponentInChildren<Button>();
-
-            if (texts.Length > 1) texts[1].text = deco.isPurchased ? "Owned" : "Not Owned";
+            if (view.nameText != null) view.nameText.text = deco.decorationType.ToString();
+            if (view.infoText != null) view.infoText.text = deco.isPurchased ? "Owned" : "Not Owned";
             
             if (!deco.isPurchased)
             {
                 int cost = deco.GetPurchaseCost();
-                if (texts.Length > 2) texts[2].text = $"${cost}";
-                button.interactable = PersistentGameData.Instance.GetTotalCoins() >= cost;
-                button.GetComponentInChildren<TextMeshProUGUI>().text = "Buy";
+                view.actionButton.interactable = PersistentGameData.Instance.GetTotalCoins() >= cost;
+                if (view.buttonText != null) view.buttonText.text = $"${cost}";
             }
             else
             {
-                if (texts.Length > 2) texts[2].text = "---";
-                button.interactable = false;
-                button.GetComponentInChildren<TextMeshProUGUI>().text = "Owned";
+                view.actionButton.interactable = false;
+                if (view.buttonText != null) view.buttonText.text = "Owned";
             }
         }
 
         private void OnNextGameClicked()
         {
-            // Reset Game State if needed (GameManager handles this on Start)
             SceneManager.LoadScene("TheBar");
         }
 

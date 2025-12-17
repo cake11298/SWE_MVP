@@ -411,6 +411,25 @@ namespace BarSimulator.Core
 
             // 計算金幣獎勵
             int coinsEarned = GameScore.CalculateCoins(rating);
+
+            // Apply Decoration Bonuses
+            if (BarSimulator.Data.PersistentGameData.Instance != null)
+            {
+                // Bamboo Bonus: +30 Coins
+                if (BarSimulator.Data.PersistentGameData.Instance.IsDecorationPurchased(BarSimulator.Data.DecorationType.Plant))
+                {
+                    coinsEarned += 30;
+                    Debug.Log($"GameManager: Bamboo Bonus applied! Extra 30 coins.");
+                }
+
+                // Speaker Bonus: +100 Coins
+                if (BarSimulator.Data.PersistentGameData.Instance.IsDecorationPurchased(BarSimulator.Data.DecorationType.Speaker))
+                {
+                    coinsEarned += 100;
+                    Debug.Log($"GameManager: Speaker Bonus applied! Extra 100 coins.");
+                }
+            }
+
             score.totalCoins += coinsEarned;
 
             // Add coins to persistent data

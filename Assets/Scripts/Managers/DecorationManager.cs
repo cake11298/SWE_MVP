@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using BarSimulator.Data;
 
 namespace BarSimulator.Managers
@@ -95,25 +96,77 @@ namespace BarSimulator.Managers
         [ContextMenu("Auto-Find Decoration Parents")]
         private void AutoFindDecorationParents()
         {
-            // Try to find speakers in Props
+            GameObject props = GameObject.Find("Props");
+            if (props == null) return;
+
+            // Find Speakers
             if (speakersParent == null)
             {
-                GameObject props = GameObject.Find("Props");
-                if (props != null)
+                // Look for objects with "Speaker" in name
+                List<Transform> speakers = new List<Transform>();
+                foreach (Transform child in props.transform)
                 {
-                    // Look for objects with "Speaker" in name
-                    foreach (Transform child in props.transform)
+                    if (child.name.Contains("Speaker"))
                     {
-                        if (child.name.Contains("Speaker"))
-                        {
-                            // Create a parent for all speakers if not exists
-                            if (speakersParent == null)
-                            {
-                                speakersParent = new GameObject("Speakers");
-                                speakersParent.transform.SetParent(props.transform);
-                            }
-                            child.SetParent(speakersParent.transform);
-                        }
+                        speakers.Add(child);
+                    }
+                }
+
+                if (speakers.Count > 0)
+                {
+                    speakersParent = new GameObject("Speakers");
+                    speakersParent.transform.SetParent(props.transform);
+                    foreach (var speaker in speakers)
+                    {
+                        speaker.SetParent(speakersParent.transform);
+                    }
+                }
+            }
+
+            // Find Plants (Bamboo)
+            if (plantsParent == null)
+            {
+                // Look for objects with "Bamboo" in name
+                List<Transform> plants = new List<Transform>();
+                foreach (Transform child in props.transform)
+                {
+                    if (child.name.Contains("Bamboo"))
+                    {
+                        plants.Add(child);
+                    }
+                }
+
+                if (plants.Count > 0)
+                {
+                    plantsParent = new GameObject("Plants");
+                    plantsParent.transform.SetParent(props.transform);
+                    foreach (var plant in plants)
+                    {
+                        plant.SetParent(plantsParent.transform);
+                    }
+                }
+            }
+
+            // Find Paintings (SM_PannelFrame)
+            if (paintingsParent == null)
+            {
+                // Look for objects with "SM_PannelFrame" in name
+                List<Transform> paintings = new List<Transform>();
+                foreach (Transform child in props.transform)
+                {
+                    if (child.name.Contains("SM_PannelFrame"))
+                    {
+                        paintings.Add(child);
+                    }
+                }
+
+                if (paintings.Count > 0)
+                {
+                    paintingsParent = new GameObject("Paintings");
+                    paintingsParent.transform.SetParent(props.transform);
+                    foreach (var painting in paintings)
+                    {
+                        painting.SetParent(paintingsParent.transform);
                     }
                 }
             }

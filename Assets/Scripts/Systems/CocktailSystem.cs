@@ -78,7 +78,45 @@ namespace BarSimulator.Systems
                 liquorDatabase.InitializeDefaults();
             }
 
+            // Apply Upgrades from PersistentGameData
+            ApplyLiquorUpgrades();
+
             // NOTE: RecipeDatabase is now static - no initialization needed
+        }
+
+        private void ApplyLiquorUpgrades()
+        {
+            if (PersistentGameData.Instance != null)
+            {
+                var upgrades = PersistentGameData.Instance.GetAllLiquorUpgrades();
+                foreach (var upgrade in upgrades)
+                {
+                    // Map BaseLiquorType to Liquor ID
+                    string liquorId = GetLiquorIdFromType(upgrade.liquorType);
+                    if (!string.IsNullOrEmpty(liquorId))
+                    {
+                        var liquor = liquorDatabase.GetLiquor(liquorId);
+                        if (liquor != null)
+                        {
+                            liquor.level = upgrade.level;
+                            Debug.Log($"CocktailSystem: Applied upgrade to {liquor.displayName} (Level {liquor.level})");
+                        }
+                    }
+                }
+            }
+        }
+
+        private string GetLiquorIdFromType(BaseLiquorType type)
+        {
+            switch (type)
+            {
+                case BaseLiquorType.Vodka: return "vodka";
+                case BaseLiquorType.Gin: return "gin";
+                case BaseLiquorType.Rum: return "rum";
+                case BaseLiquorType.Whiskey: return "whiskey";
+                case BaseLiquorType.Tequila: return "tequila";
+                default: return "";
+            }
         }
 
         private void Start()

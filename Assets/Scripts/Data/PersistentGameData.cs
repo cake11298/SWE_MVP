@@ -77,9 +77,9 @@ namespace BarSimulator.Data
             switch (decorationType)
             {
                 case DecorationType.Speaker:
-                    return 2000;
+                    return 1500;
                 case DecorationType.Plant:
-                    return 3000;
+                    return 500;
                 case DecorationType.Painting:
                     return 3000;
                 default:
