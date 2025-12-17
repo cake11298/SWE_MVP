@@ -8,14 +8,11 @@ using System.Collections.Generic;
 namespace BarSimulator.UI
 {
     /// <summary>
-    /// Game end screen UI - shows final statistics, liquor upgrades, and decoration purchases
-    /// Layout: Left (Upgrades) | Center (Stats) | Right (Decorations)
+    /// Game end screen UI controller for the standalone GameEnd scene.
+    /// Handles statistics display, shop functionality, and navigation.
     /// </summary>
     public class GameEndUI : MonoBehaviour
     {
-        [Header("Main Panel")]
-        [SerializeField] private GameObject gameEndPanel;
-
         [Header("Center - Stats")]
         [SerializeField] private Text titleText;
         [SerializeField] private Text totalCoinsText;
@@ -25,13 +22,10 @@ namespace BarSimulator.UI
 
         [Header("Left - Liquor Upgrades")]
         [SerializeField] private Transform upgradesContainer;
-        [SerializeField] private GameObject upgradeItemPrefab; // Will be created dynamically if null
-
+        
         [Header("Right - Decorations")]
         [SerializeField] private Transform decorationsContainer;
-        [SerializeField] private GameObject decorationItemPrefab; // Will be created dynamically if null
 
-        private bool isShowing = false;
         private Dictionary<BaseLiquorType, UpgradeUIItem> upgradeItems = new Dictionary<BaseLiquorType, UpgradeUIItem>();
         private Dictionary<DecorationType, DecorationUIItem> decorationItems = new Dictionary<DecorationType, DecorationUIItem>();
 
@@ -39,28 +33,17 @@ namespace BarSimulator.UI
 
         private void Start()
         {
-            // Hide panel initially
-            if (gameEndPanel != null)
-            {
-                gameEndPanel.SetActive(false);
-            }
+            // Ensure cursor is visible and unlocked
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            Time.timeScale = 1f;
 
             // Setup button listeners
             if (mainMenuButton != null)
-            {
                 mainMenuButton.onClick.AddListener(OnMainMenuClicked);
-            }
 
             if (nextGameButton != null)
-            {
                 nextGameButton.onClick.AddListener(OnNextGameClicked);
-            }
-
-            // Subscribe to GameManager events
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.OnGameStateChanged += OnGameStateChanged;
-            }
 
             // Subscribe to PersistentGameData events
             if (PersistentGameData.Instance != null)
@@ -69,16 +52,15 @@ namespace BarSimulator.UI
                 PersistentGameData.Instance.OnLiquorUpgraded += OnLiquorUpgraded;
                 PersistentGameData.Instance.OnDecorationPurchased += OnDecorationPurchased;
             }
+
+            // Initialize UI
+            UpdateStatistics();
+            CreateUpgradeItems();
+            CreateDecorationItems();
         }
 
         private void OnDestroy()
         {
-            // Unsubscribe from events
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.OnGameStateChanged -= OnGameStateChanged;
-            }
-
             if (PersistentGameData.Instance != null)
             {
                 PersistentGameData.Instance.OnCoinsChanged -= OnCoinsChanged;
@@ -86,32 +68,16 @@ namespace BarSimulator.UI
                 PersistentGameData.Instance.OnDecorationPurchased -= OnDecorationPurchased;
             }
 
-            // Remove button listeners
             if (mainMenuButton != null)
-            {
                 mainMenuButton.onClick.RemoveListener(OnMainMenuClicked);
-            }
 
             if (nextGameButton != null)
-            {
                 nextGameButton.onClick.RemoveListener(OnNextGameClicked);
-            }
         }
 
         #endregion
 
         #region Event Handlers
-
-        private void OnGameStateChanged(GameState newState)
-        {
-            Debug.Log($"GameEndUI: Game state changed to {newState}");
-            
-            if (newState == GameState.GameOver && !isShowing)
-            {
-                Debug.Log("GameEndUI: Showing game end screen");
-                ShowGameEndScreen();
-            }
-        }
 
         private void OnCoinsChanged(int newTotal)
         {
@@ -126,6 +92,7 @@ namespace BarSimulator.UI
             {
                 upgradeItems[type].UpdateDisplay();
             }
+            UpdateCoinsDisplay(); // Update coins as well
         }
 
         private void OnDecorationPurchased(DecorationType type)
@@ -134,66 +101,7 @@ namespace BarSimulator.UI
             {
                 decorationItems[type].UpdateDisplay();
             }
-        }
-
-        #endregion
-
-        #region Show/Hide
-
-        public void ShowGameEndScreen()
-        {
-            if (isShowing)
-            {
-                Debug.Log("GameEndUI: Already showing");
-                return;
-            }
-
-            Debug.Log("GameEndUI: ShowGameEndScreen called");
-            isShowing = true;
-
-            // Show panel
-            if (gameEndPanel != null)
-            {
-                gameEndPanel.SetActive(true);
-                Debug.Log("GameEndUI: Panel activated");
-            }
-            else
-            {
-                Debug.LogError("GameEndUI: gameEndPanel is null!");
-            }
-
-            // COMPLETELY PAUSE GAME - freeze all time-based operations
-            Time.timeScale = 0f;
-
-            // Unlock cursor for UI interaction
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            // Disable player input
-            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
-            {
-                GameManager.Instance.PlayerController.DisableInput();
-            }
-
-            // Update displays
-            UpdateStatistics();
-            CreateUpgradeItems();
-            CreateDecorationItems();
-        }
-
-        public void HideGameEndScreen()
-        {
-            if (!isShowing) return;
-
-            isShowing = false;
-
-            if (gameEndPanel != null)
-            {
-                gameEndPanel.SetActive(false);
-            }
-
-            // Resume time
-            Time.timeScale = 1f;
+            UpdateCoinsDisplay(); // Update coins as well
         }
 
         #endregion
@@ -204,15 +112,26 @@ namespace BarSimulator.UI
         {
             if (titleText != null)
             {
-                titleText.text = "Bar Closed - Time's Up!";
+                titleText.text = "Shift Complete";
             }
 
             UpdateCoinsDisplay();
 
-            if (drinksServedText != null && GameManager.Instance != null)
+            if (drinksServedText != null)
             {
-                var score = GameManager.Instance.GetScore();
-                drinksServedText.text = $"Drinks Served: {score.totalDrinks}";
+                // If we came from the game, we might want to pass the score.
+                // For now, we can read from GameManager if it persists, or just show total drinks from PersistentData if we tracked it there.
+                // Since GameManager is destroyed on scene load (unless DontDestroyOnLoad), we might lose the immediate session stats.
+                // However, GameManager is a singleton with DontDestroyOnLoad in the provided code.
+                if (GameManager.Instance != null)
+                {
+                    var score = GameManager.Instance.GetScore();
+                    drinksServedText.text = $"Drinks Served (Session): {score.totalDrinks}\nSatisfied: {score.satisfiedDrinks}";
+                }
+                else
+                {
+                    drinksServedText.text = "Session Ended";
+                }
             }
         }
 
@@ -231,7 +150,11 @@ namespace BarSimulator.UI
 
         private void CreateUpgradeItems()
         {
-            if (upgradesContainer == null) return;
+            if (upgradesContainer == null)
+            {
+                Debug.LogError("Upgrades Container is null!");
+                return;
+            }
 
             // Clear existing items
             foreach (Transform child in upgradesContainer)
@@ -240,8 +163,15 @@ namespace BarSimulator.UI
             }
             upgradeItems.Clear();
 
-            // Create upgrade items for each base liquor
+            if (PersistentGameData.Instance == null)
+            {
+                Debug.LogError("PersistentGameData is null!");
+                return;
+            }
+
             var upgrades = PersistentGameData.Instance.GetAllLiquorUpgrades();
+            Debug.Log($"Found {upgrades.Count} liquor upgrades to display.");
+
             foreach (var upgrade in upgrades)
             {
                 GameObject itemObj = CreateUpgradeItemUI(upgrade);
@@ -259,14 +189,11 @@ namespace BarSimulator.UI
 
         private GameObject CreateUpgradeItemUI(LiquorUpgradeData upgrade)
         {
-            // Create a simple UI item
             GameObject itemObj = new GameObject($"Upgrade_{upgrade.liquorType}");
             
-            // Add RectTransform
             var rectTransform = itemObj.AddComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(200, 60);
+            rectTransform.sizeDelta = new Vector2(0, 80); // Width controlled by layout
 
-            // Add UpgradeUIItem component
             var uiItem = itemObj.AddComponent<UpgradeUIItem>();
             uiItem.Initialize(upgrade);
 
@@ -287,17 +214,23 @@ namespace BarSimulator.UI
 
         private void CreateDecorationItems()
         {
-            if (decorationsContainer == null) return;
+            if (decorationsContainer == null)
+            {
+                Debug.LogError("Decorations Container is null!");
+                return;
+            }
 
-            // Clear existing items
             foreach (Transform child in decorationsContainer)
             {
                 Destroy(child.gameObject);
             }
             decorationItems.Clear();
 
-            // Create decoration items
+            if (PersistentGameData.Instance == null) return;
+
             var decorations = PersistentGameData.Instance.GetAllDecorations();
+            Debug.Log($"Found {decorations.Count} decorations to display.");
+
             foreach (var decoration in decorations)
             {
                 GameObject itemObj = CreateDecorationItemUI(decoration);
@@ -315,14 +248,11 @@ namespace BarSimulator.UI
 
         private GameObject CreateDecorationItemUI(DecorationData decoration)
         {
-            // Create a simple UI item
             GameObject itemObj = new GameObject($"Decoration_{decoration.decorationType}");
             
-            // Add RectTransform
             var rectTransform = itemObj.AddComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(200, 80);
+            rectTransform.sizeDelta = new Vector2(0, 100); // Width controlled by layout
 
-            // Add DecorationUIItem component
             var uiItem = itemObj.AddComponent<DecorationUIItem>();
             uiItem.Initialize(decoration);
 
@@ -343,53 +273,19 @@ namespace BarSimulator.UI
 
         private void OnMainMenuClicked()
         {
-            Debug.Log("GameEndUI: Returning to main menu");
-            
-            // Resume time before scene transition
-            Time.timeScale = 1f;
-            
-            // Re-enable player input
-            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
-            {
-                GameManager.Instance.PlayerController.EnableInput();
-            }
-            
-            // Unlock cursor
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            
-            // Load main menu scene
             SceneManager.LoadScene("MainMenu");
         }
 
         private void OnNextGameClicked()
         {
-            Debug.Log("GameEndUI: Starting next game - inheriting coins and upgrades");
-            
-            // Resume time before scene transition
-            Time.timeScale = 1f;
-
-            // Re-enable player input
-            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
-            {
-                GameManager.Instance.PlayerController.EnableInput();
-            }
-
-            // Hide this panel
-            HideGameEndScreen();
-            
-            // Reload the current scene (TheBar) - coins and upgrades persist via PersistentGameData
-            // This starts a new game with inherited coins
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            // Reset session score in GameManager if needed, but StartGame() usually handles it.
+            SceneManager.LoadScene("TheBar");
         }
 
         #endregion
 
         #region Helper Classes
 
-        /// <summary>
-        /// UI item for liquor upgrade
-        /// </summary>
         public class UpgradeUIItem : MonoBehaviour
         {
             private LiquorUpgradeData upgradeData;
@@ -407,25 +303,25 @@ namespace BarSimulator.UI
 
             private void CreateUI()
             {
-                // Create background
+                // Background
                 var bg = gameObject.AddComponent<Image>();
                 bg.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
 
-                // Create name text
+                // Name
                 GameObject nameObj = new GameObject("NameText");
                 nameObj.transform.SetParent(transform, false);
                 nameText = nameObj.AddComponent<Text>();
                 nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                nameText.fontSize = 16;
+                nameText.fontSize = 18;
                 nameText.alignment = TextAnchor.MiddleLeft;
                 nameText.color = Color.white;
                 var nameRect = nameObj.GetComponent<RectTransform>();
-                nameRect.anchorMin = new Vector2(0, 0.5f);
-                nameRect.anchorMax = new Vector2(0.5f, 1);
-                nameRect.offsetMin = new Vector2(10, 0);
-                nameRect.offsetMax = new Vector2(-5, -5);
+                nameRect.anchorMin = new Vector2(0.05f, 0.5f);
+                nameRect.anchorMax = new Vector2(0.6f, 1);
+                nameRect.offsetMin = Vector2.zero;
+                nameRect.offsetMax = Vector2.zero;
 
-                // Create level text
+                // Level
                 GameObject levelObj = new GameObject("LevelText");
                 levelObj.transform.SetParent(transform, false);
                 levelText = levelObj.AddComponent<Text>();
@@ -434,29 +330,29 @@ namespace BarSimulator.UI
                 levelText.alignment = TextAnchor.MiddleLeft;
                 levelText.color = Color.yellow;
                 var levelRect = levelObj.GetComponent<RectTransform>();
-                levelRect.anchorMin = new Vector2(0, 0);
-                levelRect.anchorMax = new Vector2(0.5f, 0.5f);
-                levelRect.offsetMin = new Vector2(10, 5);
-                levelRect.offsetMax = new Vector2(-5, 0);
+                levelRect.anchorMin = new Vector2(0.05f, 0);
+                levelRect.anchorMax = new Vector2(0.6f, 0.5f);
+                levelRect.offsetMin = Vector2.zero;
+                levelRect.offsetMax = Vector2.zero;
 
-                // Create upgrade button
+                // Button
                 GameObject buttonObj = new GameObject("UpgradeButton");
                 buttonObj.transform.SetParent(transform, false);
                 upgradeButton = buttonObj.AddComponent<Button>();
                 var buttonImage = buttonObj.AddComponent<Image>();
                 buttonImage.color = new Color(0.3f, 0.6f, 0.3f, 1f);
                 var buttonRect = buttonObj.GetComponent<RectTransform>();
-                buttonRect.anchorMin = new Vector2(0.5f, 0);
-                buttonRect.anchorMax = new Vector2(1, 1);
-                buttonRect.offsetMin = new Vector2(5, 5);
-                buttonRect.offsetMax = new Vector2(-10, -5);
+                buttonRect.anchorMin = new Vector2(0.65f, 0.1f);
+                buttonRect.anchorMax = new Vector2(0.95f, 0.9f);
+                buttonRect.offsetMin = Vector2.zero;
+                buttonRect.offsetMax = Vector2.zero;
 
-                // Create button text
+                // Button Text
                 GameObject buttonTextObj = new GameObject("Text");
                 buttonTextObj.transform.SetParent(buttonObj.transform, false);
                 buttonText = buttonTextObj.AddComponent<Text>();
                 buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                buttonText.fontSize = 12;
+                buttonText.fontSize = 14;
                 buttonText.alignment = TextAnchor.MiddleCenter;
                 buttonText.color = Color.white;
                 var buttonTextRect = buttonTextObj.GetComponent<RectTransform>();
@@ -465,7 +361,6 @@ namespace BarSimulator.UI
                 buttonTextRect.offsetMin = Vector2.zero;
                 buttonTextRect.offsetMax = Vector2.zero;
 
-                // Add button listener
                 upgradeButton.onClick.AddListener(OnUpgradeClicked);
             }
 
@@ -473,39 +368,40 @@ namespace BarSimulator.UI
             {
                 if (upgradeData == null) return;
 
-                // Update name with Chinese translation
                 if (nameText != null)
                 {
                     string displayName = upgradeData.liquorType switch
                     {
-                        BaseLiquorType.Vodka => "伏特加",
-                        BaseLiquorType.Gin => "琴酒",
-                        BaseLiquorType.Rum => "蘭姆酒",
-                        BaseLiquorType.Whiskey => "威士忌",
-                        BaseLiquorType.Tequila => "龍舌蘭",
+                        BaseLiquorType.Vodka => "伏特加 (Vodka)",
+                        BaseLiquorType.Gin => "琴酒 (Gin)",
+                        BaseLiquorType.Rum => "蘭姆酒 (Rum)",
+                        BaseLiquorType.Whiskey => "威士忌 (Whiskey)",
+                        BaseLiquorType.Tequila => "龍舌蘭 (Tequila)",
                         _ => upgradeData.liquorType.ToString()
                     };
                     nameText.text = displayName;
                 }
 
-                // Update level
                 if (levelText != null)
                 {
-                    levelText.text = $"Lv.{upgradeData.level}/{LiquorUpgradeData.MaxLevel}";
+                    levelText.text = $"Level {upgradeData.level} / {LiquorUpgradeData.MaxLevel}";
                 }
 
-                // Update button
                 if (upgradeButton != null && buttonText != null)
                 {
                     if (upgradeData.CanUpgrade())
                     {
-                        upgradeButton.interactable = PersistentGameData.Instance.GetTotalCoins() >= upgradeData.GetUpgradeCost();
-                        buttonText.text = $"Upgrade\n${upgradeData.GetUpgradeCost()}";
+                        int cost = upgradeData.GetUpgradeCost();
+                        bool canAfford = PersistentGameData.Instance.GetTotalCoins() >= cost;
+                        upgradeButton.interactable = canAfford;
+                        buttonText.text = $"Upgrade\n${cost}";
+                        upgradeButton.GetComponent<Image>().color = canAfford ? new Color(0.3f, 0.6f, 0.3f, 1f) : Color.gray;
                     }
                     else
                     {
                         upgradeButton.interactable = false;
                         buttonText.text = "MAX";
+                        upgradeButton.GetComponent<Image>().color = Color.gray;
                     }
                 }
             }
@@ -517,19 +413,8 @@ namespace BarSimulator.UI
                     PersistentGameData.Instance.UpgradeLiquor(upgradeData.liquorType);
                 }
             }
-
-            private void OnDestroy()
-            {
-                if (upgradeButton != null)
-                {
-                    upgradeButton.onClick.RemoveListener(OnUpgradeClicked);
-                }
-            }
         }
 
-        /// <summary>
-        /// UI item for decoration purchase
-        /// </summary>
         public class DecorationUIItem : MonoBehaviour
         {
             private DecorationData decorationData;
@@ -547,56 +432,56 @@ namespace BarSimulator.UI
 
             private void CreateUI()
             {
-                // Create background
+                // Background
                 var bg = gameObject.AddComponent<Image>();
                 bg.color = new Color(0.2f, 0.2f, 0.3f, 0.8f);
 
-                // Create name text
+                // Name
                 GameObject nameObj = new GameObject("NameText");
                 nameObj.transform.SetParent(transform, false);
                 nameText = nameObj.AddComponent<Text>();
                 nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                nameText.fontSize = 16;
+                nameText.fontSize = 18;
                 nameText.alignment = TextAnchor.MiddleCenter;
                 nameText.color = Color.white;
                 var nameRect = nameObj.GetComponent<RectTransform>();
-                nameRect.anchorMin = new Vector2(0, 0.6f);
-                nameRect.anchorMax = new Vector2(1, 1);
-                nameRect.offsetMin = new Vector2(10, 0);
-                nameRect.offsetMax = new Vector2(-10, -5);
+                nameRect.anchorMin = new Vector2(0.05f, 0.6f);
+                nameRect.anchorMax = new Vector2(0.95f, 0.95f);
+                nameRect.offsetMin = Vector2.zero;
+                nameRect.offsetMax = Vector2.zero;
 
-                // Create status text
+                // Status
                 GameObject statusObj = new GameObject("StatusText");
                 statusObj.transform.SetParent(transform, false);
                 statusText = statusObj.AddComponent<Text>();
                 statusText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                statusText.fontSize = 12;
+                statusText.fontSize = 14;
                 statusText.alignment = TextAnchor.MiddleCenter;
                 statusText.color = Color.gray;
                 var statusRect = statusObj.GetComponent<RectTransform>();
-                statusRect.anchorMin = new Vector2(0, 0.4f);
-                statusRect.anchorMax = new Vector2(1, 0.6f);
-                statusRect.offsetMin = new Vector2(10, 0);
-                statusRect.offsetMax = new Vector2(-10, 0);
+                statusRect.anchorMin = new Vector2(0.05f, 0.35f);
+                statusRect.anchorMax = new Vector2(0.95f, 0.55f);
+                statusRect.offsetMin = Vector2.zero;
+                statusRect.offsetMax = Vector2.zero;
 
-                // Create purchase button
+                // Button
                 GameObject buttonObj = new GameObject("PurchaseButton");
                 buttonObj.transform.SetParent(transform, false);
                 purchaseButton = buttonObj.AddComponent<Button>();
                 var buttonImage = buttonObj.AddComponent<Image>();
                 buttonImage.color = new Color(0.6f, 0.4f, 0.2f, 1f);
                 var buttonRect = buttonObj.GetComponent<RectTransform>();
-                buttonRect.anchorMin = new Vector2(0.1f, 0.05f);
-                buttonRect.anchorMax = new Vector2(0.9f, 0.35f);
+                buttonRect.anchorMin = new Vector2(0.2f, 0.05f);
+                buttonRect.anchorMax = new Vector2(0.8f, 0.3f);
                 buttonRect.offsetMin = Vector2.zero;
                 buttonRect.offsetMax = Vector2.zero;
 
-                // Create button text
+                // Button Text
                 GameObject buttonTextObj = new GameObject("Text");
                 buttonTextObj.transform.SetParent(buttonObj.transform, false);
                 buttonText = buttonTextObj.AddComponent<Text>();
                 buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                buttonText.fontSize = 12;
+                buttonText.fontSize = 14;
                 buttonText.alignment = TextAnchor.MiddleCenter;
                 buttonText.color = Color.white;
                 var buttonTextRect = buttonTextObj.GetComponent<RectTransform>();
@@ -605,7 +490,6 @@ namespace BarSimulator.UI
                 buttonTextRect.offsetMin = Vector2.zero;
                 buttonTextRect.offsetMax = Vector2.zero;
 
-                // Add button listener
                 purchaseButton.onClick.AddListener(OnPurchaseClicked);
             }
 
@@ -613,38 +497,39 @@ namespace BarSimulator.UI
             {
                 if (decorationData == null) return;
 
-                // Update name with Chinese translation
                 if (nameText != null)
                 {
                     string displayName = decorationData.decorationType switch
                     {
-                        DecorationType.Speaker => "音箱",
-                        DecorationType.Plant => "盆栽",
-                        DecorationType.Painting => "畫",
+                        DecorationType.Speaker => "音箱 (Speakers)",
+                        DecorationType.Plant => "盆栽 (Plant)",
+                        DecorationType.Painting => "畫 (Painting)",
                         _ => decorationData.decorationType.ToString()
                     };
                     nameText.text = displayName;
                 }
 
-                // Update status
                 if (statusText != null)
                 {
-                    statusText.text = decorationData.isPurchased ? "已購買" : "未購買";
+                    statusText.text = decorationData.isPurchased ? "已擁有 (Owned)" : "未擁有 (Not Owned)";
                     statusText.color = decorationData.isPurchased ? Color.green : Color.gray;
                 }
 
-                // Update button
                 if (purchaseButton != null && buttonText != null)
                 {
                     if (decorationData.CanPurchase())
                     {
-                        purchaseButton.interactable = PersistentGameData.Instance.GetTotalCoins() >= decorationData.GetPurchaseCost();
-                        buttonText.text = $"Purchase\n${decorationData.GetPurchaseCost()}";
+                        int cost = decorationData.GetPurchaseCost();
+                        bool canAfford = PersistentGameData.Instance.GetTotalCoins() >= cost;
+                        purchaseButton.interactable = canAfford;
+                        buttonText.text = $"Buy ${cost}";
+                        purchaseButton.GetComponent<Image>().color = canAfford ? new Color(0.6f, 0.4f, 0.2f, 1f) : Color.gray;
                     }
                     else
                     {
                         purchaseButton.interactable = false;
                         buttonText.text = "Purchased";
+                        purchaseButton.GetComponent<Image>().color = Color.gray;
                     }
                 }
             }
@@ -654,14 +539,6 @@ namespace BarSimulator.UI
                 if (PersistentGameData.Instance != null)
                 {
                     PersistentGameData.Instance.PurchaseDecoration(decorationData.decorationType);
-                }
-            }
-
-            private void OnDestroy()
-            {
-                if (purchaseButton != null)
-                {
-                    purchaseButton.onClick.RemoveListener(OnPurchaseClicked);
                 }
             }
         }

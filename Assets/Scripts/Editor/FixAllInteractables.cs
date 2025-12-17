@@ -225,7 +225,7 @@ public class FixAllInteractables
         var liquorsToAdd = new System.Collections.Generic.List<LiquorData>();
 
         // Check for missing liquors
-        string[] requiredLiquors = { "rum", "amaretto_syrup", "vermouth_sweet", "cognac", "lemon_juice", "vodka", "cointreau" };
+        string[] requiredLiquors = { "rum", "amaretto_syrup", "vermouth", "cognac", "lemon_juice", "vodka", "cointreau" };
         
         foreach (string liquorId in requiredLiquors)
         {

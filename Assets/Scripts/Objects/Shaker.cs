@@ -129,7 +129,7 @@ namespace BarSimulator.Objects
         #region 搖酒
 
         /// <summary>
-        /// 開始搖酒（帶QTE）
+        /// 開始搖酒（移除QTE強制綁定，改為計時完成）
         /// 參考: CocktailSystem.js shake() Line 686-707
         /// </summary>
         public void StartShaking()
@@ -150,12 +150,12 @@ namespace BarSimulator.Objects
             // Create particle effect if not exists
             CreateShakeParticles();
 
-            // 啟動QTE系統
-            if (qteSystem != null && !isQTEActive)
-            {
-                qteSystem.StartQTE();
-                isQTEActive = true;
-            }
+            // 移除強制 QTE 啟動，改為純動畫計時邏輯
+            // if (qteSystem != null && !isQTEActive)
+            // {
+            //     qteSystem.StartQTE();
+            //     isQTEActive = true;
+            // }
 
             OnShakeStart?.Invoke();
             Debug.Log($"Shaker: Started shaking with {contents.volume:F0}ml");
@@ -206,6 +206,20 @@ namespace BarSimulator.Objects
             {
                 shakeCompleteNotified = true;
                 Debug.Log("Shaker: Shake ready! You can stop shaking now.");
+
+                // 自動完成搖晃狀態 (因為移除了QTE)
+                contents.isShaken = true;
+                contents.UpdateMixedColor();
+                UpdateLiquidVisual();
+                
+                // 同步到ShakerContainer（如果存在）
+                var shakerContainer = GetComponent<ShakerContainer>();
+                if (shakerContainer != null)
+                {
+                    shakerContainer.isShaken = true;
+                }
+
+                OnShakeCompleted?.Invoke();
 
                 // Visual cue - brief intensity increase
                 TriggerWobble(0.15f);
@@ -313,64 +327,31 @@ namespace BarSimulator.Objects
         {
             if (pourPoint == null || contents.IsEmpty) return;
 
-            // 檢查是否有ShakerContainer
-            var shakerContainer = GetComponent<ShakerContainer>();
-            if (shakerContainer != null && shakerContainer.IsEmpty())
-            {
-                return;
-            }
-
-            // Raycast down from pour point
+            // 使用 SphereCast 增加檢測範圍，避免 Raycast 太細射不中
             RaycastHit hit;
-            if (Physics.Raycast(pourPoint.position, Vector3.down, out hit, pourCheckDistance))
+            float radius = 0.05f; // 5cm 半徑
+            if (Physics.SphereCast(pourPoint.position, radius, Vector3.down, out hit, pourCheckDistance))
             {
-                // 檢查是否是GlassContainer
-                var glassContainer = hit.collider.GetComponent<GlassContainer>();
-                if (glassContainer != null && shakerContainer != null)
+                // 檢查是否是普通Container
+                Container targetContainer = hit.collider.GetComponent<Container>();
+                
+                // 如果打到的是子物件，嘗試往上找 Container
+                if (targetContainer == null)
                 {
-                    // 使用ShakerContainer的倒酒方法
-                    float amount = pourRate * Time.deltaTime;
-                    float actualPoured = shakerContainer.PourToGlass(glassContainer, amount);
-                    
-                    if (actualPoured > 0f)
-                    {
-                        // 同步更新Shaker的contents
-                        contents.volume = shakerContainer.currentTotalVolume;
-                        UpdateLiquidVisual();
-                    }
+                    targetContainer = hit.collider.GetComponentInParent<Container>();
                 }
-                else
-                {
-                    // 檢查是否是普通Container
-                    Container container = hit.collider.GetComponent<Container>();
-                    if (container != null)
-                    {
-                        // 倒出混合液體
-                        float amount = pourRate * Time.deltaTime;
-                        if (contents.volume >= amount)
-                        {
-                            // 創建混合成分
-                            var mixedIngredient = new Ingredient(
-                                "mixed",
-                                "Mixed Drink",
-                                "Mixed Drink",
-                                amount,
-                                contents.mixedColor
-                            );
 
-                            // 添加到目標容器
-                            container.AddIngredient(mixedIngredient);
-                            
-                            // 減少自己的容量
-                            contents.volume -= amount;
-                            if (shakerContainer != null)
-                            {
-                                shakerContainer.PourLiquid(amount);
-                            }
-                            
-                            UpdateLiquidVisual();
-                            container.SetPouringState(true);
-                        }
+                // 確保不是倒給自己
+                if (targetContainer != null && targetContainer != this)
+                {
+                    // 使用 Container 的 TransferTo 方法，它會正確處理成分轉移
+                    float amount = pourRate * Time.deltaTime;
+                    float transferred = this.TransferTo(targetContainer, amount);
+                    
+                    if (transferred > 0)
+                    {
+                        targetContainer.SetPouringState(true);
+                        // Debug.Log($"Pouring {transferred}ml to {targetContainer.name}");
                     }
                 }
             }

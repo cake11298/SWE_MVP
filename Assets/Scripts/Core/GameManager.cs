@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using BarSimulator.Player;
 using System;
 
@@ -202,12 +203,36 @@ namespace BarSimulator.Core
         {
             pauseAction?.Enable();
             showRecipeAction?.Enable();
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnDisable()
         {
             pauseAction?.Disable();
             showRecipeAction?.Disable();
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            Debug.Log($"GameManager: Scene loaded - {scene.name}");
+            
+            if (scene.name == "TheBar")
+            {
+                // Re-validate references as they might be destroyed
+                ValidateReferences();
+                
+                // When TheBar loads, we are ready to play
+                StartGame();
+            }
+            else if (scene.name == "MainMenu")
+            {
+                SetGameState(GameState.Menu);
+            }
+            else if (scene.name == "GameEnd")
+            {
+                SetGameState(GameState.GameOver);
+            }
         }
 
         private void Update()
@@ -334,22 +359,8 @@ namespace BarSimulator.Core
 
             SetGameState(GameState.GameOver);
             
-            // 延遲載入結算場景，讓狀態變更事件先處理
-            StartCoroutine(LoadGameEndSceneDelayed());
-        }
-
-        /// <summary>
-        /// 延遲載入結算場景
-        /// </summary>
-        private System.Collections.IEnumerator LoadGameEndSceneDelayed()
-        {
-            yield return new WaitForSecondsRealtime(0.5f);
-            
-            // 恢復時間流速以便場景切換
-            Time.timeScale = 1f;
-            
-            // 載入結算場景
-            UnityEngine.SceneManagement.SceneManager.LoadScene("GameEnd");
+            // 載入 GameEnd 場景
+            SceneManager.LoadScene("GameEnd");
         }
 
         /// <summary>
@@ -358,7 +369,8 @@ namespace BarSimulator.Core
         public void RestartGame()
         {
             Debug.Log("GameManager: 重新開始遊戲");
-            StartGame();
+            SceneManager.LoadScene("TheBar");
+            // StartGame() will be called by OnSceneLoaded
         }
 
         /// <summary>

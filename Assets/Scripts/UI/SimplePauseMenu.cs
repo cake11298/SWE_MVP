@@ -180,12 +180,12 @@ namespace UI
         }
         
         /// <summary>
-        /// Force jump to Game End screen - Shows GameEndPanel directly
+        /// Force jump to Game End screen - Loads GameEnd scene
         /// </summary>
         public void ForceGameEnd()
         {
-            // Keep time paused - GameEndPanel will handle it
-            Time.timeScale = 0f;
+            // Reset time scale
+            Time.timeScale = 1f;
             isPaused = false;
             
             // Hide pause panel
@@ -201,36 +201,8 @@ namespace UI
                 gameManager.PlayerController.DisableInput();
             }
             
-            // Find and show GameEndPanel
-            var canvas = GameObject.Find("UI_Canvas");
-            if (canvas != null)
-            {
-                var gameEndPanel = canvas.transform.Find("GameEndPanel");
-                if (gameEndPanel != null)
-                {
-                    gameEndPanel.gameObject.SetActive(true);
-                    Debug.Log("[SimplePauseMenu] Forced game end - showing GameEndPanel");
-                    
-                    // Unlock cursor for UI interaction
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                    
-                    // Trigger GameEndUI to show properly
-                    var gameEndUI = gameEndPanel.GetComponent<BarSimulator.UI.GameEndUI>();
-                    if (gameEndUI != null)
-                    {
-                        gameEndUI.ShowGameEndScreen();
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning("[SimplePauseMenu] GameEndPanel not found in UI_Canvas!");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[SimplePauseMenu] UI_Canvas not found!");
-            }
+            Debug.Log("[SimplePauseMenu] Forced game end - loading GameEnd scene");
+            SceneManager.LoadScene("GameEnd");
         }
     }
 }

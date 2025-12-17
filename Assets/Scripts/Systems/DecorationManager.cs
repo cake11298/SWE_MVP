@@ -30,11 +30,20 @@ namespace BarSimulator.Systems
         #region Serialized Fields
 
         [Header("Decoration References")]
+        [Tooltip("Parent object containing all speaker objects")]
+        [SerializeField] private GameObject speakersParent;
+
         [Tooltip("Speaker decoration objects (SM_Speakers, SM_Speakers2)")]
         [SerializeField] private GameObject[] speakerObjects;
 
+        [Tooltip("Parent object containing all plant objects")]
+        [SerializeField] private GameObject plantsParent;
+
         [Tooltip("Plant decoration objects")]
         [SerializeField] private GameObject[] plantObjects;
+
+        [Tooltip("Parent object containing all painting objects")]
+        [SerializeField] private GameObject paintingsParent;
 
         [Tooltip("Painting decoration objects")]
         [SerializeField] private GameObject[] paintingObjects;
@@ -117,14 +126,17 @@ namespace BarSimulator.Systems
 
             // Update speakers
             bool speakersPurchased = PersistentGameData.Instance.IsDecorationPurchased(DecorationType.Speaker);
+            if (speakersParent != null) speakersParent.SetActive(speakersPurchased);
             SetDecorationVisibility(speakerObjects, speakersPurchased);
 
             // Update plants
             bool plantsPurchased = PersistentGameData.Instance.IsDecorationPurchased(DecorationType.Plant);
+            if (plantsParent != null) plantsParent.SetActive(plantsPurchased);
             SetDecorationVisibility(plantObjects, plantsPurchased);
 
             // Update paintings
             bool paintingsPurchased = PersistentGameData.Instance.IsDecorationPurchased(DecorationType.Painting);
+            if (paintingsParent != null) paintingsParent.SetActive(paintingsPurchased);
             SetDecorationVisibility(paintingObjects, paintingsPurchased);
 
             Debug.Log($"DecorationManager: Updated visibility - Speakers: {speakersPurchased}, Plants: {plantsPurchased}, Paintings: {paintingsPurchased}");
@@ -160,12 +172,15 @@ namespace BarSimulator.Systems
             switch (type)
             {
                 case DecorationType.Speaker:
+                    if (speakersParent != null) speakersParent.SetActive(true);
                     SetDecorationVisibility(speakerObjects, true);
                     break;
                 case DecorationType.Plant:
+                    if (plantsParent != null) plantsParent.SetActive(true);
                     SetDecorationVisibility(plantObjects, true);
                     break;
                 case DecorationType.Painting:
+                    if (paintingsParent != null) paintingsParent.SetActive(true);
                     SetDecorationVisibility(paintingObjects, true);
                     break;
             }
