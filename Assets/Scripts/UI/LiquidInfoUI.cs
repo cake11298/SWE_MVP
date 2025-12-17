@@ -40,6 +40,7 @@ namespace BarSimulator.UI
 
         // Private state
         private Objects.GlassContainer targetGlass;
+        private Objects.Container targetContainer;
         private float updateTimer = 0f;
         private string pouringTargetName = "";
 
@@ -78,6 +79,7 @@ namespace BarSimulator.UI
         public void SetTargetGlass(Objects.GlassContainer glass, string pouringTarget = "")
         {
             targetGlass = glass;
+            targetContainer = null;
             pouringTargetName = pouringTarget;
 
             if (targetGlass != null)
@@ -92,11 +94,32 @@ namespace BarSimulator.UI
         }
 
         /// <summary>
-        /// Clear the target glass.
+        /// Set the target container to display (supports Shaker, Glass, etc).
+        /// </summary>
+        public void SetTargetContainer(Objects.Container container, string pouringTarget = "")
+        {
+            targetContainer = container;
+            targetGlass = null;
+            pouringTargetName = pouringTarget;
+
+            if (targetContainer != null)
+            {
+                ShowUI();
+                UpdateUI();
+            }
+            else
+            {
+                HideUI();
+            }
+        }
+
+        /// <summary>
+        /// Clear the target.
         /// </summary>
         public void ClearTarget()
         {
             targetGlass = null;
+            targetContainer = null;
             HideUI();
         }
 
@@ -105,7 +128,7 @@ namespace BarSimulator.UI
         /// </summary>
         private void UpdateUI()
         {
-            if (targetGlass == null)
+            if (targetGlass == null && targetContainer == null)
             {
                 HideUI();
                 return;
@@ -120,18 +143,34 @@ namespace BarSimulator.UI
                 }
                 else
                 {
-                    titleText.text = "Glass Contents";
+                    if (targetContainer is Objects.Shaker)
+                        titleText.text = "Shaker Contents";
+                    else
+                        titleText.text = "Glass Contents";
                 }
+            }
+
+            float fillRatio = 0f;
+            string contents = "";
+
+            if (targetContainer != null)
+            {
+                fillRatio = targetContainer.FillRatio;
+                contents = targetContainer.GetContentsString();
+            }
+            else if (targetGlass != null)
+            {
+                fillRatio = targetGlass.GetFillRatio();
+                contents = targetGlass.GetContentsString();
             }
 
             // Update capacity slider
             if (capacitySlider != null)
             {
-                capacitySlider.value = targetGlass.GetFillRatio();
+                capacitySlider.value = fillRatio;
             }
 
             // Update content text
-            string contents = targetGlass.GetContentsString();
             if (contentTextTMP != null)
             {
                 contentTextTMP.text = contents;

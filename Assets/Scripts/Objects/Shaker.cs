@@ -237,11 +237,12 @@ namespace BarSimulator.Objects
             shakeZ += noise;
             shakeX += noise * 0.5f;
 
-            transform.localRotation = baseRotation * Quaternion.Euler(
-                shakeX * Mathf.Rad2Deg,
-                0f,
-                shakeZ * Mathf.Rad2Deg
-            );
+            // 旋轉由 ImprovedInteractionSystem 控制，這裡只處理狀態和粒子
+            // transform.localRotation = baseRotation * Quaternion.Euler(
+            //     shakeX * Mathf.Rad2Deg,
+            //     0f,
+            //     shakeZ * Mathf.Rad2Deg
+            // );
 
             // Update particles
             if (shakeParticles != null && !shakeParticles.isPlaying)
