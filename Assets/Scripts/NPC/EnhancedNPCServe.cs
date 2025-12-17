@@ -3,6 +3,7 @@ using BarSimulator.Objects;
 using BarSimulator.Core;
 using BarSimulator.UI;
 using BarSimulator.Data;
+using UnityEngine.UI;
 
 namespace BarSimulator.NPC
 {
@@ -14,6 +15,11 @@ namespace BarSimulator.NPC
     /// </summary>
     public class EnhancedNPCServe : MonoBehaviour
     {
+        [Tooltip("NPC Dialogue")]
+        public NPCDialogue_SO dialogue;
+        public Canvas dialogueUI;
+        public Text dialogueText;
+
         [Header("Serve Settings")]
         [Tooltip("Interaction distance")]
         [SerializeField] private float interactionDistance = 3f;
