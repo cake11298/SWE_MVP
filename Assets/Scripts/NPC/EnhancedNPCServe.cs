@@ -144,6 +144,7 @@ namespace BarSimulator.NPC
                     else
                     {
                         Debug.Log($"EnhancedNPCServe: You need to be holding the glass to serve to {gameObject.name}.");
+                        ShowDialogueUI(dialogueData.dialogue_ordering);
                     }
                 }
             }
