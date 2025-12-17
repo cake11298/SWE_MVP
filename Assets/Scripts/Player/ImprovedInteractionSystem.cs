@@ -622,6 +622,7 @@ namespace BarSimulator.Player
             {
                 // Debug.Log($"手持 Shaker: IsEmpty={heldShakerObj.IsEmpty}, Volume={heldShakerObj.Volume}");
                 
+                // 只要有液體就可以倒出，不需要檢查是否搖過
                 if (!heldShakerObj.IsEmpty)
                 {
                     // 倒入玻璃杯
@@ -633,8 +634,11 @@ namespace BarSimulator.Player
                         if (glass != null && !glass.IsFull)
                         {
                             float pourAmount = Time.deltaTime * 30f;
-                            heldShakerObj.TransferTo(glass, pourAmount);
-                            Debug.Log($"正在从Shaker倒酒到Glass");
+                            float transferred = heldShakerObj.TransferTo(glass, pourAmount);
+                            if (transferred > 0)
+                            {
+                                Debug.Log($"正在从Shaker倒酒到Glass: {transferred}ml");
+                            }
                             return;
                         }
 
@@ -644,11 +648,18 @@ namespace BarSimulator.Player
                         {
                             float pourAmount = Time.deltaTime * 30f; // 30ml/s
                             // 使用 Container 的 TransferTo 方法 (需要 Container.cs 支援)
-                            heldShakerObj.TransferTo(glassContainer, pourAmount);
-                            Debug.Log($"正在从Shaker倒酒到GlassContainer");
+                            float transferred = heldShakerObj.TransferTo(glassContainer, pourAmount);
+                            if (transferred > 0)
+                            {
+                                Debug.Log($"正在从Shaker倒酒到GlassContainer: {transferred}ml");
+                            }
                             return;
                         }
                     }
+                }
+                else
+                {
+                    // Debug.Log("Shaker is empty, cannot pour.");
                 }
             }
 
