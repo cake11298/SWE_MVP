@@ -438,6 +438,9 @@ namespace BarSimulator.Player
                 InteractableItem targetItem = currentHighlightedObject.GetComponent<InteractableItem>();
                 if (targetItem != null && targetItem.itemType == ItemType.Glass)
                 {
+                    // 再次检查 heldItem 是否仍然有效
+                    if (heldItem == null) return;
+                    
                     // 获取酒的类型
                     string liquidName = heldItem.liquidType.ToString();
                     
@@ -460,6 +463,9 @@ namespace BarSimulator.Player
                 var shakerContainer = currentHighlightedObject.GetComponent<Objects.ShakerContainer>();
                 if (shakerContainer != null && !shakerContainer.IsFull())
                 {
+                    // 再次检查 heldItem 是否仍然有效
+                    if (heldItem == null) return;
+                    
                     string liquidName = heldItem.liquidType.ToString();
                     float pourAmount = Time.deltaTime * 30f; // 30ml/s
                     shakerContainer.AddLiquid(liquidName, pourAmount);
