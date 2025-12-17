@@ -272,11 +272,19 @@ namespace BarSimulator.Core
                 case GameState.Paused:
                     Time.timeScale = 0f;
                     UnlockCursor();
+                    if (playerController != null)
+                    {
+                        playerController.DisableInput();
+                    }
                     break;
 
                 case GameState.GameOver:
-                    Time.timeScale = 1f;
+                    Time.timeScale = 0f; // Keep paused during game over screen
                     UnlockCursor();
+                    if (playerController != null)
+                    {
+                        playerController.DisableInput();
+                    }
                     break;
             }
 
@@ -344,6 +352,16 @@ namespace BarSimulator.Core
             if (currentGameState != GameState.GameOver)
             {
                 Debug.Log("GameManager: Time's up! Game ending...");
+                
+                // Completely pause the game
+                Time.timeScale = 0f;
+                
+                // Disable player input
+                if (playerController != null)
+                {
+                    playerController.DisableInput();
+                }
+                
                 EndGame(false);
             }
         }

@@ -162,12 +162,18 @@ namespace BarSimulator.UI
                 Debug.LogError("GameEndUI: gameEndPanel is null!");
             }
 
-            // Pause game
+            // COMPLETELY PAUSE GAME - freeze all time-based operations
             Time.timeScale = 0f;
 
-            // Unlock cursor
+            // Unlock cursor for UI interaction
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            // Disable player input
+            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
+            {
+                GameManager.Instance.PlayerController.DisableInput();
+            }
 
             // Update displays
             UpdateStatistics();
@@ -339,8 +345,14 @@ namespace BarSimulator.UI
         {
             Debug.Log("GameEndUI: Returning to main menu");
             
-            // Resume time
+            // Resume time before scene transition
             Time.timeScale = 1f;
+            
+            // Re-enable player input
+            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
+            {
+                GameManager.Instance.PlayerController.EnableInput();
+            }
             
             // Load main menu scene
             SceneManager.LoadScene("MainMenu");
@@ -348,15 +360,21 @@ namespace BarSimulator.UI
 
         private void OnNextGameClicked()
         {
-            Debug.Log("GameEndUI: Starting next game with inherited coins and upgrades");
+            Debug.Log("GameEndUI: Starting next game - inheriting coins and upgrades");
             
-            // Resume time
+            // Resume time before scene transition
             Time.timeScale = 1f;
+
+            // Re-enable player input
+            if (GameManager.Instance != null && GameManager.Instance.PlayerController != null)
+            {
+                GameManager.Instance.PlayerController.EnableInput();
+            }
 
             // Hide this panel
             HideGameEndScreen();
             
-            // Reload the current scene (TheBar)
+            // Reload the current scene (TheBar) - coins and upgrades persist via PersistentGameData
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 

@@ -40,6 +40,18 @@ namespace UI
                     Pause();
                 }
             }
+            
+            // Handle C key - Back to Main Menu (only when paused)
+            if (isPaused && Input.GetKeyDown(KeyCode.C))
+            {
+                LoadMenu();
+            }
+            
+            // Handle M key - Force to Game End (only when paused)
+            if (isPaused && Input.GetKeyDown(KeyCode.M))
+            {
+                ForceGameEnd();
+            }
         }
 
         /// <summary>
@@ -52,19 +64,28 @@ namespace UI
                 pausePanel.SetActive(true);
             }
             
-            // Stop the entire game
+            // COMPLETELY STOP THE GAME - freeze all time-based operations
             Time.timeScale = 0f;
             isPaused = true;
             
-            // Unlock cursor
+            // Unlock cursor for UI interaction
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             
-            // Notify GameManager if available
+            // Disable player input
             var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
-            if (gameManager != null && gameManager.IsPlaying)
+            if (gameManager != null)
             {
-                gameManager.Pause();
+                if (gameManager.IsPlaying)
+                {
+                    gameManager.Pause();
+                }
+                
+                // Disable player controller input
+                if (gameManager.PlayerController != null)
+                {
+                    gameManager.PlayerController.DisableInput();
+                }
             }
         }
 
@@ -78,18 +99,28 @@ namespace UI
                 pausePanel.SetActive(false);
             }
             
+            // Resume game time
             Time.timeScale = 1f;
             isPaused = false;
             
-            // Lock cursor back
+            // Lock cursor back for gameplay
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             
-            // Notify GameManager if available
+            // Re-enable player input
             var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
-            if (gameManager != null && gameManager.IsPaused)
+            if (gameManager != null)
             {
-                gameManager.Resume();
+                if (gameManager.IsPaused)
+                {
+                    gameManager.Resume();
+                }
+                
+                // Re-enable player controller input
+                if (gameManager.PlayerController != null)
+                {
+                    gameManager.PlayerController.EnableInput();
+                }
             }
         }
 
@@ -102,16 +133,76 @@ namespace UI
             Time.timeScale = 1f;
             isPaused = false;
             
-            // Reset game state through GameManager if available
+            // Re-enable player input before scene transition
             var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
             if (gameManager != null)
             {
                 // Clear any game state
                 Debug.Log("[SimplePauseMenu] Resetting game state before returning to main menu");
+                
+                // Re-enable player controller input
+                if (gameManager.PlayerController != null)
+                {
+                    gameManager.PlayerController.EnableInput();
+                }
             }
             
             // Load main menu scene
             SceneManager.LoadScene("MainMenu");
+        }
+        
+        /// <summary>
+        /// Force jump to Game End screen - Shows GameEndPanel directly
+        /// </summary>
+        public void ForceGameEnd()
+        {
+            // Keep time paused - GameEndPanel will handle it
+            Time.timeScale = 0f;
+            isPaused = false;
+            
+            // Hide pause panel
+            if (pausePanel != null)
+            {
+                pausePanel.SetActive(false);
+            }
+            
+            // Disable player input
+            var gameManager = FindObjectOfType<BarSimulator.Core.GameManager>();
+            if (gameManager != null && gameManager.PlayerController != null)
+            {
+                gameManager.PlayerController.DisableInput();
+            }
+            
+            // Find and show GameEndPanel
+            var canvas = GameObject.Find("UI_Canvas");
+            if (canvas != null)
+            {
+                var gameEndPanel = canvas.transform.Find("GameEndPanel");
+                if (gameEndPanel != null)
+                {
+                    gameEndPanel.gameObject.SetActive(true);
+                    Debug.Log("[SimplePauseMenu] Forced game end - showing GameEndPanel");
+                    
+                    // Unlock cursor for UI interaction
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                    
+                    // Trigger GameEndUI to show properly
+                    var gameEndUI = gameEndPanel.GetComponent<BarSimulator.UI.GameEndUI>();
+                    if (gameEndUI != null)
+                    {
+                        gameEndUI.ShowGameEndScreen();
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("[SimplePauseMenu] GameEndPanel not found in UI_Canvas!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SimplePauseMenu] UI_Canvas not found!");
+            }
         }
     }
 }
