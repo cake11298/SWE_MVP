@@ -110,6 +110,7 @@ namespace BarSimulator.NPC
 
         /// <summary>
         /// Handle F key input for serving drinks
+        /// (Also as a temporary enter point of chatting with NPC)
         /// </summary>
         private void HandleServeInput()
         {
