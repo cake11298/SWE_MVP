@@ -212,10 +212,18 @@ namespace BarSimulator.Player
 
         private void HandleInput()
         {
-            // E键：拾取或放回原位
+            // 按下E键：切換播放/拾取或放回原位
             if (Input.GetKeyDown(KeyCode.E))
             {
-                if (heldObject == null)
+                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                {
+                    // 切換音樂播放
+                    var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
+
+                    speaker.TogglePlay();
+                    Debug.Log("[HandleInput] 切換音樂播放狀態");
+                }
+                else if (heldObject == null)
                 {
                     TryPickupObject();
                 }
@@ -225,25 +233,51 @@ namespace BarSimulator.Player
                 }
             }
 
-            // Q键：原地放下
-            if (Input.GetKeyDown(KeyCode.Q) && heldObject != null)
+            // 按下Q键：輪換歌曲/原地放下
+            if (Input.GetKeyDown(KeyCode.Q))
             {
-                DropAtCurrentPosition();
+                if (currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                {
+                    // 輪換歌曲
+                    var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
+                    speaker.SwitchMusic();
+                    Debug.Log("[HandleInput] 輪換歌曲");
+                    return;
+                }
+                else if(heldObject != null)
+                {
+                    DropAtCurrentPosition();
+                }
             }
 
-            // 左键：倒酒
-            if (Input.GetMouseButton(0) && heldObject != null && heldItem != null)
+            // 按下左键：減小音量/倒酒
+            if(Input.GetMouseButton(0))
             {
-                if (heldItem.itemType == ItemType.Bottle || heldItem.itemType == ItemType.Shaker)
+                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                {
+                    // 減小音量
+                    var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
+                    speaker.SetVolume(speaker.GetComponent<AudioSource>().volume - 0.01f);
+                    Debug.Log("[HandleInput] 減小音量");
+                }
+                else if (heldObject != null && heldItem != null && (heldItem.itemType == ItemType.Bottle || heldItem.itemType == ItemType.Shaker))
                 {
                     TryPourLiquid();
                 }
             }
+            
 
-            // 按下右鍵: 開始搖酒
-            if (Input.GetMouseButtonDown(1) && heldObject != null && heldItem != null)
+            // 按下右鍵: 增加音量/開始搖酒
+            if (Input.GetMouseButton(1))
             {
-                if(heldItem.itemType == ItemType.Shaker)
+                if(currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+                {
+                    // 增加音量
+                    var speaker = currentHighlightedObject.GetComponent<Objects.Speaker>();
+                    speaker.SetVolume(speaker.GetComponent<AudioSource>().volume + 0.01f);
+                    Debug.Log("[HandleInput] 增加音量");
+                }
+                else if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
                 {
                     // 嘗試獲取 Shaker 組件 (優先) 或 ShakerContainer
                     var shaker = heldObject.GetComponent<Objects.Shaker>();
@@ -271,6 +305,7 @@ namespace BarSimulator.Player
                     }
                 }
             }
+            
 
             // 鬆開右鍵: 停止搖酒
             if (Input.GetMouseButtonUp(1) && heldObject != null && heldItem != null)
