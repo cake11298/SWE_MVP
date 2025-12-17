@@ -191,6 +191,8 @@ namespace BarSimulator.NPC
 
             // Evaluate the drink
             EvaluationResult evaluation = CocktailEvaluator.Evaluate(currentOrder, glassContents, liquorDatabase);
+            if(heldGlass.isShaken)
+                evaluation.coins = Mathf.RoundToInt(evaluation.coins * 1.3f);
 
             // Clear the glass
             heldGlass.Clear();

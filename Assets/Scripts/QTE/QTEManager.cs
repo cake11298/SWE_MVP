@@ -45,18 +45,23 @@ namespace BarSimulator.QTE
         
         private ShakeState shakeState = ShakeState.Wait;
         private ShakeQTE currentShakeQTE = null;
-        private float qualityMultiplier = 0.2f;
+        private bool isShaken;
 
-        // 計算品質倍率並重置狀態
-        public float GetQualityAndResetQTE()
+        // 重置狀態
+        public void ResetQTE()
         {
             shakeState = ShakeState.Wait;
+            isShaken = false;
+        }
 
-            return qualityMultiplier;
+        // 計算品質倍率
+        public bool IsShaken()
+        {
+            return isShaken;
         }
 
         // 開始搖晃QTE，由ImproveInteractionSystem.HandleInput呼叫
-        public void StartShakeQTE(Action<float> onComplete = null)
+        public void StartShakeQTE()
         {
             // 等待時創建新的shakeQTE
             if (shakeState == ShakeState.Wait)
@@ -67,10 +72,6 @@ namespace BarSimulator.QTE
                 currentShakeQTE = new ShakeQTE(qteCanvas, pointer, circle);
                 // 設定搖酒完成後的callback
                 currentShakeQTE.onFinish += HandleFinishShakeQTE;
-                if (onComplete != null)
-                {
-                    currentShakeQTE.onFinish += onComplete;
-                }
                 StartCoroutine(currentShakeQTE.StartQTE());
             }
             else if(shakeState == ShakeState.STOP)
@@ -78,16 +79,6 @@ namespace BarSimulator.QTE
                 Debug.Log("[QTE] 繼續QTE");
                 shakeState = ShakeState.Shaking;
                 currentShakeQTE.isShaking = true;
-                if (onComplete != null)
-                {
-                    // Avoid adding the same callback multiple times if possible, 
-                    // but for now we assume the caller handles it or it's a one-off.
-                    // Actually, if we resume, the previous callback is still attached to currentShakeQTE.
-                    // So we might not need to re-attach, or we might duplicate.
-                    // For simplicity in this context, we'll assume StartShakeQTE is called to START.
-                    // If resuming, we might not pass a new callback or we accept duplication.
-                    // However, ImprovedInteractionSystem calls StartShakeQTE on MouseDown.
-                }
             }
         }
 
@@ -104,10 +95,10 @@ namespace BarSimulator.QTE
         }
 
         // 完成搖晃QTE
-        public void HandleFinishShakeQTE(float quality)
+        public void HandleFinishShakeQTE(bool isShaken)
         {
-            Debug.Log($"[QTE] QTE完成, 品質倍率: {quality}");
-            qualityMultiplier = quality;
+            Debug.Log($"[QTE] QTE結果: {isShaken}");
+            this.isShaken = isShaken;
             shakeState = ShakeState.Finished;
             currentShakeQTE = null;
         }
@@ -119,7 +110,7 @@ namespace BarSimulator.QTE
         private GameObject qteCanvas;
         private Image pointer;
         private Image circle;
-        public Action<float> onFinish = null;
+        public Action<bool> onFinish = null;
         public bool isShaking = true;
 
         private List<bool> results = new List<bool>();
@@ -231,17 +222,10 @@ namespace BarSimulator.QTE
                     successCount++;
             }
 
-            float quality;
-            if (successCount == 3)
-                quality = 1f;
-            else if (successCount == 2)
-                quality = 0.8f;
-            else if (successCount == 1)
-                quality = 0.6f;
-            else
-                quality = 0.5f;
-            
-            onFinish?.Invoke(quality);
+            if (successCount >= 1)
+                onFinish?.Invoke(true);
+            else 
+                onFinish?.Invoke(false);
         }
     }
 }

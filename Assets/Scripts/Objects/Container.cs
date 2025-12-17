@@ -2,6 +2,7 @@ using UnityEngine;
 using BarSimulator.Core;
 using BarSimulator.Data;
 using BarSimulator.Interaction;
+using BarSimulator.QTE;
 
 namespace BarSimulator.Objects
 {
@@ -386,10 +387,7 @@ namespace BarSimulator.Objects
             }
 
             // 轉移shaken狀態
-            if (contents.isShaken)
-            {
-                target.contents.isShaken = true;
-            }
+            target.contents.isShaken = QTEManager.Instance.IsShaken() || target.contents.isShaken;
 
             // 清理空成分
             contents.ingredients.RemoveAll(i => i.amount <= 0.01f);
@@ -426,10 +424,8 @@ namespace BarSimulator.Objects
             contents.volume -= actualAmount;
 
             // 轉移shaken狀態
-            if (contents.isShaken)
-            {
-                target.isShaken = true;
-            }
+            target.isShaken = QTEManager.Instance.IsShaken() || target.isShaken;
+            QTEManager.Instance.ResetQTE();
 
             // 清理空成分
             contents.ingredients.RemoveAll(i => i.amount <= 0.01f);

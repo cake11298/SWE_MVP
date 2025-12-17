@@ -298,25 +298,9 @@ namespace BarSimulator.Player
                     Debug.Log("[HandleInput] 搖晃 Shaker (New)");
                     // 啟動 Shaker 的視覺效果 (不使用計時器)
                     shaker.StartShaking(false);
-                    
-                    // 啟動 QTE，並傳入回調
-                    QTEManager.Instance.StartShakeQTE((quality) => {
-                        if (shaker != null)
-                        {
-                            shaker.OnShakeFinished(quality);
-                        }
-                    });
-                    isShaking = true;
-                }
-                else if (shakerContainer != null && QTEManager.Instance != null)
-                {
                     Debug.Log("[HandleInput] 搖晃 ShakerContainer (Legacy)");
                     QTEManager.Instance.StartShakeQTE();
                     isShaking = true;
-                }
-                else
-                {
-                    Debug.Log("[HandleInput] 無法搖晃: 缺少 Shaker 組件或 QTEManager");
                 }
             }
             
