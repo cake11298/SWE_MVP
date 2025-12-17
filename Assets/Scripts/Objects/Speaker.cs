@@ -2,6 +2,9 @@ using Unity;
 using UnityEngine.UI;
 using BarSimulator.Interaction;
 using UnityEngine;
+using BarSimulator.UI;
+using System.Linq.Expressions;
+
 namespace BarSimulator.Objects
 {
     /// <summary>
@@ -18,21 +21,21 @@ namespace BarSimulator.Objects
         private AudioClip[] musicClips; // 可播放的音樂剪輯列表
         [SerializeField]
         private float volume = 0.5f; // 音量設置
+        [SerializeField]
         private int currentTrackIndex = 0;
-
+        static readonly string[] MusicNames = { "Jazz Shot", "Relax Whiskey", "Slience Call" };
         #endregion
 
-        public void Awake()
+        public void Start()
         {
+            // 確保AudioSource組件存在
             if (audioSource == null)
             {
                 audioSource = gameObject.AddComponent<AudioSource>();
-            }   
-        }
+            }
 
-        public void TogglePlay()
-        {
-            if (audioSource != null && musicClips.Length > 0)
+            // 播放第一首音樂
+            if (musicClips.Length > 0)
             {
                 audioSource.clip = musicClips[currentTrackIndex];
                 audioSource.volume = volume;
@@ -41,11 +44,30 @@ namespace BarSimulator.Objects
             }
         }
 
+        // 切換播放狀態
+        public void TogglePlay()
+        {
+            if (audioSource.isPlaying)
+            {
+                Debug.Log("暫停音樂");
+                UIPromptManager.Show("音樂已暫停");
+                audioSource.Pause();
+            }
+            else
+            {
+                Debug.Log("播放音樂");
+                UIPromptManager.Show("音樂已播放");
+                audioSource.Play();
+            }
+        }
+
         public void SwitchMusic()
         {
             if (musicClips.Length == 0 || audioSource == null)
                 return;
-
+            
+            Debug.Log("切換音樂");
+            UIPromptManager.Show($"切換至音樂：{MusicNames[currentTrackIndex]}");
             currentTrackIndex = (currentTrackIndex + 1) % musicClips.Length;
             audioSource.clip = musicClips[currentTrackIndex];
             audioSource.Play();
@@ -54,6 +76,8 @@ namespace BarSimulator.Objects
         public void SetVolume(float newVolume)
         {
             volume = Mathf.Clamp01(newVolume);
+            Debug.Log($"設置音量至 {newVolume}");
+            UIPromptManager.Show($"音量大小：{Mathf.RoundToInt(newVolume * 100)}%");
             if (audioSource != null)
             {
                 audioSource.volume = volume;

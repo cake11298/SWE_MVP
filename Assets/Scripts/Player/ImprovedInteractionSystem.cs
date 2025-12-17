@@ -790,6 +790,16 @@ namespace BarSimulator.Player
                 // Holding bottle, looking at glass
                 UIPromptManager.Show($"按住左鍵倒酒到 {itemName}");
             }
+            else if (currentHighlightedObject.GetComponent<InteractableItem>().itemType == ItemType.Speaker)
+            {
+                // Holding speaker, show volume controls
+                UIPromptManager.Show($"按住左鍵/右鍵 減小/增加音量，按 E 切換播放，按 Q 輪換歌曲");
+            }
+            else if (heldObject != null && heldItem != null && heldItem.itemType == ItemType.Shaker)
+            {
+                // Holding shaker, looking at glass
+                UIPromptManager.Show($"按住左鍵倒酒到 {itemName}，按住右鍵搖晃");
+            }
             else
             {
                 // Not holding anything, looking at item
