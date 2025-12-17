@@ -7,6 +7,13 @@ public class NPCDialogue_SO : ScriptableObject
 {
     [TextArea]
     public string dialogue_ordering;
+    [TextArea]
+    public string dialogue_ordering_1;
+    [TextArea]
+    public string dialogue_ordering_2;
+
+    [TextArea]
+    public string dialogue_notOrdering;
 
     [TextArea]
     public string dialogue_perfectDrink;
