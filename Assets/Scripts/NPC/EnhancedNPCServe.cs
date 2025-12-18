@@ -191,8 +191,17 @@ namespace BarSimulator.NPC
 
             // Evaluate the drink
             EvaluationResult evaluation = CocktailEvaluator.Evaluate(currentOrder, glassContents, liquorDatabase);
+
+            // Apply shake bonus
             if(heldGlass.isShaken)
                 evaluation.coins = Mathf.RoundToInt(evaluation.coins * 1.3f);
+
+            // Apply glass type bonus
+            if (heldGlass.glassType == "CoupeGlass")
+            {
+                evaluation.coins = Mathf.RoundToInt(evaluation.coins * 1.5f);
+            }
+            // CrystalGlass has no bonus (1.0x multiplier)
 
             // Clear the glass
             heldGlass.Clear();

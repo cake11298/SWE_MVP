@@ -468,16 +468,36 @@ namespace BarSimulator.Core
         /// <param name="amount">金幣數量</param>
         public void AddCoins(int amount)
         {
-            score.totalCoins += amount;
+            int totalEarned = amount;
+
+            // Apply Decoration Bonuses
+            if (BarSimulator.Data.PersistentGameData.Instance != null)
+            {
+                // Bamboo Bonus: +30 Coins
+                if (BarSimulator.Data.PersistentGameData.Instance.IsDecorationPurchased(BarSimulator.Data.DecorationType.Plant))
+                {
+                    totalEarned += 30;
+                    Debug.Log($"GameManager: Bamboo Bonus applied! Extra 30 coins.");
+                }
+
+                // Speaker Bonus: +100 Coins
+                if (BarSimulator.Data.PersistentGameData.Instance.IsDecorationPurchased(BarSimulator.Data.DecorationType.Speaker))
+                {
+                    totalEarned += 100;
+                    Debug.Log($"GameManager: Speaker Bonus applied! Extra 100 coins.");
+                }
+            }
+
+            score.totalCoins += totalEarned;
 
             // Add coins to persistent data
             if (BarSimulator.Data.PersistentGameData.Instance != null)
             {
-                BarSimulator.Data.PersistentGameData.Instance.AddCoins(amount);
+                BarSimulator.Data.PersistentGameData.Instance.AddCoins(totalEarned);
             }
 
-            OnCoinsUpdated?.Invoke(amount, score.totalCoins);
-            Debug.Log($"GameManager: 獲得 {amount} 金幣！總金幣: {score.totalCoins}");
+            OnCoinsUpdated?.Invoke(totalEarned, score.totalCoins);
+            Debug.Log($"GameManager: 獲得 {totalEarned} 金幣 (基礎: {amount})！總金幣: {score.totalCoins}");
         }
 
         private void TriggerWin()
