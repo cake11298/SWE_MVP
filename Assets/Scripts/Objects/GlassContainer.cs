@@ -17,6 +17,9 @@ namespace BarSimulator.Objects
         [Tooltip("Maximum capacity in ml")]
         public float maxGlassVolume = 300f;
 
+        [Tooltip("Glass type (e.g. CrystalGlass, CoupeGlass, MartiniGlass)")]
+        public string glassType = "CrystalGlass";
+
         [Header("Current Contents")]
         [Tooltip("Current total volume in ml")]
         public float currentTotalVolume = 0f;
