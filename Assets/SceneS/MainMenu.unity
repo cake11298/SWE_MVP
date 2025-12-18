@@ -1508,6 +1508,89 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1159959416}
   m_CullTransparentMesh: 1
+--- !u!1 &1441077999
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1441078000}
+  - component: {fileID: 1441078002}
+  - component: {fileID: 1441078001}
+  m_Layer: 0
+  m_Name: DisclaimerText
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1441078000
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1441077999}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2115448568}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: 10}
+  m_SizeDelta: {x: 0, y: 300}
+  m_Pivot: {x: 0.5, y: 0}
+--- !u!114 &1441078001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1441077999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 14
+    m_FontStyle: 0
+    m_BestFit: 0
+    m_MinSize: 10
+    m_MaxSize: 40
+    m_Alignment: 4
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: "DISCLAIMER:\nThis is a non-commercial educational project created for
+    \nacademic purposes only. All product names, logos, and \nbrands are property
+    of their respective owners. Use of \nthese trademarks does not imply endorsement.\n\nThis
+    game is not affiliated with, endorsed by, or \nsponsored by any of the companies
+    whose products appear \nin this game.\n\n\u514D\u8CAC\u8072\u660E\uFF1A\n\u672C\u4F5C\u54C1\u70BA\u975E\u5546\u696D\u6027\u8CEA\u4E4B\u5B78\u8853\u5C08\u984C\uFF0C\u50C5\u4F9B\u6559\u80B2\u7528\u9014\u3002\n\u6240\u6709\u7522\u54C1\u540D\u7A31\u3001\u6A19\u8A8C\u53CA\u54C1\u724C\u5747\u70BA\u5176\u5404\u81EA\u6240\u6709\u8005\u4E4B\u8CA1\u7522\u3002\n\u4F7F\u7528\u9019\u4E9B\u5546\u6A19\u4E26\u4E0D\u4EE3\u8868\u7372\u5F97\u4EFB\u4F55\u5F62\u5F0F\u4E4B\u6388\u6B0A\u6216\u80CC\u66F8\u3002\n\n\u672C\u904A\u6232\u8207\u904A\u6232\u4E2D\u51FA\u73FE\u4E4B\u4EFB\u4F55\u516C\u53F8\u6216\u54C1\u724C\u7121\u95DC\u806F\u95DC\u4FC2\u3002"
+--- !u!222 &1441078002
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1441077999}
+  m_CullTransparentMesh: 1
 --- !u!1 &1473780071
 GameObject:
   m_ObjectHideFlags: 0
@@ -2435,6 +2518,7 @@ RectTransform:
   - {fileID: 594950236}
   - {fileID: 344010372}
   - {fileID: 97078994}
+  - {fileID: 1441078000}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
