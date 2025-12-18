@@ -12,6 +12,7 @@ namespace BarSimulator.UI
     {
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI coinsText;
+        [SerializeField] private TextMeshProUGUI failMessageText;
         [SerializeField] private Transform liquorListContainer;
         [SerializeField] private Transform decorationListContainer;
         [SerializeField] private Button nextGameButton;
@@ -45,6 +46,15 @@ namespace BarSimulator.UI
         {
             if (coinsText != null)
                 coinsText.text = $"Coins: {coins}";
+
+            CheckWinCondition(coins);
+        }
+
+        private void CheckWinCondition(int coins)
+        {
+            bool canProceed = coins >= 300;
+            if (nextGameButton != null) nextGameButton.interactable = canProceed;
+            if (failMessageText != null) failMessageText.gameObject.SetActive(!canProceed);
         }
 
         private void RefreshShopItems()
