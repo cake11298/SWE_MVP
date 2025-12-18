@@ -18,6 +18,8 @@ namespace BarSimulator.UI
         [SerializeField] private Button nextGameButton;
         [SerializeField] private Button mainMenuButton;
 
+        private bool _initialWinConditionMet;
+
         private void Start()
         {
             if (PersistentGameData.Instance == null)
@@ -25,6 +27,8 @@ namespace BarSimulator.UI
                 Debug.LogError("ShopUIController: PersistentGameData.Instance is null!");
                 return;
             }
+
+            _initialWinConditionMet = PersistentGameData.Instance.GetTotalCoins() >= 300;
 
             // Initialize UI
             UpdateCoinsUI(PersistentGameData.Instance.GetTotalCoins());
@@ -58,7 +62,7 @@ namespace BarSimulator.UI
 
         private void CheckWinCondition(int coins)
         {
-            bool canProceed = coins >= 300;
+            bool canProceed = _initialWinConditionMet;
             if (nextGameButton != null) nextGameButton.interactable = canProceed;
             if (failMessageText != null) failMessageText.gameObject.SetActive(!canProceed);
         }
