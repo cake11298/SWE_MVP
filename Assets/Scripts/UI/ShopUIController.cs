@@ -20,6 +20,12 @@ namespace BarSimulator.UI
 
         private void Start()
         {
+            if (PersistentGameData.Instance == null)
+            {
+                Debug.LogError("ShopUIController: PersistentGameData.Instance is null!");
+                return;
+            }
+
             // Initialize UI
             UpdateCoinsUI(PersistentGameData.Instance.GetTotalCoins());
             
@@ -30,8 +36,8 @@ namespace BarSimulator.UI
             RefreshShopItems();
 
             // Bind Buttons
-            nextGameButton.onClick.AddListener(OnNextGameClicked);
-            mainMenuButton.onClick.AddListener(OnMainMenuClicked);
+            if (nextGameButton != null) nextGameButton.onClick.AddListener(OnNextGameClicked);
+            if (mainMenuButton != null) mainMenuButton.onClick.AddListener(OnMainMenuClicked);
         }
 
         private void OnDestroy()

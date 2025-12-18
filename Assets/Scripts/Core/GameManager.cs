@@ -547,6 +547,9 @@ namespace BarSimulator.Core
 
         private void ValidateReferences()
         {
+            // Only validate references if we are in the gameplay scene
+            if (SceneManager.GetActiveScene().name != "TheBar") return;
+
             if (playerController == null)
             {
                 playerController = FindFirstObjectByType<FirstPersonController>();
